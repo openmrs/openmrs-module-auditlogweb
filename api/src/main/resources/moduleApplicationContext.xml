@@ -25,34 +25,34 @@
 
     <context:component-scan base-package="org.openmrs.module.auditlogweb" />
 
-    <!-- Wraps AuditlogwebService methods in DB transactions and OpenMRS interceptors,
-    which set audit info like dateCreated, changedBy, etc.-->
-    <bean id="auditlogweb.AuditlogwebService"
-            class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
-        <property name="transactionManager">
-            <ref bean="transactionManager" />
-        </property>
-        <property name="target">
-            <bean class="org.openmrs.module.auditlogweb.api.impl.AuditlogwebServiceImpl">
-                <property name="dao" ref="auditlogweb.AuditlogwebDao" />
-            </bean>
-        </property>
-        <property name="preInterceptors">
-            <ref bean="serviceInterceptors" />
-        </property>
-        <property name="transactionAttributeSource">
-            <ref bean="transactionAttributeSource" />
-        </property>
-    </bean>
+<!--    &lt;!&ndash; Wraps AuditlogwebService methods in DB transactions and OpenMRS interceptors,-->
+<!--    which set audit info like dateCreated, changedBy, etc.&ndash;&gt;-->
+<!--    <bean id="auditlogweb.AuditlogwebService"-->
+<!--            class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">-->
+<!--        <property name="transactionManager">-->
+<!--            <ref bean="transactionManager" />-->
+<!--        </property>-->
+<!--        <property name="target">-->
+<!--            <bean class="org.openmrs.module.auditlogweb.api.impl.AuditlogwebServiceImpl">-->
+<!--                <property name="dao" ref="auditlogweb.AuditlogwebDao" />-->
+<!--            </bean>-->
+<!--        </property>-->
+<!--        <property name="preInterceptors">-->
+<!--            <ref bean="serviceInterceptors" />-->
+<!--        </property>-->
+<!--        <property name="transactionAttributeSource">-->
+<!--            <ref bean="transactionAttributeSource" />-->
+<!--        </property>-->
+<!--    </bean>-->
 
-    <!-- Adds AuditlogwebService to OpenMRS context so it can be accessed
-    calling Context.getService(AuditlogwebService.class) -->
-    <bean parent="serviceContext">
-        <property name="moduleService">
-            <list>
-                <value>org.openmrs.module.auditlogweb.api.AuditlogwebService</value>
-                <ref bean="auditlogweb.AuditlogwebService" />
-            </list>
-        </property>
-    </bean>
+<!--    &lt;!&ndash; Adds AuditlogwebService to OpenMRS context so it can be accessed-->
+<!--    calling Context.getService(AuditlogwebService.class) &ndash;&gt;-->
+<!--    <bean parent="serviceContext">-->
+<!--        <property name="moduleService">-->
+<!--            <list>-->
+<!--                <value>org.openmrs.module.auditlogweb.api.AuditlogwebService</value>-->
+<!--                <ref bean="auditlogweb.AuditlogwebService" />-->
+<!--            </list>-->
+<!--        </property>-->
+<!--    </bean>-->
 </beans>

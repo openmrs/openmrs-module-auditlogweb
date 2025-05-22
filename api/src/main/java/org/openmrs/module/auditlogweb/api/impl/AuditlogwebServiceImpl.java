@@ -9,44 +9,44 @@
  */
 package org.openmrs.module.auditlogweb.api.impl;
 
-import org.openmrs.api.APIException;
-import org.openmrs.api.UserService;
 import org.openmrs.api.impl.BaseOpenmrsService;
-import org.openmrs.module.auditlogweb.Item;
+import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditlogwebService;
 import org.openmrs.module.auditlogweb.api.dao.AuditlogwebDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
 public class AuditlogwebServiceImpl extends BaseOpenmrsService implements AuditlogwebService {
 	
-	AuditlogwebDao dao;
+	private final Logger log = LoggerFactory.getLogger(AuditlogwebServiceImpl.class);
 	
-	UserService userService;
+	private final AuditlogwebDao auditlogwebDao;
 	
-	/**
-	 * Injected in moduleApplicationContext.xml
-	 */
-	public void setDao(AuditlogwebDao dao) {
-		this.dao = dao;
+	public AuditlogwebServiceImpl(AuditlogwebDao auditlogwebDao) {
+		this.auditlogwebDao = auditlogwebDao;
 	}
 	
-	/**
-	 * Injected in moduleApplicationContext.xml
-	 */
-	public void setUserService(UserService userService) {
-		this.userService = userService;
+	public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
+		return auditlogwebDao.getAllRevisions(entityClass);
 	}
 	
 	@Override
-	public Item getItemByUuid(String uuid) throws APIException {
-		return dao.getItemByUuid(uuid);
-	}
-	
-	@Override
-	public Item saveItem(Item item) throws APIException {
-		if (item.getOwner() == null) {
-			item.setOwner(userService.getUser(1));
+	public <T> List<AuditEntity<T>> getAllRevisions(String entityClass) {
+		try{
+			Class clazz = Class.forName(entityClass);
+			return getAllRevisions(clazz);
+		} catch (ClassNotFoundException e) {
+			log.error(e.getMessage(), e);
+			return new ArrayList<>();
 		}
-		
-		return dao.saveItem(item);
+	}
+	
+	public <T> T getAllRevisionById(Class<T> entityClass, int entityId, int revisionId) {
+		return auditlogwebDao.getRevisionById(entityClass, entityId, revisionId);
 	}
 }

@@ -9,29 +9,46 @@
  */
 package org.openmrs.module.auditlogweb.api.dao;
 
-import org.hibernate.criterion.Restrictions;
-import org.openmrs.api.db.hibernate.DbSession;
-import org.openmrs.api.db.hibernate.DbSessionFactory;
-import org.openmrs.module.auditlogweb.Item;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.hibernate.SessionFactory;
+import org.hibernate.envers.AuditReader;
+import org.hibernate.envers.AuditReaderFactory;
+import org.hibernate.envers.RevisionType;
+import org.hibernate.envers.query.AuditQuery;
+import org.openmrs.api.context.Context;
+import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
+import org.openmrs.module.auditlogweb.AuditEntity;
 import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.stream.Collectors;
 
-@Repository("auditlogweb.AuditlogwebDao")
+@Repository
 public class AuditlogwebDao {
 	
-	@Autowired
-	DbSessionFactory sessionFactory;
+	private final SessionFactory sessionFactory;
 	
-	private DbSession getSession() {
-		return sessionFactory.getCurrentSession();
+	public AuditlogwebDao(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
 	}
 	
-	public Item getItemByUuid(String uuid) {
-		return (Item) getSession().createCriteria(Item.class).add(Restrictions.eq("uuid", uuid)).uniqueResult();
+	@SuppressWarnings("unchecked")
+	public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
+		AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());;
+		AuditQuery auditQuery = auditReader.createQuery().forRevisionsOfEntity(entityClass, false, true);
+		return (List<AuditEntity<T>>) auditQuery.getResultList().stream()
+				.map(result -> {
+					Object[] array = (Object[]) result;
+					T entity = entityClass.cast(array[0]);
+					OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) array[1];
+					RevisionType revisionType = (RevisionType) array[2];
+					String changedBy = Context.getUserService().getUser(revisionEntity.getChangedBy()).toString();
+					return new AuditEntity<>(entity, revisionEntity, revisionType, changedBy);
+				})
+				.collect(Collectors.toList());
 	}
 	
-	public Item saveItem(Item item) {
-		getSession().saveOrUpdate(item);
-		return item;
+	public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
+		AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+		T entity = auditReader.find(entityClass, entityId, revisionId);
+		return entity;
 	}
 }

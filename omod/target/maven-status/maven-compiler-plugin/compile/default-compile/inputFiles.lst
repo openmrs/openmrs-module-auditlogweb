@@ -1,2 +1,3 @@
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/omod/src/main/java/org/openmrs/module/auditlogweb/extension/html/AdminList.java
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/omod/src/main/java/org/openmrs/module/auditlogweb/web/controller/AuditlogwebController.java
+/Users/njiddasalifu/openmrs/auditlogs/watched-projects/auditlogweb/omod/src/main/java/org/openmrs/module/auditlogweb/extension/html/AdminList.java
+/Users/njiddasalifu/openmrs/auditlogs/watched-projects/auditlogweb/omod/src/main/java/org/openmrs/module/auditlogweb/web/controller/AuditlogwebController.java
+/Users/njiddasalifu/openmrs/auditlogs/watched-projects/auditlogweb/omod/src/main/java/org/openmrs/module/auditlogweb/web/controller/ViewAuditController.java
