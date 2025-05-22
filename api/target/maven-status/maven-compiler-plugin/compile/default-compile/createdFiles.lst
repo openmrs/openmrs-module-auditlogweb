@@ -1,0 +1,6 @@
+org/openmrs/module/auditlogweb/Item.class
+org/openmrs/module/auditlogweb/api/impl/AuditlogwebServiceImpl.class
+org/openmrs/module/auditlogweb/api/dao/AuditlogwebDao.class
+org/openmrs/module/auditlogweb/api/AuditlogwebService.class
+org/openmrs/module/auditlogweb/AuditlogwebActivator.class
+org/openmrs/module/auditlogweb/AuditlogwebConfig.class
