@@ -9,17 +9,14 @@
  */
 package org.openmrs.module.auditlogweb.api;
 
-import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 /**
  * The main service of this module, which is exposed for other modules. See
  * moduleApplicationContext.xml on how it is wired up.
  */
-public interface AuditlogwebService extends OpenmrsService {
+public interface AuditlogwebService {
 	
 	<T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass);
 	

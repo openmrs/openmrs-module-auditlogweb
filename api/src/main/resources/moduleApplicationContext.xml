@@ -25,8 +25,8 @@
 
     <context:component-scan base-package="org.openmrs.module.auditlogweb" />
 
-<!--    &lt;!&ndash; Wraps AuditlogwebService methods in DB transactions and OpenMRS interceptors,-->
-<!--    which set audit info like dateCreated, changedBy, etc.&ndash;&gt;-->
+<!--    Wraps AuditlogwebService methods in DB transactions and OpenMRS interceptors,
+        which set audit info like dateCreated, changedBy, etc.&ndash;&gt;-->
 <!--    <bean id="auditlogweb.AuditlogwebService"-->
 <!--            class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">-->
 <!--        <property name="transactionManager">-->
@@ -45,8 +45,8 @@
 <!--        </property>-->
 <!--    </bean>-->
 
-<!--    &lt;!&ndash; Adds AuditlogwebService to OpenMRS context so it can be accessed-->
-<!--    calling Context.getService(AuditlogwebService.class) &ndash;&gt;-->
+<!--   Adds AuditlogwebService to OpenMRS context so it can be accessed
+        calling Context.getService(AuditlogwebService.class) -->
 <!--    <bean parent="serviceContext">-->
 <!--        <property name="moduleService">-->
 <!--            <list>-->

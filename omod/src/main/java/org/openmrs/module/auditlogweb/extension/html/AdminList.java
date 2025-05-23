@@ -41,7 +41,7 @@ public class AdminList extends AdministrationSectionExt {
 	 */
 	public Map<String, String> getLinks() {
 		Map<String, String> map = new HashMap<String, String>();
-		map.put("module/auditlogweb/allAudits.form", "view audit logs");
+		map.put("module/auditlogweb/allAudits.form", "View Audit Logs");
 		return map;
 	}
 	

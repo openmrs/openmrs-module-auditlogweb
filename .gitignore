@@ -8,6 +8,8 @@
 
 ### Maven ###
 target/
+api/target/
+omod/target/
 pom.xml.versionsBackup
 #############
 

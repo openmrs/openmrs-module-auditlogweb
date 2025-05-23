@@ -14,6 +14,7 @@ import org.openmrs.module.auditlogweb.api.AuditlogwebService;
 import org.openmrs.module.auditlogweb.api.utill.ClassUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,11 +27,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping(value = "module/auditlogweb/allAudits.form")
 public class AuditlogwebController {
 	
-	private final AuditlogwebService auditlogwebService;
-	
 	/** Success form view name */
 	private final String VIEW = "/module/auditlogweb/allAudits";
 	
+	private final AuditlogwebService auditlogwebService;
+	
+	/**
+	 * Default constructor
+	 */
 	public AuditlogwebController(AuditlogwebService auditlogwebService) {
 		this.auditlogwebService = auditlogwebService;
 	}
@@ -45,6 +49,7 @@ public class AuditlogwebController {
 		return VIEW;
 	}
 	
+	@ModelAttribute("classes")
 	protected List<String> getClasses() throws Exception {
 		return ClassUtil.findClassesWithAuditedAnnotation();
 	}

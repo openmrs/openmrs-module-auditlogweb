@@ -47,6 +47,7 @@ public class AuditlogwebServiceImpl extends BaseOpenmrsService implements Auditl
 	}
 	
 	public <T> T getAllRevisionById(Class<T> entityClass, int entityId, int revisionId) {
-		return auditlogwebDao.getRevisionById(entityClass, entityId, revisionId);
+		T entity = auditlogwebDao.getRevisionById(entityClass, entityId, revisionId);
+		return entity;
 	}
 }
