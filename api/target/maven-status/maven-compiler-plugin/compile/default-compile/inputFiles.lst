@@ -1,6 +1,0 @@
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/api/src/main/java/org/openmrs/module/auditlogweb/AuditlogwebActivator.java
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/api/src/main/java/org/openmrs/module/auditlogweb/AuditlogwebConfig.java
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/api/src/main/java/org/openmrs/module/auditlogweb/Item.java
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/api/src/main/java/org/openmrs/module/auditlogweb/api/AuditlogwebService.java
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/api/src/main/java/org/openmrs/module/auditlogweb/api/dao/AuditlogwebDao.java
-/home/wikum/Documents/Code/OpenMRS/openmrs-module-auditlogweb/api/src/main/java/org/openmrs/module/auditlogweb/api/impl/AuditlogwebServiceImpl.java
