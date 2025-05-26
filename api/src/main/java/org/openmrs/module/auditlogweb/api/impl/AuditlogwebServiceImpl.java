@@ -9,12 +9,40 @@
  */
 package org.openmrs.module.auditlogweb.api.impl;
 
-import org.openmrs.api.APIException;
-import org.openmrs.api.UserService;
 import org.openmrs.api.impl.BaseOpenmrsService;
+import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditlogwebService;
 import org.openmrs.module.auditlogweb.api.dao.AuditlogwebDao;
+import org.slf4j.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AuditlogwebServiceImpl extends BaseOpenmrsService implements AuditlogwebService {
 	
+	private final Logger log = LoggerFactory.getLogger(AuditlogwebServiceImpl.class);
+	
+	private final AuditlogwebDao auditlogwebDao;
+	
+	public AuditlogwebServiceImpl(AuditlogwebDao auditlogwebDao) {
+		this.auditlogwebDao = auditlogwebDao;
+	}
+	
+	public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
+		return auditlogwebDao.getAllRevisions(entityClass);
+	}
+	
+	@Override
+    public <T> List<AuditEntity<T>> getAllRevisions(String entityClass) {
+        try {
+            Class clazz = Class.forName(entityClass);
+            return getAllRevisions(clazz);
+        } catch (ClassNotFoundException e) {
+            log.error(e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+	
+	public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
+		return auditlogwebDao.getRevisionById(entityClass, entityId, revisionId);
+	}
 }

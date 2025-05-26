@@ -9,11 +9,47 @@
  */
 package org.openmrs.module.auditlogweb.api.dao;
 
-import org.hibernate.criterion.Restrictions;
-import org.openmrs.api.db.hibernate.DbSession;
-import org.openmrs.api.db.hibernate.DbSessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.hibernate.SessionFactory;
+import org.hibernate.envers.AuditReader;
+import org.hibernate.envers.AuditReaderFactory;
+import org.hibernate.envers.RevisionType;
+import org.hibernate.envers.query.AuditQuery;
+import org.openmrs.api.context.Context;
+import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
+import org.openmrs.module.auditlogweb.AuditEntity;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Repository("auditlogweb.AuditlogwebDao")
-public class AuditlogwebDao {}
+public class AuditlogwebDao {
+	
+	private final SessionFactory sessionFactory;
+	
+	public AuditlogwebDao(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+	
+	@SuppressWarnings("unchecked")
+    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
+        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());;
+        AuditQuery auditQuery = auditReader.createQuery().forRevisionsOfEntity(entityClass, false, true);
+        return (List<AuditEntity<T>>) auditQuery.getResultList().stream()
+                .map(result -> {
+                    Object[] array = (Object[]) result;
+                    T entity = entityClass.cast(array[0]);
+                    OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) array[1];
+                    RevisionType revisionType = (RevisionType) array[2];
+                    String changedBy = Context.getUserService().getUser(revisionEntity.getChangedBy()).toString();
+                    return new AuditEntity<>(entity, revisionEntity, revisionType, changedBy);
+                })
+                .collect(Collectors.toList());
+    }
+	
+	public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
+		AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+		T entity = auditReader.find(entityClass, entityId, revisionId);
+		return entity;
+	}
+}

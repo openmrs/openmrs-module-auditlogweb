@@ -9,16 +9,19 @@
  */
 package org.openmrs.module.auditlogweb.api;
 
-import org.openmrs.annotation.Authorized;
-import org.openmrs.api.APIException;
-import org.openmrs.api.OpenmrsService;
-import org.openmrs.module.auditlogweb.AuditlogwebConfig;
-import org.springframework.transaction.annotation.Transactional;
+import org.openmrs.module.auditlogweb.AuditEntity;
+import java.util.List;
 
 /**
  * The main service of this module, which is exposed for other modules. See
  * moduleApplicationContext.xml on how it is wired up.
  */
 public interface AuditlogwebService {
+	
+	<T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass);
+	
+	<T> List<AuditEntity<T>> getAllRevisions(String entityClass);
+	
+	<T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId);
 	
 }
