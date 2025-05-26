@@ -16,7 +16,8 @@ import org.openmrs.module.web.extension.AdministrationSectionExt;
 
 /**
  * This class defines the links that will appear on the administration page under the
- * "auditlogweb.title" heading. This extension is enabled by defining (uncommenting) it in the config.xml file.
+ * "auditlogweb.title" heading. This extension is enabled by defining (uncommenting) it in the
+ * config.xml file.
  */
 public class AdminList extends AdministrationSectionExt {
 	
@@ -24,7 +25,7 @@ public class AdminList extends AdministrationSectionExt {
 	 * @see org.openmrs.module.web.extension.AdministrationSectionExt#getTitle()
 	 */
 	public String getTitle() {
-		return "auditlogweb.title";
+		return "Audit Log Module";
 	}
 	
 	/**
@@ -34,7 +35,7 @@ public class AdminList extends AdministrationSectionExt {
 		
 		Map<String, String> map = new HashMap<String, String>();
 		
-		map.put("module/auditlogweb/auditlogweb.form", "auditlogweb.title");
+		map.put("module/auditlogweb/auditlogweb.form", "View Audit Logs");
 		
 		return map;
 	}
