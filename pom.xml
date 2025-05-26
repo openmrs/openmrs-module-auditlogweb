@@ -2,7 +2,6 @@
 		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>auditlogweb</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
@@ -22,6 +21,12 @@
 		<module>api</module>
 		<module>omod</module>
 	</modules>
+
+	<properties>
+		<openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
+		<legacyUiVersion>2.0.0-SNAPSHOT</legacyUiVersion>
+		<javaCompilerVersion>1.8</javaCompilerVersion>
+	</properties>
 
 	<repositories>
 		<repository>
@@ -160,11 +165,4 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
-
-    <properties>
-        <openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
-		<legacyUiVersion>2.0.0-SNAPSHOT</legacyUiVersion>
-		<javaCompilerVersion>1.8</javaCompilerVersion>
-    </properties>
 </project>

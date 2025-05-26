@@ -12,41 +12,9 @@ package org.openmrs.module.auditlogweb.api.impl;
 import org.openmrs.api.APIException;
 import org.openmrs.api.UserService;
 import org.openmrs.api.impl.BaseOpenmrsService;
-import org.openmrs.module.auditlogweb.Item;
 import org.openmrs.module.auditlogweb.api.AuditlogwebService;
 import org.openmrs.module.auditlogweb.api.dao.AuditlogwebDao;
 
 public class AuditlogwebServiceImpl extends BaseOpenmrsService implements AuditlogwebService {
 	
-	AuditlogwebDao dao;
-	
-	UserService userService;
-	
-	/**
-	 * Injected in moduleApplicationContext.xml
-	 */
-	public void setDao(AuditlogwebDao dao) {
-		this.dao = dao;
-	}
-	
-	/**
-	 * Injected in moduleApplicationContext.xml
-	 */
-	public void setUserService(UserService userService) {
-		this.userService = userService;
-	}
-	
-	@Override
-	public Item getItemByUuid(String uuid) throws APIException {
-		return dao.getItemByUuid(uuid);
-	}
-	
-	@Override
-	public Item saveItem(Item item) throws APIException {
-		if (item.getOwner() == null) {
-			item.setOwner(userService.getUser(1));
-		}
-		
-		return dao.saveItem(item);
-	}
 }
