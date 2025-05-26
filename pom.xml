@@ -1,7 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+	<parent>
+		<groupId>org.openmrs.maven.parents</groupId>
+		<artifactId>maven-parent-openmrs-module</artifactId>
+		<version>1.1.1</version>
+	</parent>
 
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>auditlogweb</artifactId>
@@ -47,49 +52,9 @@
 		</pluginRepository>
 	</pluginRepositories>
 
-
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>org.openmrs.api</groupId>
-				<artifactId>openmrs-api</artifactId>
-				<version>${openmrsPlatformVersion}</version>
-				<type>jar</type>
-				<scope>provided</scope>
-			</dependency>
-
-			<dependency>
-				<groupId>org.openmrs.web</groupId>
-				<artifactId>openmrs-web</artifactId>
-				<version>${openmrsPlatformVersion}</version>
-				<type>jar</type>
-				<scope>provided</scope>
-			</dependency>
-
-			<dependency>
-				<groupId>org.openmrs.api</groupId>
-				<artifactId>openmrs-api</artifactId>
-				<version>${openmrsPlatformVersion}</version>
-				<type>test-jar</type>
-				<scope>test</scope>
-			</dependency>
-
-			<dependency>
-				<groupId>org.openmrs.web</groupId>
-				<artifactId>openmrs-web</artifactId>
-				<version>${openmrsPlatformVersion}</version>
-				<type>test-jar</type>
-				<scope>test</scope>
-			</dependency>
-
-			<dependency>
-				<groupId>org.openmrs.test</groupId>
-				<artifactId>openmrs-test</artifactId>
-				<version>${openmrsPlatformVersion}</version>
-				<type>pom</type>
-				<scope>test</scope>
-			</dependency>
-
+			<!--	OpenMRS modules-->
 			<dependency>
 				<groupId>org.openmrs.module</groupId>
 				<artifactId>legacyui-omod</artifactId>
@@ -97,12 +62,6 @@
 				<scope>provided</scope>
 			</dependency>
 
-			<dependency>
-				<groupId>javax.servlet</groupId>
-				<artifactId>javax.servlet-api</artifactId>
-				<version>4.0.1</version>
-				<scope>provided</scope>
-			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -117,54 +76,13 @@
 						<source>${javaCompilerVersion}</source>
 					</configuration>
 				</plugin>
-				<!-- Spotless plugin -->
-				<plugin>
-					<groupId>com.diffplug.spotless</groupId>
-					<artifactId>spotless-maven-plugin</artifactId>
-					<version>2.27.2</version>
-					<configuration>
-						<java>
-							<licenseHeader>
-								<file>${project.basedir}/license-header.txt</file>
-							</licenseHeader>
-							<eclipse>
-								<file>${project.basedir}/OpenMRSFormatter.xml</file>
-							</eclipse>
-							<removeUnusedImports/>
-							<importOrder>
-								<order>javax,java</order>
-							</importOrder>
-						</java>
-						<formats>
-							<format>
-								<includes>
-									<include>**/*.xml</include>
-								</includes>
-								<licenseHeader>
-									<file>${project.basedir}/license-header.txt</file>
-									<delimiter>^(?!&lt;\?xml)</delimiter>
-								</licenseHeader>
-							</format>
-						</formats>
-					</configuration>
-					<executions>
-						<execution>
-							<id>spotless-apply</id>
-							<phase>validate</phase>
-							<goals>
-								<goal>apply</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
 
-
-    <properties>
-        <openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
+	<properties>
+		<openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
 		<legacyUiVersion>2.0.0-SNAPSHOT</legacyUiVersion>
 		<javaCompilerVersion>1.8</javaCompilerVersion>
-    </properties>
+	</properties>
 </project>
