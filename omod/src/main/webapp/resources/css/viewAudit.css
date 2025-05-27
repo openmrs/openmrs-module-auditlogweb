@@ -1,0 +1,62 @@
+.audit-container {
+    max-width: none;
+    margin: 40px 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 32px 24px 24px 24px;
+}
+.audit-title {
+    font-size: 2em;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: #2c3e50;
+    letter-spacing: 0.5px;
+}
+table.audit-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #fafbfc;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+.audit-table th, .audit-table td {
+    padding: 14px 12px;
+    text-align: left;
+}
+.audit-table th {
+    background: #f4f6fa;
+    color: #34495e;
+    font-size: 1.05em;
+    font-weight: 600;
+    border-bottom: 2px solid #e1e4ea;
+}
+.audit-table tr {
+    transition: background 0.15s;
+}
+.audit-table tr:nth-child(even) {
+    background: #f9fafb;
+}
+.audit-table tr:hover {
+    background: #eaf6ff;
+}
+.audit-table .highlight {
+    background: #fffbe6 !important;
+    font-weight: 500;
+    color: #b26a00;
+}
+.audit-table td {
+    border-bottom: 1px solid #e1e4ea;
+    font-size: 1em;
+}
+.audit-table td:first-child {
+    font-family: 'Fira Mono', 'Consolas', monospace;
+    color: #2d6a4f;
+}
+@media (max-width: 700px) {
+    .audit-container { padding: 12px; }
+    .audit-title { font-size: 1.2em; }
+    .audit-table th, .audit-table td { padding: 8px 4px; font-size: 0.95em; }
+}
