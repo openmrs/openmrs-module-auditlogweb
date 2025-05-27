@@ -8,39 +8,50 @@
  */
 package org.openmrs.module.auditlogweb.web.controller;
 
-import java.util.List;
-
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.openmrs.User;
-import org.openmrs.api.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.openmrs.module.auditlogweb.api.AuditlogwebService;
+import org.openmrs.module.auditlogweb.api.utils.ClassUtil;
 import org.springframework.stereotype.Controller;
-import org.springframework.validation.BindingResult;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 /**
  * This class configured as controller using annotation and mapped with the URL of
  * 'module/${rootArtifactid}/${rootArtifactid}Link.form'.
  */
 @Controller("${rootrootArtifactid}.AuditlogwebController")
-@RequestMapping(value = "module/${rootArtifactid}/${rootArtifactid}.form")
+@RequestMapping(value = "module/auditlogweb/auditlogweb.form")
 public class AuditlogwebController {
 	
 	/** Success form view name */
-	private final String VIEW = "/module/${rootArtifactid}/${rootArtifactid}";
-	
-	/**
-	 * Initially called after the getUsers method to get the landing form name
-	 * 
-	 * @return String form view name
-	 */
+	private final String VIEW = "/module/auditlogweb/auditlogweb";
+
+	private final AuditlogwebService auditlogwebService;
+
+    public AuditlogwebController(AuditlogwebService auditlogwebService) {
+        this.auditlogwebService = auditlogwebService;
+    }
+
 	@RequestMapping(method = RequestMethod.GET)
 	public String onGet() {
+		return VIEW;
+	}
+
+	@ModelAttribute("classes")
+	protected List<String> getClasses() throws Exception {
+		return ClassUtil.findClassesWithAuditedAnnotation();
+	}
+
+	@RequestMapping(method = RequestMethod.POST)
+	public String showClassFormAndAudits(@RequestParam(value = "selectedClass", required = false) String domainName, Model model) {
+		if (domainName != null && !domainName.isEmpty()) {
+			model.addAttribute("audits", auditlogwebService.getAllRevisions(domainName));
+			model.addAttribute("currentClass", domainName);
+		}
 		return VIEW;
 	}
 	
