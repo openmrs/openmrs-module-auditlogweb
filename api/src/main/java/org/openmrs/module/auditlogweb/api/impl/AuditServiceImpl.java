@@ -12,7 +12,7 @@ package org.openmrs.module.auditlogweb.api.impl;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
-import org.openmrs.module.auditlogweb.api.dao.AuditlogDao;
+import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,14 +23,14 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
     private final Logger log = LoggerFactory.getLogger(AuditServiceImpl.class);
 
-    private final AuditlogDao auditlogDao;
+    private final AuditDao auditDao;
 
-    public AuditServiceImpl(AuditlogDao auditlogDao) {
-        this.auditlogDao = auditlogDao;
+    public AuditServiceImpl(AuditDao auditDao) {
+        this.auditDao = auditDao;
     }
 
     public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
-        return auditlogDao.getAllRevisions(entityClass);
+        return auditDao.getAllRevisions(entityClass);
     }
 
     @Override
@@ -45,6 +45,6 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
-        return auditlogDao.getRevisionById(entityClass, entityId, revisionId);
+        return auditDao.getRevisionById(entityClass, entityId, revisionId);
     }
 }

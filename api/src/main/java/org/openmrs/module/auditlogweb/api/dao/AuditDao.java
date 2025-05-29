@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository("auditlogweb.AuditlogwebDao")
-public class AuditlogDao {
+public class AuditDao {
 
     private final SessionFactory sessionFactory;
 
-    public AuditlogDao(SessionFactory sessionFactory) {
+    public AuditDao(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
     }
 
