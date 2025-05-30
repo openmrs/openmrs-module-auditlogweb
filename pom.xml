@@ -24,7 +24,7 @@
 
 	<properties>
 		<openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
-		<legacyUiVersion>2.0.0-SNAPSHOT</legacyUiVersion>
+		<legacyUiVersion>1.23.0</legacyUiVersion>
 		<javaCompilerVersion>1.8</javaCompilerVersion>
 	</properties>
 
