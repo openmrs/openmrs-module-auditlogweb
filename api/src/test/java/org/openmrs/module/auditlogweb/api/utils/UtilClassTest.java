@@ -1,8 +1,6 @@
 package org.openmrs.module.auditlogweb.api.utils;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import javafx.scene.control.Alert;
 import org.junit.jupiter.api.Test;
 import org.openmrs.Allergies;
 import org.openmrs.Allergy;
@@ -105,6 +103,7 @@ import org.openmrs.hl7.HL7InError;
 import org.openmrs.hl7.HL7InQueue;
 import org.openmrs.hl7.HL7QueueItem;
 import org.openmrs.hl7.HL7Source;
+import org.openmrs.notification.Alert;
 import org.openmrs.notification.AlertRecipient;
 import org.openmrs.notification.Template;
 import org.openmrs.person.PersonMergeLog;
@@ -120,7 +119,7 @@ class UtilClassTest {
     @Test
     public void testAuditedClassesContainsExpected() throws IOException {
         List<String> expectedClassNames = Arrays.asList(
-                Allergy.class.getName(), Allergies.class.getName(), BaseCustomizableMetadata.class.getName(), BaseFormRecordableOpenmrsData.class.getName(),
+                Allergy.class.getName(), Allergy.class.getName(), BaseCustomizableMetadata.class.getName(), BaseFormRecordableOpenmrsData.class.getName(),
                 BaseOpenmrsData.class.getName(), BaseOpenmrsMetadata.class.getName(), BaseOpenmrsObject.class.getName(), BaseReferenceRange.class.getName(),
                 CareSetting.class.getName(), Cohort.class.getName(), CohortMembership.class.getName(), Concept.class.getName(), ConceptAnswer.class.getName(),
                 ConceptAttribute.class.getName(), ConceptAttribute.class.getName(), ConceptAttributeType.class.getName(), ConceptClass.class.getName(),
