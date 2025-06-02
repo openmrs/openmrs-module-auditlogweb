@@ -1,6 +1,6 @@
 package org.openmrs.module.auditlogweb.api.utils;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.openmrs.Allergy;
 import org.openmrs.Order;
