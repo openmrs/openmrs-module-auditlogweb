@@ -1,6 +1,6 @@
 package org.openmrs.module.auditlogweb.web.controller;
 
-import org.openmrs.module.auditlogweb.api.AuditlogwebService;
+import org.openmrs.module.auditlogweb.api.AuditService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,11 +13,12 @@ import javax.servlet.http.HttpServletRequest;
 public class ViewAuditController {
 
     private final String VIEW = "/module/auditlogweb/viewAudit";
-    private final AuditlogwebService auditlogwebService;
+    private final AuditService auditService;
 
-    public ViewAuditController(AuditlogwebService auditlogwebService) {
-        this.auditlogwebService = auditlogwebService;
+    public ViewAuditController(AuditService auditService) {
+        this.auditService = auditService;
     }
+
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
         int auditId = Integer.parseInt(request.getParameter("auditId"));
@@ -29,9 +30,9 @@ public class ViewAuditController {
             throw new RuntimeException(e);
         }
 
-        Object currentEntity = auditlogwebService.getRevisionById(clazz, entityId, auditId);
+        Object currentEntity = auditService.getRevisionById(clazz, entityId, auditId);
         if (auditId - 1 > 0) {
-            Object oldEntity = auditlogwebService.getRevisionById(clazz, entityId, --auditId);
+            Object oldEntity = auditService.getRevisionById(clazz, entityId, --auditId);
             model.addAttribute("oldEntity", clazz.cast(oldEntity));
         }
         model.addAttribute("currentEntity", clazz.cast(currentEntity));

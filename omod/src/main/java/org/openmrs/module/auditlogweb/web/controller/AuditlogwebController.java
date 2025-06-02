@@ -7,8 +7,7 @@
  * graphic logo is a trademark of OpenMRS Inc.
  */
 package org.openmrs.module.auditlogweb.web.controller;
-
-import org.openmrs.module.auditlogweb.api.AuditlogwebService;
+import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.utils.ClassUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,17 +22,17 @@ import java.util.List;
  * This class configured as controller using annotation and mapped with the URL of
  * 'module/${rootArtifactid}/${rootArtifactid}Link.form'.
  */
-@Controller("${rootrootArtifactid}.AuditlogwebController")
-@RequestMapping(value = "module/auditlogweb/auditlogweb.form")
+@Controller
+@RequestMapping(value = "module/auditlogweb/auditlogs.form")
 public class AuditlogwebController {
 	
 	/** Success form view name */
-	private final String VIEW = "/module/auditlogweb/auditlogweb";
+	private final String VIEW = "/module/auditlogweb/auditlogs";
 
-	private final AuditlogwebService auditlogwebService;
+	private final AuditService auditService;
 
-    public AuditlogwebController(AuditlogwebService auditlogwebService) {
-        this.auditlogwebService = auditlogwebService;
+    public AuditlogwebController(AuditService auditService) {
+        this.auditService = auditService;
     }
 
 	@RequestMapping(method = RequestMethod.GET)
@@ -47,9 +46,11 @@ public class AuditlogwebController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST)
-	public String showClassFormAndAudits(@RequestParam(value = "selectedClass", required = false) String domainName, Model model) {
+	public String showClassFormAndAudits(
+			@RequestParam(value = "selectedClass", required = false) String domainName,
+			Model model) {
 		if (domainName != null && !domainName.isEmpty()) {
-			model.addAttribute("audits", auditlogwebService.getAllRevisions(domainName));
+			model.addAttribute("audits", auditService.getAllRevisions(domainName));
 			model.addAttribute("currentClass", domainName);
 		}
 		return VIEW;
