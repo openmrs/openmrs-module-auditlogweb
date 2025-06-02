@@ -23,7 +23,7 @@ class UtilClassTest {
 
         // Assert that all found audited classes are within the correct package
         for (String clazz : actualAuditedClasses) {
-            assertTrue(clazz.startsWith("org.openmr"), "Audited class outside expected package: " + clazz);
+            assertTrue(clazz.startsWith("org.openmrs"), "Audited class outside expected package: " + clazz);
         }
 
         // Assert that expected audited classes are among those found
