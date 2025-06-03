@@ -1,48 +1,52 @@
-${moduleName}
-==========================
+[![CI Build Status](https://github.com/openmrs/openmrs-module-webservices.rest/actions/workflows/maven.yml/badge.svg)](https://github.com/nsalifu/openmrs-module-auditlogweb/blob/unit-tests/.github/workflows/maven.yml)
+
+<img src="https://talk.openmrs.org/uploads/default/original/2X/f/f1ec579b0398cb04c80a54c56da219b2440fe249.jpg" alt="OpenMRS"/>
+
+# OpenMRS Audit Log Web Module
+
+> Audit Log Web Module for [OpenMRS](https://openmrs.atlassian.net/wiki/spaces/projects/pages/363757631/Improved+Audit+Logging) Wiki Page
+>
+> 
+> Audit Log Web Module for [OpenMRS](https://openmrs.atlassian.net/jira/software/c/projects/AUDIT/summary)  JIRA Board
 
 Description
 -----------
-This is a very basic module which can be used as a starting point in creating a new module.
+This module provides enhanced audit logging capabilities for OpenMRS, allowing administrators and developers to track, view, and analyze changes made to data within the system through a user-friendly web interface.
 
-Building from Source
+# Building from Source
 --------------------
-You will need to have Java 1.6+ and Maven 2.x+ installed.  Use the command 'mvn package' to 
-compile and package the module.  The .omod file will be in the omod/target folder.
+Pre-requisites:
+1. Java 1.8+ 
+2. Maven 2.x+
+3. OpenMRS SDK (optional, but recommended for easier module management)
+4. OpenMRS instance running (for testing purposes)
+5. Git (to clone the repository)
+6. An IDE (like IntelliJ IDEA or Eclipse) for easier development and debugging
 
-Alternatively you can add the snippet provided in the [Creating Modules](https://wiki.openmrs.org/x/cAEr) page to your 
-omod/pom.xml and use the mvn command:
-
-    mvn package -P deploy-web -D deploy.path="../../openmrs-1.8.x/webapp/src/main/webapp"
-
-It will allow you to deploy any changes to your web 
-resources such as jsp or js files without re-installing the module. The deploy path says 
-where OpenMRS is deployed.
-
-Running Spotless
-----------------
-This project uses Spotless for code formatting. Spotless is embedded in the build process, so when you run `mvn clean package`, Spotless will automatically format your code according to the project's style guidelines.
-
-If you want to run Spotless separately, you can use the following Maven commands:
-
-To apply the formatting:
-
-    mvn spotless:apply
-
-This will automatically format your code according to the project's style guidelines. It's recommended to run this command before committing your changes.
-
-To check if your code adheres to the style guidelines without making any changes, you can run:
-
-    mvn spotless:check
-
-If this command reports any violations, you can then run `mvn spotless:apply` to fix them.
-
-Remember, in most cases, you don't need to run these commands separately as Spotless will run automatically during the build process with `mvn clean package`.
+To build the module from source, clone this repo:
+```
+git clone https://github.com/openmrs/openmrs-module-auditlogweb
+```
+Navigate into the `openmrs-module-auditlogweb` directory and compile the module using Maven:
+```
+cd openmrs-module-auditlogweb && mvn clean package
+```
 
 Installation
 ------------
 1. Build the module to produce the .omod file.
 2. Use the OpenMRS Administration > Manage Modules screen to upload and install the .omod file.
+
+Alternative Installation Method: 
+If OpenMRS SDk is installed, you can use the following command to install the module:
+```
+mvn openmrs-sdk:deploy -DserverId={serverName} -DmoduleVersion=1.0.0-SNAPSHOT
+```
+As a developer, you can also use the OpenMRS SDK to watch the module by your running OpenMRS instance.
+```
+mvn openmrs-sdk:watch -DserverId={serverName} -DmoduleVersion=1.0.0-SNAPSHOT
+```
+This will automatically deploy changes to the module without needing to manually upload the .omod file each time.
 
 If uploads are not allowed from the web (changable via a runtime property), you can drop the omod
 into the ~/.OpenMRS/modules folder.  (Where ~/.OpenMRS is assumed to be the Application 
