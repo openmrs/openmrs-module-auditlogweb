@@ -58,7 +58,7 @@ public class UtilClass {
         return ClassUtils.convertClassNameToResourcePath(SystemPropertyUtils.resolvePlaceholders("org.openmrs"));
     }
 
-    private static boolean doesClassContainsAuditedAnnotation(MetadataReader metadataReader) {
+    public static boolean doesClassContainsAuditedAnnotation(MetadataReader metadataReader) {
         try {
             Class<?> dwrClass = Class.forName(metadataReader.getClassMetadata().getClassName());
 
