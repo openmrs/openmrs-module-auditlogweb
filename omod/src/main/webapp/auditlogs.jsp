@@ -1,11 +1,14 @@
 <%@ include file="/WEB-INF/template/include.jsp"%>
 <%@ include file="/WEB-INF/template/header.jsp"%>
+<% request.setAttribute("page", "auditlogs"); %>
+<%@include file="localHeader.jsp"%>
 
 <style>
     .auditlog-container {
-        width: 90vw;
-        max-width: 1200px;
-        margin: 30px auto;
+        /*width: 90vw;*/
+        max-width: none;
+        margin-top: 8px;
+        margin-bottom: 30px;
         background: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -14,6 +17,12 @@
     .search-group {
         position: relative;
         margin-bottom: 24px;
+    }
+    .search-label{
+        display: block;
+        font-size: 1em;
+        margin-bottom: 8px;
+        color: #444;
     }
     .search-dropdown-input {
         width: 100%;
@@ -36,19 +45,8 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         display: none;
     }
-    .dropdown-list.active {
-        display: block;
-    }
-    .dropdown-item {
-        padding: 10px 14px;
-        cursor: pointer;
-        transition: background 0.15s;
-    }
-    .dropdown-item:hover, .dropdown-item.selected {
-        background: #f5f7fa;
-    }
     .view-btn {
-        background: #0e856f;
+        background: #0a9a7e;
         color: #fff;
         border: none;
         padding: 10px 24px;
@@ -75,14 +73,56 @@
     .audit-table tr:hover {
         background: #f5f7fa;
     }
+    .filter-field input[type="text"],
+    .filter-field input[type="date"] {
+        max-width: 160px;
+        width: 100%;
+        padding: 12px;
+        font-size: 0.98em;
+        box-sizing: border-box;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+        align-items: flex-end;
+    }
+    .filter-field {
+        display: flex;
+        flex-direction: column;
+        flex: none;
+    }
+    .filter-label {
+        font-size: 1em;
+        margin-bottom: 4px;
+        color: #444;
+    }
+    @media (max-width: 700px) {
+        .filter-group { flex-direction: column; gap: 8px; }
+    }
 </style>
-
 <div class="auditlog-container">
-    <h2><spring:message code="auditlogweb.title" /></h2>
+    <h2><spring:message code="Audit Logs" /></h2>
     <form action="auditlogs.form" method="post" id="auditForm" autocomplete="off">
+        <div class="filter-group">
+            <div class="filter-field">
+                <label for="username" class="filter-label">Search by User: </label>
+                <input type="text" id="username" name="username" placeholder="Enter username" value="${param.username}">
+            </div>
+            <div class="filter-field">
+                <label for="startDate" class="filter-label">From: </label>
+                <input type="date" id="startDate" name="startDate" value="${param.startDate}">
+            </div>
+            <div class="filter-field">
+                <label for="endDate" class="filter-label">To: </label>
+                <input type="date" id="endDate" name="endDate" value="${param.endDate}">
+            </div>
+        </div>
         <div class="search-group">
-            <label for="entitySearch" class="search-label">Search and Select Entity Class:</label>
-            <input type="text" id="entitySearch" class="search-dropdown-input" placeholder="Type to search..." readonly>
+            <label for="entitySearch" class="search-label">Search and Select an Entity:</label>
+            <input type="text" id="entitySearch" class="search-dropdown-input" placeholder="Type entity name to search..." readonly>
             <input type="hidden" name="selectedClass" id="selectedClass" required>
             <div id="dropdownList" class="dropdown-list"></div>
             <button type="submit" class="view-btn" >View Audits</button>
@@ -114,7 +154,7 @@
     </c:if>
     <br>
     <section class="recent-audits-section">
-        <h2>Most Recent Events</h2>
+        <h2>Recent Audit Trails</h2>
         <c:choose>
             <c:when test="${not empty recentAudits}">
                 <table class="audit-table">
@@ -150,7 +190,6 @@
 <%@ include file="/WEB-INF/template/footer.jsp"%>
 
 <script>
-    // Prepare options from server
     const classes = [
         <c:forEach var="cls" items="${classes}" varStatus="status">
         "${cls}"<c:if test="${!status.last}">,</c:if>
@@ -173,6 +212,7 @@
                 div.onclick = function() {
                     input.value = cls;
                     hiddenInput.value = cls;
+                    dropdown.style.display = "none";
                     dropdown.classList.remove('active');
                     document.getElementById('auditForm').submit();
                 };
@@ -180,25 +220,22 @@
                 found = true;
             }
         });
+        dropdown.style.display = found ? "block" : "none";
         dropdown.classList.toggle('active', found);
     }
 
-    // Show dropdown on input focus/click
     input.addEventListener('focus', () => renderDropdown(input.value));
     input.addEventListener('click', () => renderDropdown(input.value));
-
-    // Allow typing to filter
     input.removeAttribute('readonly');
     input.addEventListener('input', () => renderDropdown(input.value));
 
-    // Hide dropdown on outside click
     document.addEventListener('click', function(e) {
         if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = "none";
             dropdown.classList.remove('active');
         }
     });
 
-    // Set initial value if any
     if (currentClass) {
         input.value = currentClass;
         hiddenInput.value = currentClass;

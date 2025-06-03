@@ -1,12 +1,13 @@
 <%@ include file="/WEB-INF/template/include.jsp"%>
 <%@ include file="/WEB-INF/template/header.jsp"%>
 <%@ page import="java.lang.reflect.Field" %>
-<%@ page import="org.hibernate.QueryException" %>
+<% request.setAttribute("page", "viewAudit"); %>
+<%@include file="localHeader.jsp"%>
 
 <style>
     .audit-container {
-        max-width: 900px;
-        margin: 40px auto;
+        max-width: none;
+        margin: 40px 0;
         background: #fff;
         border-radius: 10px;
         box-shadow: 0 4px 24px rgba(0,0,0,0.08);
@@ -77,7 +78,7 @@
             <th>Current Value</th>
         </tr>
         </thead>
-        <tbody>
+        <tbody id="auditTableBody">
         <%
             try {
                 Object oldEntity = request.getAttribute("oldEntity");
@@ -101,7 +102,7 @@
                                 boolean isDifferent = (oldValue != null && currentValue != null && !oldValue.toString().trim().equals(currentValue.toString().trim()))
                                         || (oldValue == null && currentValue != null);
                                 String rowClass = (rowIndex % 2 == 0) ? "evenRow" : "oddRow";
-                                out.println("<tr class='" + rowClass + (isDifferent ? " highlight" : "") + "'>");
+                                out.println("<tr class='audit-row " + rowClass + (isDifferent ? " highlight" : "") + "'>");
                                 out.println("<td>" + field.getName() + "</td>");
                                 out.println("<td>" + (oldValue != null ? oldValue : "null") + "</td>");
                                 out.println("<td>" + (currentValue != null ? currentValue : "null") + "</td>");
@@ -109,7 +110,7 @@
                                 rowIndex++;
                             }
                         } else {
-                            out.println("<tr><td colspan='3'>The entities are of different types.</td></tr>");
+                            out.println("<tr class='audit-row'><td colspan='3'>The entities are of different types.</td></tr>");
                         }
                     } else {
                         Field[] fields = currentEntityClass.getDeclaredFields();
@@ -120,7 +121,7 @@
                                 currentValue = field.get(currentEntity);
                             } catch (IllegalAccessException e) {}
 
-                            out.println("<tr>");
+                            out.println("<tr class='audit-row'>");
                             out.println("<td>" + field.getName() + "</td>");
                             out.println("<td>null</td>");
                             out.println("<td>" + (currentValue != null ? currentValue : "null") + "</td>");
@@ -129,11 +130,12 @@
                         }
                     }
                 } else {
-                    out.println("<tr><td colspan='3'>No entity data available.</td></tr>");
+                    out.println("<tr class='audit-row'><td colspan='3'>No entity data available.</td></tr>");
                 }
             } catch (IllegalArgumentException ie) {
                 if (ie.getCause() instanceof org.hibernate.QueryException) {
-                    out.println("<tr><td colspan='3' style='color: #b94a48; background: #f2dede;'>Some referenced data could not be loaded. Please contact your administrator if this problem persists.</td></tr>");
+                    out.println("<tr class='audit-row'><td colspan='3' style='color: #b94a48; background: #f2dede;'>Some referenced data could not be loaded." +
+                            " Please contact your administrator if this problem persists.</td></tr>");
                 } else {
                     throw ie;
                 }
