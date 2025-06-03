@@ -114,7 +114,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
-class UtilClassTest {
+public class UtilClassTest {
 
     @Test
     public void testAuditedClassesContainsExpected() throws IOException {
