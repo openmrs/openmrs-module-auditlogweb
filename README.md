@@ -4,7 +4,10 @@
 
 # OpenMRS Audit Log Web Module
 
-> Audit Log Web Module for [OpenMRS](https://openmrs.atlassian.net/wiki/spaces/projects/pages/363757631/Improved+Audit+Logging)
+> Audit Log Web Module for [OpenMRS](https://openmrs.atlassian.net/wiki/spaces/projects/pages/363757631/Improved+Audit+Logging) Wiki Page
+>
+> 
+> Audit Log Web Module for [OpenMRS](https://openmrs.atlassian.net/jira/software/c/projects/AUDIT/summary)  JIRA Board
 
 Description
 -----------
