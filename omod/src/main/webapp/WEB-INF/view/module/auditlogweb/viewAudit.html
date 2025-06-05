@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:openmrs="http://www.w3.org/1999/XSL/Transform">
+<head>
+    <title>Audit Log Details</title>
+    <link rel="stylesheet" th:href="@{/moduleResources/auditlogweb/css/auditlogs.css}" />
+</head>
+<body>
+<ul id="menu">
+    <li class="first">
+        <a th:href="@{/admin/index.htm}"><openmrs:message code="admin.title.short"/></a>
+    </li>
+    <li th:classappend="${#httpServletRequest.requestURI.endsWith('auditlogs')} ? 'active'">
+        <a th:href="@{/module/auditlogweb/auditlogs}">Audit Logs</a>
+    </li>
+    <li th:classappend="${#httpServletRequest.requestURI.endsWith('viewAudit')} ? 'active'">
+        <a th:href="@{/module/auditlogweb/viewAudit}">Audit Log Detail</a>
+    </li>
+</ul>
+
+<div class="audit-container">
+    <div class="audit-title">Audit Log Details</div>
+    <table class="audit-table">
+        <thead>
+        <tr>
+            <th>Field</th>
+            <th>Old Value</th>
+            <th>Current Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <th:block th:if="${currentEntity != null}">
+            <th:block th:if="${oldEntity != null and oldEntity.getClass() == currentEntity.getClass()}">
+                <tr th:each="field : ${#fields.detailedFields(currentEntity)}"
+                    th:classappend="${#strings.toString(field.value) != #strings.toString(#fields.detailedField(oldEntity, field.name).value)} ? 'highlight'">
+                    <td th:text="${field.name}"></td>
+                    <td th:text="${#fields.detailedField(oldEntity, field.name).value} ?: 'null'"></td>
+                    <td th:text="${field.value} ?: 'null'"></td>
+                </tr>
+            </th:block>
+            <th:block th:unless="${oldEntity != null and oldEntity.getClass() == currentEntity.getClass()}">
+                <tr th:each="field : ${#fields.detailedFields(currentEntity)}">
+                    <td th:text="${field.name}"></td>
+                    <td>null</td>
+                    <td th:text="${field.value} ?: 'null'"></td>
+                </tr>
+            </th:block>
+        </th:block>
+        <th:block th:unless="${currentEntity != null}">
+            <tr>
+                <td colspan="3">No entity data available.</td>
+            </tr>
+        </th:block>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
