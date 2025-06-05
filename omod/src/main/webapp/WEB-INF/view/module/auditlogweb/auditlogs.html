@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:openmrs="http://www.w3.org/1999/XSL/Transform">
+<head>
+    <title>Audit Logs</title>
+    <link rel="stylesheet" th:href="@{/moduleResources/auditlogweb/css/auditlogs.css}" />
+</head>
+<body>
+<ul id="menu">
+    <li class="first">
+        <a th:href="@{/admin/index.htm}"><openmrs:message code="admin.title.short"/></a>
+    </li>
+    <li th:classappend="${#httpServletRequest.requestURI.endsWith('auditlogs')} ? 'active'">
+        <a th:href="@{/module/auditlogweb/auditlogs}">Audit Logs</a>
+    </li>
+    <li th:classappend="${#httpServletRequest.requestURI.endsWith('viewAudit')} ? 'active'">
+        <a th:href="@{/module/auditlogweb/viewAudit}">Audit Log Detail</a>
+    </li>
+</ul>
+
+<div class="auditlog-container">
+    <h2>Audit Logs</h2>
+    <form th:action="@{/module/auditlogweb/auditlogs}" method="get" id="auditForm" autocomplete="off">
+        <div class="filter-group">
+            <div class="filter-field">
+                <label for="username" class="filter-label">Search by User: </label>
+                <input type="text" id="username" name="username"
+                       th:value="${username}" placeholder="Enter username">
+            </div>
+            <div class="filter-field">
+                <label for="startDate" class="filter-label">From: </label>
+                <input type="date" id="startDate" name="startDate"
+                       th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}">
+            </div>
+            <div class="filter-field">
+                <label for="endDate" class="filter-label">To: </label>
+                <input type="date" id="endDate" name="endDate"
+                       th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}">
+            </div>
+        </div>
+        <div class="search-group">
+            <label for="entitySearch" class="search-label">Search and Select an Entity:</label>
+            <input type="text" id="entitySearch" class="search-dropdown-input"
+                   placeholder="Type entity name to search..." th:attr="readonly=${currentClass == null}">
+            <input type="hidden" name="selectedClass" id="selectedClass" th:value="${currentClass}">
+            <div id="dropdownList" class="dropdown-list"></div>
+            <button type="submit" class="view-btn">View Audits</button>
+        </div>
+    </form>
+
+    <div th:if="${audits != null and !audits.empty}">
+        <h2>Audit Table for <span th:text="${currentClass}"></span></h2>
+        <table class="audit-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Changed By</th>
+                <th>Changed On</th>
+                <th>Revision Type</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="audit : ${audits}"
+                th:onclick="'window.location.href=\'' + @{/module/auditlogweb/viewAudit(auditId=${audit.revisionEntity.id}, entityId=${audit.entity.id}, class=${currentClass})} + '\''"
+                style="cursor: pointer;">
+                <td th:text="${audit.entity.id}"></td>
+                <td th:text="${audit.changedBy}"></td>
+                <td th:text="${#temporals.format(audit.revisionEntity.changedOn, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                <td th:text="${audit.revisionType.name()}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <section class="recent-audits-section">
+        <h2>Recent Audit Trails</h2>
+        <div th:if="${recentAudits != null and !recentAudits.empty}">
+            <table class="audit-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Entity Class</th>
+                    <th>Changed By</th>
+                    <th>Changed On</th>
+                    <th>Revision Type</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="audit : ${recentAudits}"
+                    th:onclick="'window.location.href=\'' + @{/module/auditlogweb/viewAudit(auditId=${audit.revisionEntity.id}, entityId=${audit.entity.id}, class=${audit.entity.getClass().name})} + '\''"
+                    style="cursor: pointer;">
+                    <td th:text="${audit.entity.id}"></td>
+                    <td th:text="${#strings.substringAfterLast(audit.entity.getClass().name, '.')}"></td>
+                    <td th:text="${audit.changedBy}"></td>
+                    <td th:text="${#temporals.format(audit.revisionEntity.changedOn, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td th:text="${audit.revisionType.name()}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:unless="${recentAudits != null and !recentAudits.empty}"
+             style="padding: 24px; color: #888;">
+            No recent audit events to display.
+        </div>
+    </section>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const classes = /*[[${classes}]]*/ [];
+    const currentClass = /*[[${currentClass}]]*/ '';
+
+    const input = document.getElementById('entitySearch');
+    const hiddenInput = document.getElementById('selectedClass');
+    const dropdown = document.getElementById('dropdownList');
+
+    function renderDropdown(filter = "") {
+        dropdown.innerHTML = "";
+        let found = false;
+        classes.forEach(cls => {
+            if (cls.toLowerCase().includes(filter.toLowerCase())) {
+                const div = document.createElement('div');
+                div.className = 'dropdown-item' + (cls === currentClass ? ' selected' : '');
+                div.textContent = cls;
+                div.onclick = function() {
+                    input.value = cls;
+                    hiddenInput.value = cls;
+                    dropdown.style.display = "none";
+                    dropdown.classList.remove('active');
+                    document.getElementById('auditForm').submit();
+                };
+                dropdown.appendChild(div);
+                found = true;
+            }
+        });
+        dropdown.style.display = found ? "block" : "none";
+        dropdown.classList.toggle('active', found);
+    }
+
+    input.addEventListener('focus', () => renderDropdown(input.value));
+    input.addEventListener('click', () => renderDropdown(input.value));
+    if (input.hasAttribute('readonly') && currentClass === '') {
+        input.removeAttribute('readonly');
+    }
+    input.addEventListener('input', () => renderDropdown(input.value));
+
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = "none";
+            dropdown.classList.remove('active');
+        }
+    });
+
+    if (currentClass) {
+        input.value = currentClass;
+        hiddenInput.value = currentClass;
+    }
+    /*]]>*/
+</script>
+</body>
+</html>
