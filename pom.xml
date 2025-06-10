@@ -26,6 +26,7 @@
 		<openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
 		<legacyUiVersion>1.23.0</legacyUiVersion>
 		<javaCompilerVersion>1.8</javaCompilerVersion>
+		<lombok.version>1.18.38</lombok.version>
 	</properties>
 
 	<repositories>
@@ -111,7 +112,7 @@
 			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
-				<version>1.18.38</version>
+				<version>${lombok.version}</version>
 				<scope>provided</scope>
 			</dependency>
 		</dependencies>
@@ -130,7 +131,7 @@
 							<path>
 								<groupId>org.projectlombok</groupId>
 								<artifactId>lombok</artifactId>
-								<version>1.18.38</version>
+								<version></version>
 							</path>
 						</annotationProcessorPaths>
 					</configuration>
