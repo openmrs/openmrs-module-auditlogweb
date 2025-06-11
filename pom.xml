@@ -26,6 +26,7 @@
 		<openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
 		<legacyUiVersion>1.23.0</legacyUiVersion>
 		<javaCompilerVersion>1.8</javaCompilerVersion>
+		<lombokVersion>1.18.38</lombokVersion>
 	</properties>
 
 	<repositories>
@@ -108,6 +109,12 @@
 				<version>4.0.1</version>
 				<scope>provided</scope>
 			</dependency>
+			<dependency>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok</artifactId>
+				<version>${lombokVersion}</version>
+				<scope>provided</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -120,6 +127,13 @@
 					<configuration>
 						<target>${javaCompilerVersion}</target>
 						<source>${javaCompilerVersion}</source>
+						<annotationProcessorPaths>
+							<path>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+								<version>${lombokVersion}</version>
+							</path>
+						</annotationProcessorPaths>
 					</configuration>
 				</plugin>
 				<!-- Spotless plugin -->
