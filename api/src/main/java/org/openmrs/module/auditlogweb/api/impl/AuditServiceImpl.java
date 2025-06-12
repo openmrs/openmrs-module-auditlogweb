@@ -15,10 +15,13 @@ import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
+@Service
 public class AuditServiceImpl extends BaseOpenmrsService implements AuditService {
 
     private final Logger log = LoggerFactory.getLogger(AuditServiceImpl.class);
