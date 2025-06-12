@@ -8,39 +8,38 @@
  */
 package org.openmrs.module.auditlogweb.web.controller;
 
-import java.util.List;
-
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.openmrs.User;
-import org.openmrs.api.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.openmrs.module.auditlogweb.api.AuditService;
 import org.springframework.stereotype.Controller;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * This class configured as controller using annotation and mapped with the URL of
  * 'module/${rootArtifactid}/${rootArtifactid}Link.form'.
  */
-@Controller("${rootrootArtifactid}.AuditlogwebController")
-@RequestMapping(value = "module/${rootArtifactid}/${rootArtifactid}.form")
+@Controller
+@RequestMapping(value = "module/auditlogweb/auditlogs.form")
+@RequiredArgsConstructor
 public class AuditlogwebController {
-	
+
+	private final AuditService auditService;
 	/** Success form view name */
-	private final String VIEW = "/module/${rootArtifactid}/${rootArtifactid}";
-	
-	/**
-	 * Initially called after the getUsers method to get the landing form name
-	 * 
-	 * @return String form view name
-	 */
+	private final String VIEW = "/module/auditlogweb/auditlogs";
+
+
 	@RequestMapping(method = RequestMethod.GET)
 	public String onGet() {
+		return VIEW;
+	}
+
+	public String showClassFormAndAudits(@RequestParam(required = false) String className, Model model) {
+		if (className != null && !className.isEmpty()) {
+			model.addAttribute("audits", auditService.getAllRevisions(className));
+			model.addAttribute("currentClass", className);
+		}
 		return VIEW;
 	}
 	
