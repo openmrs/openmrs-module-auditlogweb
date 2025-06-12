@@ -9,6 +9,7 @@
 package org.openmrs.module.auditlogweb.web.controller;
 
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 public class ViewAuditController {
 
     private final String VIEW = "/module/auditlogweb/viewAudit";
+    private final String ENVERS_DISABLED_VIEW = "/module/auditlogweb/enversDisabled";
+
     private final AuditService auditService;
 
     public ViewAuditController(AuditService auditService) {
@@ -29,6 +32,12 @@ public class ViewAuditController {
 
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
+        //checking if envers is enabled before going further
+        if (!EnversUtils.isEnversEnabled()){
+            model.addAttribute("errorMessage", "Audit logging is not enabled on this server. " +
+                    "Please enable Hibernate Envers in openmrs-runtime.properties to view audit logs.");
+            return new ModelAndView(ENVERS_DISABLED_VIEW, model);
+        }
         int auditId = Integer.parseInt(request.getParameter("auditId"));
         int entityId = Integer.parseInt(request.getParameter("entityId"));
         Class<?> clazz;
