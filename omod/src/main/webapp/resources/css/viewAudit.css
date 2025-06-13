@@ -60,3 +60,11 @@ table.audit-table {
     .audit-title { font-size: 1.2em; }
     .audit-table th, .audit-table td { padding: 8px 4px; font-size: 0.95em; }
 }
+.audit-error {
+    color: #b94a48;
+    background-color: #f2dede;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    font-weight: bold;
+}
