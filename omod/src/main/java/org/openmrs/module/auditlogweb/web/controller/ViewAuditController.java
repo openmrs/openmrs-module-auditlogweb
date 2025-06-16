@@ -25,12 +25,13 @@ import java.lang.reflect.Field;
 import java.util.Objects;
 
 @Controller
-@RequestMapping(value = "module/auditlogweb/viewAudit.form")
+@RequestMapping(value = ViewAuditController.MODULE_PATH + "/viewAudit.form")
 @RequiredArgsConstructor
 public class ViewAuditController {
 
-    private final String VIEW = "/module/auditlogweb/viewAudit";
-    private final String ENVERS_DISABLED_VIEW = "/module/auditlogweb/enversDisabled";
+    public static final String MODULE_PATH = "/module/auditlogweb";
+    private final String VIEW = MODULE_PATH + "/viewAudit";
+    private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
     private final AuditService auditService;
 

@@ -25,12 +25,13 @@ import java.util.List;
  * 'module/${rootArtifactid}/${rootArtifactid}Link.form'.
  */
 @Controller
-@RequestMapping(value = "module/auditlogweb/auditlogs.form")
+@RequestMapping(value = AuditlogwebController.MODULE_PATH + "/auditlogs.form")
 @RequiredArgsConstructor
 public class AuditlogwebController {
 
-    private final String VIEW = "/module/auditlogweb/auditlogs";
-    private final String ENVERS_DISABLED_VIEW = "/module/auditlogweb/enversDisabled";
+    public static final String MODULE_PATH = "/module/auditlogweb";
+    private final String VIEW = MODULE_PATH + "/auditlogs";
+    private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
     private final AuditService auditService;
 
