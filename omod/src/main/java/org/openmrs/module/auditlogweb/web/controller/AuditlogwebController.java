@@ -7,6 +7,8 @@
  * graphic logo is a trademark of OpenMRS Inc.
  */
 package org.openmrs.module.auditlogweb.web.controller;
+
+import lombok.RequiredArgsConstructor;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
@@ -24,43 +26,36 @@ import java.util.List;
  */
 @Controller
 @RequestMapping(value = "module/auditlogweb/auditlogs.form")
+@RequiredArgsConstructor
 public class AuditlogwebController {
-	
-	/** Success form view name */
-	private final String VIEW = "/module/auditlogweb/auditlogs";
-	private final String ENVERS_DISABLED_VIEW = "/module/auditlogweb/enversDisabled";
 
-	private final AuditService auditService;
+    private final String VIEW = "/module/auditlogweb/auditlogs";
+    private final String ENVERS_DISABLED_VIEW = "/module/auditlogweb/enversDisabled";
 
-    public AuditlogwebController(AuditService auditService) {
-        this.auditService = auditService;
+    private final AuditService auditService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String onGet() {
+        return VIEW;
     }
 
-	@RequestMapping(method = RequestMethod.GET)
-	public String onGet() {
-		return VIEW;
-	}
+    @ModelAttribute("classes")
+    protected List<String> getClasses() throws Exception {
+        return UtilClass.findClassesWithAnnotation();
+    }
 
-	@ModelAttribute("classes")
-	protected List<String> getClasses() throws Exception {
-		return UtilClass.findClassesWithAnnotation();
-	}
+    @RequestMapping(method = RequestMethod.POST)
+    public String showClassFormAndAudits(@RequestParam(value = "selectedClass", required = false) String domainName, Model model) {
+        // check if envers is enable
+        if (!EnversUtils.isEnversEnabled()) {
+            model.addAttribute("errorMessage", "Audit logging is not enabled on this server. " + "Please enable Hibernate Envers in openmrs-runtime.properties to view audit logs.");
+            return ENVERS_DISABLED_VIEW;
+        }
+        if (domainName != null && !domainName.isEmpty()) {
+            model.addAttribute("audits", auditService.getAllRevisions(domainName));
+            model.addAttribute("currentClass", domainName);
+        }
+        return VIEW;
+    }
 
-	@RequestMapping(method = RequestMethod.POST)
-	public String showClassFormAndAudits(
-			@RequestParam(value = "selectedClass", required = false) String domainName,
-			Model model) {
-		// check if envers is enable
-		if (!EnversUtils.isEnversEnabled()){
-			model.addAttribute("errorMessage", "Audit logging is not enabled on this server. " +
-					"Please enable Hibernate Envers in openmrs-runtime.properties to view audit logs.");
-			return ENVERS_DISABLED_VIEW;
-		}
-		if (domainName != null && !domainName.isEmpty()) {
-			model.addAttribute("audits", auditService.getAllRevisions(domainName));
-			model.addAttribute("currentClass", domainName);
-		}
-		return VIEW;
-	}
-	
 }
