@@ -98,7 +98,6 @@ public class ViewAuditController {
 
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
-            //skipping static or synthetic fields like loggers, serialVersionUID, ...
             if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
                 continue;
             }
@@ -106,14 +105,9 @@ public class ViewAuditController {
             field.setAccessible(true);
             Object currentValue = null;
             Object oldValue = null;
-            boolean errorOnCurrent = false;
-            boolean errorOnOld = false;
 
             try {
                 currentValue = field.get(currentEntity);
-            } catch (org.hibernate.ObjectNotFoundException e) {
-                currentValue = "Data not found";
-                errorOnCurrent = true;
             } catch (IllegalAccessException ignored) {
             }
 
@@ -121,23 +115,29 @@ public class ViewAuditController {
                 if (oldEntity != null) {
                     oldValue = field.get(oldEntity);
                 }
-            } catch (org.hibernate.ObjectNotFoundException e) {
-                oldValue = "Data not found";
-                errorOnOld = true;
             } catch (IllegalAccessException ignored) {
             }
 
-            String oldStr = errorOnOld ? "Data not found" : (oldValue != null ? oldValue.toString() : "null");
-            String currStr = errorOnCurrent ? "Data not found" : (currentValue != null ? currentValue.toString() : "null");
+            String oldStr = safeToString(oldValue);
+            String currStr = safeToString(currentValue);
 
-            // Only compare if neither side had an access error
-            boolean isDifferent = (!errorOnOld && !errorOnCurrent) && !Objects.equals(oldStr, currStr);
+            boolean isDifferent = !Objects.equals(oldStr, currStr);
 
             diffs.add(new AuditFieldDiff(field.getName(), oldStr, currStr, isDifferent));
-
         }
 
         return diffs;
+    }
+
+    private String safeToString(Object obj) {
+        if (obj == null) return "null";
+        try {
+            return obj.toString();
+        } catch (org.hibernate.ObjectNotFoundException | org.hibernate.LazyInitializationException e) {
+            return "Data not found";
+        } catch (Exception e) {
+            return "Data not found";
+        }
     }
 
 }
