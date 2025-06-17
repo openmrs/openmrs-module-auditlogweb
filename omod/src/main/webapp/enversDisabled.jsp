@@ -10,7 +10,7 @@
 <%@ include file="/WEB-INF/template/header.jsp"%>
 
 <div class="error-container">
-    <h2>Hibernate Envers Not Enabled on the Server</h2>
+    <h2>Audit Logging Not Enabled on this Server</h2>
     <p>${errorMessage}</p>
 </div>
 
