@@ -19,17 +19,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
+import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 
 /**
  * This class configured as controller using annotation and mapped with the URL of
  * 'module/${rootArtifactid}/${rootArtifactid}Link.form'.
  */
-@Controller
-@RequestMapping(value = AuditlogwebController.MODULE_PATH + "/auditlogs.form")
+@Controller("auditlogweb.AuditlogwebController")
+@RequestMapping(value = MODULE_PATH + "/auditlogs.form")
 @RequiredArgsConstructor
 public class AuditlogwebController {
 
-    public static final String MODULE_PATH = "/module/auditlogweb";
     private final String VIEW = MODULE_PATH + "/auditlogs";
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 

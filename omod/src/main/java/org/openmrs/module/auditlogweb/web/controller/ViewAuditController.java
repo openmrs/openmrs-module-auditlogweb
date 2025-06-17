@@ -12,24 +12,22 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.QueryException;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
-import org.openmrs.module.auditlogweb.web.dto.AuditFieldDiff;
+import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.List;
-import java.lang.reflect.Field;
-import java.util.Objects;
+import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 
-@Controller
-@RequestMapping(value = ViewAuditController.MODULE_PATH + "/viewAudit.form")
+@Controller("auditlogweb.ViewAuditController")
+@RequestMapping(value = MODULE_PATH + "/viewAudit.form")
 @RequiredArgsConstructor
 public class ViewAuditController {
 
-    public static final String MODULE_PATH = "/module/auditlogweb";
     private final String VIEW = MODULE_PATH + "/viewAudit";
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
@@ -72,7 +70,7 @@ public class ViewAuditController {
                     oldEntity = null;
                 }
             }
-            List<AuditFieldDiff> diffs = computeFieldDiffs(clazz, oldEntity, currentEntity);
+            List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
             model.addAttribute("diffs", diffs);
             return new ModelAndView(VIEW, model);
 
@@ -90,55 +88,55 @@ public class ViewAuditController {
         }
     }
 
-    private List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
-        List<AuditFieldDiff> diffs = new ArrayList<>();
-
-        if (currentEntity == null) {
-            return diffs;
-        }
-
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
-                continue;
-            }
-
-            field.setAccessible(true);
-            Object currentValue = null;
-            Object oldValue = null;
-
-            try {
-                currentValue = field.get(currentEntity);
-            } catch (IllegalAccessException ignored) {
-            }
-
-            try {
-                if (oldEntity != null) {
-                    oldValue = field.get(oldEntity);
-                }
-            } catch (IllegalAccessException ignored) {
-            }
-
-            String oldStr = safeToString(oldValue);
-            String currStr = safeToString(currentValue);
-
-            boolean isDifferent = !Objects.equals(oldStr, currStr);
-
-            diffs.add(new AuditFieldDiff(field.getName(), oldStr, currStr, isDifferent));
-        }
-
-        return diffs;
-    }
-
-    private String safeToString(Object obj) {
-        if (obj == null) return "null";
-        try {
-            return obj.toString();
-        } catch (org.hibernate.ObjectNotFoundException | org.hibernate.LazyInitializationException e) {
-            return "Data not found";
-        } catch (Exception e) {
-            return "Data not found";
-        }
-    }
+//    private List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
+//        List<AuditFieldDiff> diffs = new ArrayList<>();
+//
+//        if (currentEntity == null) {
+//            return diffs;
+//        }
+//
+//        Field[] fields = clazz.getDeclaredFields();
+//        for (Field field : fields) {
+//            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
+//                continue;
+//            }
+//
+//            field.setAccessible(true);
+//            Object currentValue = null;
+//            Object oldValue = null;
+//
+//            try {
+//                currentValue = field.get(currentEntity);
+//            } catch (IllegalAccessException ignored) {
+//            }
+//
+//            try {
+//                if (oldEntity != null) {
+//                    oldValue = field.get(oldEntity);
+//                }
+//            } catch (IllegalAccessException ignored) {
+//            }
+//
+//            String oldStr = safeToString(oldValue);
+//            String currStr = safeToString(currentValue);
+//
+//            boolean isDifferent = !Objects.equals(oldStr, currStr);
+//
+//            diffs.add(new AuditFieldDiff(field.getName(), oldStr, currStr, isDifferent));
+//        }
+//
+//        return diffs;
+//    }
+//
+//    private String safeToString(Object obj) {
+//        if (obj == null) return "null";
+//        try {
+//            return obj.toString();
+//        } catch (org.hibernate.ObjectNotFoundException | org.hibernate.LazyInitializationException e) {
+//            return "Data not found";
+//        } catch (Exception e) {
+//            return "Data not found";
+//        }
+//    }
 
 }

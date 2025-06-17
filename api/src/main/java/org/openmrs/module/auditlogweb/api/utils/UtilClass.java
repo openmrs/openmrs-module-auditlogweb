@@ -9,11 +9,16 @@
 package org.openmrs.module.auditlogweb.api.utils;
 
 import org.hibernate.envers.Audited;
+import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,20 +30,46 @@ public class UtilClass {
             return classesWithAuditAnnotation;
         }
 
-        Reflections reflections = new Reflections(
-                new ConfigurationBuilder()
-                        .setUrls(ClasspathHelper.forPackage("org.openmrs"))
-                        .setScanners(Scanners.TypesAnnotated)
-        );
+        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("org.openmrs")).setScanners(Scanners.TypesAnnotated));
 
         Set<Class<?>> auditedClasses = reflections.getTypesAnnotatedWith(Audited.class);
-        classesWithAuditAnnotation = auditedClasses.stream()
-                .map(Class::getName)
-                .sorted()
-                .collect(Collectors.toList());
+        classesWithAuditAnnotation = auditedClasses.stream().map(Class::getName).sorted().collect(Collectors.toList());
         return classesWithAuditAnnotation;
     }
+
     public static boolean doesClassContainsAuditedAnnotation(Class<?> clazz) {
         return clazz.isAnnotationPresent(Audited.class);
+    }
+
+    public static List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
+        List<AuditFieldDiff> diffs = new ArrayList<>();
+
+        if (currentEntity == null) {
+            return diffs;
+        }
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
+                continue;
+            }
+            field.setAccessible(true);
+            String oldString = readFieldValueSafely(field, oldEntity);
+            String currentString = readFieldValueSafely(field, currentEntity);
+            boolean isDifferent = !Objects.equals(oldString, currentString);
+
+            diffs.add(new AuditFieldDiff(field.getName(), oldString, currentString, isDifferent));
+        }
+        return diffs;
+    }
+
+    public static String readFieldValueSafely(Field field, Object entity) {
+        if (entity == null) return null;
+        try {
+            Object value = field.get(entity);
+            return value != null ? value.toString() : null;
+        } catch (Exception e) {
+            return "Unable to read";
+        }
+
     }
 }
