@@ -49,7 +49,7 @@ public class AuditlogwebController {
     public String showClassFormAndAudits(@RequestParam(value = "selectedClass", required = false) String domainName, Model model) {
         // check if envers is enable
         if (!EnversUtils.isEnversEnabled()) {
-            model.addAttribute("errorMessage", "Audit logging is not enabled on this server. " + "Please enable Hibernate Envers in openmrs-runtime.properties to view audit logs.");
+            model.addAttribute("errorMessage", EnversUtils.getAdminHint());
             return ENVERS_DISABLED_VIEW;
         }
         if (domainName != null && !domainName.isEmpty()) {

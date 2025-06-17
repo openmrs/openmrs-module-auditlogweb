@@ -15,4 +15,18 @@ public class EnversUtils {
         String value = Context.getRuntimeProperties().getProperty("hibernate.integration.envers.enabled");
         return Boolean.parseBoolean(value);
     }
+
+    public static boolean isCurrentUserSystemAdmin() {
+        return Context.isAuthenticated() && Context.getAuthenticatedUser().hasRole("System Developer");
+    }
+
+    public static String getAdminHint() {
+        if (isCurrentUserSystemAdmin()) {
+            return "As a System Administrator, you can enable audit logging by adding the following lines to your"
+                    + " <code>openmrs-runtime.properties</code> file:"
+                    + "<br/><code>hibernate.integration.envers.enabled=true</code>"
+                    + "<br/><code>hibernate.hbm2ddl.auto=update</code>";
+        }
+        return "";
+    }
 }

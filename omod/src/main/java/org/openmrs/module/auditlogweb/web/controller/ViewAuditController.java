@@ -14,6 +14,8 @@ import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +29,7 @@ import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 @RequestMapping(value = MODULE_PATH + "/viewAudit.form")
 @RequiredArgsConstructor
 public class ViewAuditController {
-
+    private static final Logger logger = LoggerFactory.getLogger(ViewAuditController.class);
     private final String VIEW = MODULE_PATH + "/viewAudit";
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
@@ -36,7 +38,7 @@ public class ViewAuditController {
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
         if (!EnversUtils.isEnversEnabled()) {
-            model.addAttribute("errorMessage", "Audit logging is not enabled on this server.");
+            model.addAttribute("errorMessage", EnversUtils.getAdminHint());
             return new ModelAndView(ENVERS_DISABLED_VIEW, model);
         }
 
@@ -83,60 +85,8 @@ public class ViewAuditController {
             }
         } catch (Exception e) {
             model.addAttribute("errorMessage", "Error loading audit data: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error loading audit data: ", e);
             return new ModelAndView(VIEW, model);
         }
     }
-
-//    private List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
-//        List<AuditFieldDiff> diffs = new ArrayList<>();
-//
-//        if (currentEntity == null) {
-//            return diffs;
-//        }
-//
-//        Field[] fields = clazz.getDeclaredFields();
-//        for (Field field : fields) {
-//            if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
-//                continue;
-//            }
-//
-//            field.setAccessible(true);
-//            Object currentValue = null;
-//            Object oldValue = null;
-//
-//            try {
-//                currentValue = field.get(currentEntity);
-//            } catch (IllegalAccessException ignored) {
-//            }
-//
-//            try {
-//                if (oldEntity != null) {
-//                    oldValue = field.get(oldEntity);
-//                }
-//            } catch (IllegalAccessException ignored) {
-//            }
-//
-//            String oldStr = safeToString(oldValue);
-//            String currStr = safeToString(currentValue);
-//
-//            boolean isDifferent = !Objects.equals(oldStr, currStr);
-//
-//            diffs.add(new AuditFieldDiff(field.getName(), oldStr, currStr, isDifferent));
-//        }
-//
-//        return diffs;
-//    }
-//
-//    private String safeToString(Object obj) {
-//        if (obj == null) return "null";
-//        try {
-//            return obj.toString();
-//        } catch (org.hibernate.ObjectNotFoundException | org.hibernate.LazyInitializationException e) {
-//            return "Data not found";
-//        } catch (Exception e) {
-//            return "Data not found";
-//        }
-//    }
-
 }

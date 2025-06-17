@@ -11,7 +11,9 @@
 
 <div class="error-container">
     <h2>Audit Logging Not Enabled on this Server</h2>
-    <p>${errorMessage}</p>
+    <c:if test="${not empty errorMessage}">
+        <p><c:out value="${errorMessage}" escapeXml="false" /></p>
+    </c:if>
 </div>
 
 <%@ include file="/WEB-INF/template/footer.jsp"%>
