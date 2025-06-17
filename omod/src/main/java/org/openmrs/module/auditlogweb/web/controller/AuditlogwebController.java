@@ -47,7 +47,7 @@ public class AuditlogwebController {
 
     @RequestMapping(method = RequestMethod.POST)
     public String showClassFormAndAudits(@RequestParam(value = "selectedClass", required = false) String domainName, Model model) {
-        // check if envers is enable
+        // check if Envers is enabled
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", EnversUtils.getAdminHint());
             return ENVERS_DISABLED_VIEW;
