@@ -73,13 +73,13 @@ public class ViewAuditController {
             List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
             String auditType;
             if (oldEntity == null && currentEntity != null) {
-                auditType = "Addition";
+                auditType = "Record was added";
             } else if (oldEntity != null && currentEntity == null) {
-                auditType = "Deletion";
+                auditType = "Record was deleted";
             } else if (oldEntity != null && currentEntity != null) {
-                auditType = "Modification";
+                auditType = "Record was modified";
             } else {
-                auditType = "Nothing Changed";
+                auditType = "No change";
             }
             model.addAttribute("auditType", auditType);
             model.addAttribute("diffs", diffs);

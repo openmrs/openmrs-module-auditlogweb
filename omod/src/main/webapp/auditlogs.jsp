@@ -39,7 +39,7 @@
     </form>
 
     <c:if test="${not empty audits}">
-        <h2>Audit Table for ${currentClassi}</h2>
+        <h2>Audit Table for ${className}</h2>
         <table class="audit-table">
             <thead>
             <tr>
@@ -55,7 +55,21 @@
                     <td>${audit.entity.id}</td>
                     <td>${audit.changedBy}</td>
                     <td>${audit.revisionEntity.changedOn}</td>
-                    <td>${audit.revisionType.name()}</td>
+<%--                    <td>${audit.revisionType.name()}</td>--%>
+                    <td>
+                        <c:choose>
+                            <c:when test="${audit.revisionType.name() == 'ADD'}">
+                                <spring:message code="auditlogweb.revisionType.add"/>
+                            </c:when>
+                            <c:when test="${audit.revisionType.name() == 'MOD'}">
+                                <spring:message code="auditlogweb.revisionType.mod"/>
+                            </c:when>
+                            <c:when test="${audit.revisionType.name() == 'DEL'}">
+                                <spring:message code="auditlogweb.revisionType.del"/>
+                            </c:when>
+                            <c:otherwise>${audit.revisionType.name()}</c:otherwise>
+                        </c:choose>
+                    </td>
                 </tr>
             </c:forEach>
             </tbody>

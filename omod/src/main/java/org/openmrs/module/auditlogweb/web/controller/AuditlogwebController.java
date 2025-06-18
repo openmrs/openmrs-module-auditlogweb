@@ -53,7 +53,9 @@ public class AuditlogwebController {
             return ENVERS_DISABLED_VIEW;
         }
         if (domainName != null && !domainName.isEmpty()) {
+            String simpleName = domainName.substring(domainName.lastIndexOf('.') + 1);
             model.addAttribute("audits", auditService.getAllRevisions(domainName));
+            model.addAttribute("className", simpleName);
             model.addAttribute("currentClass", domainName);
         }
         return VIEW;
