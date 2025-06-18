@@ -68,9 +68,7 @@ public class ViewAuditController {
             if (auditId - 1 > 0) {
                 try {
                     oldEntity = auditService.getRevisionById(clazz, entityId, auditId - 1);
-                } catch (org.hibernate.ObjectNotFoundException ex) {
-                    oldEntity = null;
-                }
+                } catch (org.hibernate.ObjectNotFoundException ignored) {}
             }
             List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
             model.addAttribute("diffs", diffs);
