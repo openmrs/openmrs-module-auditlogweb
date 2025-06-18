@@ -71,6 +71,17 @@ public class ViewAuditController {
                 } catch (org.hibernate.ObjectNotFoundException ignored) {}
             }
             List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
+            String auditType;
+            if (oldEntity == null && currentEntity != null) {
+                auditType = "Addition";
+            } else if (oldEntity != null && currentEntity == null) {
+                auditType = "Deletion";
+            } else if (oldEntity != null && currentEntity != null) {
+                auditType = "Modification";
+            } else {
+                auditType = "Nothing Changed";
+            }
+            model.addAttribute("auditType", auditType);
             model.addAttribute("diffs", diffs);
             return new ModelAndView(VIEW, model);
 

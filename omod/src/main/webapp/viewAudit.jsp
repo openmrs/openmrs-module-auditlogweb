@@ -15,6 +15,10 @@
 <div class="audit-container">
     <div class="audit-title">Audit Log Details</div>
 
+    <div class="audit-type">
+        Audit Type: <c:out value="${auditType}" />
+    </div>
+
     <c:if test="${not empty errorMessage}">
         <div class="audit-error">
                 ${errorMessage}

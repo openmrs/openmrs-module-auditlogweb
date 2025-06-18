@@ -76,3 +76,10 @@ table.audit-table {
     border-radius: 4px;
     font-weight: bold;
 }
+.audit-type {
+    margin: 16px 0;
+    padding: 8px 16px;
+    color: #2c3e50;
+    font-weight: bold;
+    font-size: 1.1em;
+}
