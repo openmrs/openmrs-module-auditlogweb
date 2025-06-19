@@ -23,5 +23,7 @@ public interface AuditService {
     <T> List<AuditEntity<T>> getAllRevisions(String entityClass);
 
     <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId);
+    <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId);
+
 
 }

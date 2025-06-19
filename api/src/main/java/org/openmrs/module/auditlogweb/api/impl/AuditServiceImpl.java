@@ -46,4 +46,9 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
         return auditDao.getRevisionById(entityClass, entityId, revisionId);
     }
+
+    @Override
+    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId) {
+        return auditDao.getAuditEntityRevisionById(entityClass, entityId, revisionId);
+    }
 }

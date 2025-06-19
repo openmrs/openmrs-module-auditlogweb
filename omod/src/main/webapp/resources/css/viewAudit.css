@@ -76,10 +76,27 @@ table.audit-table {
     border-radius: 4px;
     font-weight: bold;
 }
-.audit-type {
-    margin: 16px 0;
-    padding: 8px 16px;
+.audit-meta-data {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin: 16px 0 24px;
+    padding: 12px 16px;
+    background-color: #f8f9fb;
+    border: 1px solid #e1e4ea;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     color: #2c3e50;
-    font-weight: bold;
-    font-size: 1.1em;
+    font-weight: 500;
+    font-size: 1.05em;
+}
+
+.audit-meta-item {
+    min-width: 200px;
+    margin-bottom: 6px;
+}
+
+.audit-meta-item strong {
+    margin-right: 6px;
+    color: #2c3e50;
 }

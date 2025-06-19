@@ -1,3 +1,4 @@
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%--
   This Source Code Form is subject to the terms of the Mozilla Public License,
   v. 2.0. If a copy of the MPL was not distributed with this file, You can
@@ -15,8 +16,11 @@
 <div class="audit-container">
     <div class="audit-title">Audit Log Details</div>
 
-    <div class="audit-type">
-        Audit Type: <c:out value="${auditType}" />
+    <div class="audit-meta-data">
+        <div class="audit-meta-item"><strong>Audit Type:</strong> <c:out value="${auditType}" /></div>
+        <div class="audit-meta-item"><strong>Entity Type:</strong> <c:out value="${entityType}" /></div>
+        <div class="audit-meta-item"><strong>Changed By:</strong> <c:out value="${changedBy}" /></div>
+        <div class="audit-meta-item"><strong>Changed On:</strong> <fmt:formatDate value="${changedOn}" pattern="yyyy-MM-dd HH:mm:ss" /></div>
     </div>
 
     <c:if test="${not empty errorMessage}">

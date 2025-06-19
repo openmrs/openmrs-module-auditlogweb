@@ -10,9 +10,10 @@ package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.hibernate.QueryException;
+import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
-import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
+import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,32 +22,39 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+
 import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 
 @Controller("auditlogweb.ViewAuditController")
 @RequestMapping(value = MODULE_PATH + "/viewAudit.form")
 @RequiredArgsConstructor
 public class ViewAuditController {
+
     private static final Logger logger = LoggerFactory.getLogger(ViewAuditController.class);
-    private final String VIEW = MODULE_PATH + "/viewAudit";
-    private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
     private final AuditService auditService;
 
+    private static final String VIEW = MODULE_PATH + "/viewAudit";
+    private static final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
+
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
+        // Check if auditing is enabled
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", EnversUtils.getAdminHint());
             return new ModelAndView(ENVERS_DISABLED_VIEW, model);
         }
 
+        // Extract request parameters
         String auditIdParam = request.getParameter("auditId");
         String entityIdParam = request.getParameter("entityId");
         String className = request.getParameter("class");
 
-        if (auditIdParam == null || entityIdParam == null || className == null || auditIdParam.isEmpty() || entityIdParam.isEmpty() || className.isEmpty()) {
+        if (auditIdParam == null || entityIdParam == null || className == null ||
+                auditIdParam.isEmpty() || entityIdParam.isEmpty() || className.isEmpty()) {
             model.addAttribute("errorMessage", "Please select an entity to view audit details.");
             return new ModelAndView(VIEW, model);
         }
@@ -55,22 +63,30 @@ public class ViewAuditController {
             int auditId = Integer.parseInt(auditIdParam);
             int entityId = Integer.parseInt(entityIdParam);
             Class<?> clazz = Class.forName(className);
-            Object currentEntity = null;
-            Object oldEntity = null;
 
+            // Fetch current revision with full audit info
+            AuditEntity<?> auditEntity;
             try {
-                currentEntity = auditService.getRevisionById(clazz, entityId, auditId);
+                auditEntity = auditService.getAuditEntityRevisionById(clazz, entityId, auditId);
             } catch (org.hibernate.ObjectNotFoundException ex) {
                 model.addAttribute("errorMessage", "Audit entity not found for this revision.");
                 return new ModelAndView(VIEW, model);
             }
 
+            Object currentEntity = auditEntity.getEntity();
+
+            // Try to fetch the previous revision
+            Object oldEntity = null;
             if (auditId - 1 > 0) {
                 try {
                     oldEntity = auditService.getRevisionById(clazz, entityId, auditId - 1);
                 } catch (org.hibernate.ObjectNotFoundException ignored) {}
             }
+
+            // Compute field differences
             List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
+
+            // Determine edit or revision type
             String auditType;
             if (oldEntity == null && currentEntity != null) {
                 auditType = "Record was added";
@@ -81,8 +97,14 @@ public class ViewAuditController {
             } else {
                 auditType = "No change";
             }
+
+            // Add metadata and results to model
+            model.addAttribute("entityType", className.substring(className.lastIndexOf('.') + 1));
             model.addAttribute("auditType", auditType);
+            model.addAttribute("changedBy", auditEntity.getChangedBy());
+            model.addAttribute("changedOn", auditEntity.getRevisionEntity().getChangedOn());
             model.addAttribute("diffs", diffs);
+
             return new ModelAndView(VIEW, model);
 
         } catch (IllegalArgumentException e) {
