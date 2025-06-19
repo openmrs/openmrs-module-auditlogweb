@@ -14,7 +14,8 @@ import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UtilClass {
+    private static final Logger log = LoggerFactory.getLogger(UtilClass.class);
     private static List<String> classesWithAuditAnnotation;
 
     public static List<String> findClassesWithAnnotation() {
@@ -45,32 +47,41 @@ public class UtilClass {
     public static List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
         List<AuditFieldDiff> diffs = new ArrayList<>();
 
-        if (currentEntity == null) {
-            return diffs;
-        }
+        if (currentEntity == null) return diffs;
+
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
-            if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
-                continue;
-            }
-            field.setAccessible(true);
-            String oldString = readFieldValueSafely(field, oldEntity);
-            String currentString = readFieldValueSafely(field, currentEntity);
-            boolean isDifferent = !Objects.equals(oldString, currentString);
+            if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) continue;
 
-            diffs.add(new AuditFieldDiff(field.getName(), oldString, currentString, isDifferent));
+            field.setAccessible(true);
+
+            String oldVal = null;
+            String currVal = null;
+            boolean failedOld = false;
+            boolean failedCurr = false;
+
+            try {
+                currVal = currentEntity != null ? String.valueOf(field.get(currentEntity)) : null;
+            } catch (Exception e) {
+                log.warn("Failed to read current value of field '{}': {}", field.getName(), e.getMessage());
+                failedCurr = true;
+            }
+
+            try {
+                oldVal = oldEntity != null ? String.valueOf(field.get(oldEntity)) : null;
+            } catch (Exception e) {
+                log.warn("Failed to read old value of field '{}': {}", field.getName(), e.getMessage());
+                failedOld = true;
+            }
+
+            if (failedOld || failedCurr) {
+                log.debug("Setting field '{}' values to 'Unable to read' due to access failure", field.getName());
+                oldVal = currVal = "Unable to read";
+            }
+
+            boolean isDifferent = !Objects.equals(oldVal, currVal);
+            diffs.add(new AuditFieldDiff(field.getName(), oldVal, currVal, isDifferent));
         }
         return diffs;
-    }
-
-    public static String readFieldValueSafely(Field field, Object entity) {
-        if (entity == null) return null;
-        try {
-            Object value = field.get(entity);
-            return value != null ? value.toString() : null;
-        } catch (Exception e) {
-            return "Unable to read";
-        }
-
     }
 }
