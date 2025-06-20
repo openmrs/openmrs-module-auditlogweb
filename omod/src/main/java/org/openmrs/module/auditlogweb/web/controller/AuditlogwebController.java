@@ -31,6 +31,7 @@ import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 public class AuditlogwebController {
 
     private final String VIEW = MODULE_PATH + "/auditlogs";
+
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
     private final AuditService auditService;
@@ -60,5 +61,4 @@ public class AuditlogwebController {
         }
         return VIEW;
     }
-
 }

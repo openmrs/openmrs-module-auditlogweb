@@ -25,7 +25,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UtilClass {
+
     private static final Logger log = LoggerFactory.getLogger(UtilClass.class);
+
     private static List<String> classesWithAuditAnnotation;
 
     public static List<String> findClassesWithAnnotation() {

@@ -52,19 +52,15 @@ public class AuditDao {
 
     public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId){
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
-
-        //audit query for the exact revision
         AuditQuery auditQuery = auditReader.createQuery()
                 .forRevisionsOfEntity(entityClass, false, true)
                 .add(org.hibernate.envers.query.AuditEntity.id().eq(entityId))
                 .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
-
         Object[] result = (Object[]) auditQuery.getSingleResult();
         T entity = entityClass.cast(result[0]);
         OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
         RevisionType revisionType = (RevisionType) result[2];
         String changedBy = Context.getUserService().getUser(revisionEntity.getChangedBy()).toString();
         return new AuditEntity<>(entity, revisionEntity, revisionType, changedBy);
-
     }
 }
