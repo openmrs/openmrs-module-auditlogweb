@@ -27,6 +27,8 @@
 		<legacyUiVersion>1.23.0</legacyUiVersion>
 		<javaCompilerVersion>1.8</javaCompilerVersion>
 		<lombokVersion>1.18.38</lombokVersion>
+		<slf4jVersion>2.0.17</slf4jVersion>
+		<javaxServletVersion>4.0.1</javaxServletVersion>
 	</properties>
 
 	<repositories>
@@ -106,13 +108,19 @@
 			<dependency>
 				<groupId>javax.servlet</groupId>
 				<artifactId>javax.servlet-api</artifactId>
-				<version>4.0.1</version>
+				<version>${javaxServletVersion}</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<version>${lombokVersion}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4jVersion}</version>
 				<scope>provided</scope>
 			</dependency>
 		</dependencies>
