@@ -20,6 +20,11 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implementation of the {@link AuditService} interface.
+ * Provides services for retrieving audit logs and revision information
+ * using the {@link AuditDao} layer.
+ */
 @RequiredArgsConstructor
 @Service
 public class AuditServiceImpl extends BaseOpenmrsService implements AuditService {
@@ -28,10 +33,25 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
     private final AuditDao auditDao;
 
+    /**
+     * Retrieves all revision entries for the specified audited entity class.
+     *
+     * @param entityClass the audited entity class
+     * @param <T>         the type of the audited entity
+     * @return a list of {@link AuditEntity} containing revision data
+     */
     public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
         return auditDao.getAllRevisions(entityClass);
     }
 
+    /**
+     * Retrieves all revision entries for the specified audited entity class, given as a fully qualified class name.
+     *
+     * @param entityClass the fully qualified class name of the audited entity
+     * @param <T>         the type of the audited entity
+     * @return a list of {@link AuditEntity} containing revision data,
+     *         or an empty list if the class is not found
+     */
     @Override
     public <T> List<AuditEntity<T>> getAllRevisions(String entityClass) {
         try {
@@ -43,10 +63,28 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         }
     }
 
+    /**
+     * Retrieves a specific revision of an audited entity by its ID and revision number.
+     *
+     * @param entityClass the audited entity class
+     * @param entityId    the ID of the audited entity
+     * @param revisionId  the revision number to retrieve
+     * @param <T>         the type of the audited entity
+     * @return the entity at the specified revision, or null if not found
+     */
     public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
         return auditDao.getRevisionById(entityClass, entityId, revisionId);
     }
 
+    /**
+     * Retrieves a specific {@link AuditEntity} for an entity and revision number, including audit metadata.
+     *
+     * @param entityClass the audited entity class
+     * @param entityId    the ID of the entity
+     * @param revisionId  the revision number
+     * @param <T>         the type of the audited entity
+     * @return an {@link AuditEntity} containing the entity and its audit metadata
+     */
     @Override
     public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId) {
         return auditDao.getAuditEntityRevisionById(entityClass, entityId, revisionId);

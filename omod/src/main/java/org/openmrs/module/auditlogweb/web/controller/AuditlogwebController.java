@@ -36,16 +36,37 @@ public class AuditlogwebController {
 
     private final AuditService auditService;
 
+    /**
+     * Handles HTTP GET requests to display the main audit logs page.
+     *
+     * @return the view name for the audit logs page
+     */
     @RequestMapping(method = RequestMethod.GET)
     public String onGet() {
         return VIEW;
     }
 
+    /**
+     * Provides a list of all audited entity classes annotated with @Audited.
+     * This list is added to the model attribute "classes" for use in views.
+     *
+     * @return a list of fully qualified class names of audited entities
+     * @throws Exception if an error occurs while retrieving audited classes
+     */
     @ModelAttribute("classes")
     protected List<String> getClasses() throws Exception {
         return UtilClass.findClassesWithAnnotation();
     }
 
+    /**
+     * Handles HTTP POST requests for displaying audit logs of a selected entity class.
+     * If Envers auditing is disabled, shows an error message to the user.
+     * Otherwise, fetches and adds audit logs for the selected class to the model.
+     *
+     * @param domainName the fully qualified name of the audited entity class selected
+     * @param model      the Spring MVC model to populate attributes for the view
+     * @return the view name to display audit logs or the Envers-disabled notification view
+     */
     @RequestMapping(method = RequestMethod.POST)
     public String showClassFormAndAudits(@RequestParam(value = "selectedClass", required = false) String domainName, Model model) {
         // check if Envers is enabled

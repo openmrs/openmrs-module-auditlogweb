@@ -24,28 +24,60 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Utility class providing methods for working with Envers-audited classes and computing field-level differences.
+ */
 public class UtilClass {
 
     private static final Logger log = LoggerFactory.getLogger(UtilClass.class);
 
     private static List<String> classesWithAuditAnnotation;
 
+    /**
+     * Scans the {@code org.openmrs} package for all classes annotated with {@link Audited} and returns their names.
+     * The results are cached to avoid redundant scanning.
+     *
+     * @return a sorted list of fully qualified class names that are annotated with {@link Audited}
+     */
     public static List<String> findClassesWithAnnotation() {
         if (classesWithAuditAnnotation != null) {
             return classesWithAuditAnnotation;
         }
 
-        Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forPackage("org.openmrs")).setScanners(Scanners.TypesAnnotated));
+        Reflections reflections = new Reflections(
+                new ConfigurationBuilder()
+                        .setUrls(ClasspathHelper.forPackage("org.openmrs"))
+                        .setScanners(Scanners.TypesAnnotated)
+        );
 
         Set<Class<?>> auditedClasses = reflections.getTypesAnnotatedWith(Audited.class);
-        classesWithAuditAnnotation = auditedClasses.stream().map(Class::getName).sorted().collect(Collectors.toList());
+        classesWithAuditAnnotation = auditedClasses.stream()
+                .map(Class::getName)
+                .sorted()
+                .collect(Collectors.toList());
+
         return classesWithAuditAnnotation;
     }
 
+    /**
+     * Checks whether the given class is annotated with {@link Audited}.
+     *
+     * @param clazz the class to check
+     * @return true if the class is annotated with {@code @Audited}, false otherwise
+     */
     public static boolean doesClassContainsAuditedAnnotation(Class<?> clazz) {
         return clazz.isAnnotationPresent(Audited.class);
     }
 
+    /**
+     * Compares two instances of a class and returns a list of field differences between them.
+     * If a field cannot be read due to access restrictions or exceptions, a placeholder is used.
+     *
+     * @param clazz        the class of the objects being compared
+     * @param oldEntity    the previous version of the object
+     * @param currentEntity the current version of the object
+     * @return a list of {@link AuditFieldDiff} representing changes between the old and current object states
+     */
     public static List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
         List<AuditFieldDiff> diffs = new ArrayList<>();
 

@@ -40,6 +40,15 @@ public class ViewAuditController {
     private static final String VIEW = MODULE_PATH + "/viewAudit";
     private static final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
+    /**
+     * Handles HTTP GET requests to display audit details for a selected entity revision.
+     * Validates required parameters, checks if audit logging is enabled, and fetches
+     * both the current and previous entity revisions to compute and display differences.
+     *
+     * @param request the HttpServletRequest containing parameters: auditId, entityId, and class
+     * @param model   the Spring ModelMap to add attributes for the view rendering
+     * @return ModelAndView for either the audit detail view or the Envers-disabled/error view
+     */
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
         // Check if auditing is enabled

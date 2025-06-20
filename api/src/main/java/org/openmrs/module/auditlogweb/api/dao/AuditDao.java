@@ -21,6 +21,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Data access object (DAO) for retrieving audit log information using Hibernate Envers.
+ * This DAO provides methods for fetching entity revisions and revision metadata such as
+ * who made the change, what was changed, and when it occurred.
+ */
 @Repository("auditlogweb.AuditlogwebDao")
 public class AuditDao {
 
@@ -30,6 +35,13 @@ public class AuditDao {
         this.sessionFactory = sessionFactory;
     }
 
+    /**
+     * Retrieves all revision entries for a given audited entity class.
+     *
+     * @param entityClass the entity class to retrieve revisions for
+     * @param <T>         the type of the audited entity
+     * @return a list of {@link AuditEntity} objects containing revision data for the entity
+     */
     @SuppressWarnings("unchecked")
     public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
@@ -44,12 +56,31 @@ public class AuditDao {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves a specific revision of an entity by its entity ID and revision number.
+     *
+     * @param entityClass the entity class type
+     * @param entityId    the unique ID of the entity
+     * @param revisionId  the specific revision number to fetch
+     * @param <T>         the type of the audited entity
+     * @return the entity instance at the specified revision, or null if not found
+     */
     public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         T entity = auditReader.find(entityClass, entityId, revisionId);
         return entity;
     }
 
+    /**
+     * Retrieves an {@link AuditEntity} object that includes revision metadata for a given entity
+     * and revision ID.
+     *
+     * @param entityClass the class of the audited entity
+     * @param entityId    the ID of the specific entity
+     * @param revisionId  the revision number to retrieve
+     * @param <T>         the type of the audited entity
+     * @return an {@link AuditEntity} object containing the entity, revision info, and author
+     */
     public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId){
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         AuditQuery auditQuery = auditReader.createQuery()
