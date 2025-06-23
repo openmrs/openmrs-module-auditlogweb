@@ -21,9 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementation of the {@link AuditService} interface.
- * Provides services for retrieving audit logs and revision information
- * using the {@link AuditDao} layer.
+ * Default implementation of the {@link AuditService} interface.
+ * Delegates audit-related operations to the {@link AuditDao} layer.
  */
 @RequiredArgsConstructor
 @Service
@@ -34,59 +33,70 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     private final AuditDao auditDao;
 
     /**
-     * Retrieves all revision entries for the specified audited entity class.
-     *
-     * @param entityClass the audited entity class
-     * @param <T>         the type of the audited entity
-     * @return a list of {@link AuditEntity} containing revision data
+     * {@inheritDoc}
      */
-    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
-        return auditDao.getAllRevisions(entityClass);
+    @Override
+    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size) {
+        return auditDao.getAllRevisions(entityClass, page, size);
     }
 
     /**
-     * Retrieves all revision entries for the specified audited entity class, given as a fully qualified class name.
+     * Retrieves all revisions for the given entity class name (as string), paginated.
      *
-     * @param entityClass the fully qualified class name of the audited entity
-     * @param <T>         the type of the audited entity
-     * @return a list of {@link AuditEntity} containing revision data,
-     *         or an empty list if the class is not found
+     * @param entityClassName fully qualified class name of the audited entity
+     * @param page            page number (zero-based)
+     * @param size            number of results per page
+     * @param <T>             type of the audited entity
+     * @return list of {@link AuditEntity} or empty list if class not found
      */
     @Override
-    public <T> List<AuditEntity<T>> getAllRevisions(String entityClass) {
+    public <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size) {
         try {
-            Class clazz = Class.forName(entityClass);
-            return getAllRevisions(clazz);
+            Class<T> clazz = (Class<T>) Class.forName(entityClassName);
+            return getAllRevisions(clazz, page, size);
         } catch (ClassNotFoundException e) {
-            log.error(e.getMessage(), e);
+            log.error("Entity class not found: {}", entityClassName, e);
             return new ArrayList<>();
         }
     }
 
     /**
-     * Retrieves a specific revision of an audited entity by its ID and revision number.
-     *
-     * @param entityClass the audited entity class
-     * @param entityId    the ID of the audited entity
-     * @param revisionId  the revision number to retrieve
-     * @param <T>         the type of the audited entity
-     * @return the entity at the specified revision, or null if not found
+     * {@inheritDoc}
      */
+    @Override
     public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
         return auditDao.getRevisionById(entityClass, entityId, revisionId);
     }
 
     /**
-     * Retrieves a specific {@link AuditEntity} for an entity and revision number, including audit metadata.
-     *
-     * @param entityClass the audited entity class
-     * @param entityId    the ID of the entity
-     * @param revisionId  the revision number
-     * @param <T>         the type of the audited entity
-     * @return an {@link AuditEntity} containing the entity and its audit metadata
+     * {@inheritDoc}
      */
     @Override
     public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId) {
         return auditDao.getAuditEntityRevisionById(entityClass, entityId, revisionId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> int countAllRevisions(Class<T> entityClass) {
+        return auditDao.countAllRevisions(entityClass);
+    }
+
+    /**
+     * Counts total revisions for a given entity class by its fully qualified name.
+     *
+     * @param entityClassName the fully qualified name of the audited entity class
+     * @return number of revisions, or 0 if class not found
+     */
+    public int countAllRevisions(String entityClassName) {
+        try {
+            Class<?> clazz = Class.forName(entityClassName);
+            return countAllRevisions(clazz);
+        } catch (ClassNotFoundException e) {
+            log.error("Entity class not found: {}", entityClassName, e);
+            return 0;
+        }
     }
 }

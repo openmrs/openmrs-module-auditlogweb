@@ -8,7 +8,7 @@
 --%>
 <%@ include file="/WEB-INF/template/include.jsp"%>
 <%@ include file="/WEB-INF/template/header.jsp"%>
-<%@include file="localHeader.jsp"%>
+<%@ include file="localHeader.jsp"%>
 
 <link rel="stylesheet" type="text/css" href="<openmrs:contextPath/>/moduleResources/auditlogweb/css/auditlogs.css" >
 
@@ -17,24 +17,29 @@
     <form action="auditlogs.form" method="post" id="auditForm" autocomplete="off">
         <div class="filter-group">
             <div class="filter-field">
-                <label for="username" class="filter-label">Search by User: </label>
+                <label for="username" class="filter-label">Search by User:</label>
                 <input type="text" id="username" name="username" placeholder="Enter username" value="${param.username}">
             </div>
             <div class="filter-field">
-                <label for="startDate" class="filter-label">From: </label>
+                <label for="startDate" class="filter-label">From:</label>
                 <input type="date" id="startDate" name="startDate" value="${param.startDate}">
             </div>
             <div class="filter-field">
-                <label for="endDate" class="filter-label">To: </label>
+                <label for="endDate" class="filter-label">To:</label>
                 <input type="date" id="endDate" name="endDate" value="${param.endDate}">
             </div>
         </div>
+
         <div class="search-group">
             <label for="entitySearch" class="search-label">Search and Select an Entity:</label>
             <input type="text" id="entitySearch" class="search-dropdown-input" placeholder="Type entity name to search..." readonly>
             <input type="hidden" name="selectedClass" id="selectedClass" required>
+
+            <input type="hidden" name="page" id="pageInput" value="${currentPage != null ? currentPage : 0}" />
+            <input type="hidden" name="size" id="hiddenPageSize" value="${pageSize != null ? pageSize : 15}" />
+
             <div id="dropdownList" class="dropdown-list"></div>
-            <button type="submit" class="view-btn" >View Audits</button>
+            <button type="submit" class="view-btn">View Audits</button>
         </div>
     </form>
 
@@ -50,23 +55,16 @@
             </tr>
             </thead>
             <tbody>
-            <c:forEach var="audit" items="${audits}" varStatus="status">
+            <c:forEach var="audit" items="${audits}">
                 <tr onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${currentClass}'">
                     <td>${audit.entity.id}</td>
                     <td>${audit.changedBy}</td>
                     <td>${audit.revisionEntity.changedOn}</td>
-<%--                    <td>${audit.revisionType.name()}</td>--%>
                     <td>
                         <c:choose>
-                            <c:when test="${audit.revisionType.name() == 'ADD'}">
-                                <spring:message code="auditlogweb.revisionType.add"/>
-                            </c:when>
-                            <c:when test="${audit.revisionType.name() == 'MOD'}">
-                                <spring:message code="auditlogweb.revisionType.mod"/>
-                            </c:when>
-                            <c:when test="${audit.revisionType.name() == 'DEL'}">
-                                <spring:message code="auditlogweb.revisionType.del"/>
-                            </c:when>
+                            <c:when test="${audit.revisionType.name() == 'ADD'}"><spring:message code="auditlogweb.revisionType.add"/></c:when>
+                            <c:when test="${audit.revisionType.name() == 'MOD'}"><spring:message code="auditlogweb.revisionType.mod"/></c:when>
+                            <c:when test="${audit.revisionType.name() == 'DEL'}"><spring:message code="auditlogweb.revisionType.del"/></c:when>
                             <c:otherwise>${audit.revisionType.name()}</c:otherwise>
                         </c:choose>
                     </td>
@@ -74,8 +72,32 @@
             </c:forEach>
             </tbody>
         </table>
+
+        <div class="pagination-controls">
+            <div class="pagination-container">
+                <c:forEach begin="0" end="${totalPages - 1}" var="i">
+                    <button
+                            type="button"
+                            onclick="goToPage(${i})"
+                            class="pagination-btn <c:if test='${i == currentPage}'>active-page</c:if>">
+                            ${i + 1}
+                    </button>
+                </c:forEach>
+
+                <!-- Page Size Selector -->
+                <label for="size" class="page-size-label">Page Size:</label>
+                <select name="size" id="size"
+                        onchange="document.getElementById('pageInput').value = 0; document.getElementById('hiddenPageSize').value = this.value; document.getElementById('auditForm').submit();">
+                    <option value="5"  <c:if test="${pageSize == 5}">selected</c:if>>5</option>
+                    <option value="10" <c:if test="${pageSize == 10}">selected</c:if>>10</option>
+                    <option value="15" <c:if test="${pageSize == 15}">selected</c:if>>15</option>
+                    <option value="25" <c:if test="${pageSize == 25}">selected</c:if>>25</option>
+                    <option value="50" <c:if test="${pageSize == 50}">selected</c:if>>50</option>
+                </select>
+            </div>
+        </div>
     </c:if>
-    <br>
+
     <section class="recent-audits-section">
         <h2>Recent Audit Trails</h2>
         <c:choose>
@@ -111,6 +133,7 @@
 </div>
 
 <%@ include file="/WEB-INF/template/footer.jsp"%>
+
 <script>
     const classes = [
         <c:forEach var="cls" items="${classes}" varStatus="status">

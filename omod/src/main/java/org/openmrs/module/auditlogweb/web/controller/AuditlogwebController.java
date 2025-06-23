@@ -68,18 +68,43 @@ public class AuditlogwebController {
      * @return the view name to display audit logs or the Envers-disabled notification view
      */
     @RequestMapping(method = RequestMethod.POST)
-    public String showClassFormAndAudits(@RequestParam(value = "selectedClass", required = false) String domainName, Model model) {
-        // check if Envers is enabled
+    public String showClassFormAndAudits(
+            @RequestParam(value = "selectedClass", required = false) String domainName,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "15") int size,
+            Model model) {
+
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", EnversUtils.getAdminHint());
             return ENVERS_DISABLED_VIEW;
         }
+
         if (domainName != null && !domainName.isEmpty()) {
-            String simpleName = domainName.substring(domainName.lastIndexOf('.') + 1);
-            model.addAttribute("audits", auditService.getAllRevisions(domainName));
-            model.addAttribute("className", simpleName);
-            model.addAttribute("currentClass", domainName);
+            try {
+                Class<?> clazz = Class.forName(domainName);
+
+                String simpleName = domainName.substring(domainName.lastIndexOf('.') + 1);
+                List audits = auditService.getAllRevisions(clazz, page, size);
+                int totalCount = auditService.countAllRevisions(clazz);
+
+                int totalPages = (int) Math.ceil((double) totalCount / size);
+                boolean hasNextPage = (page + 1) < totalPages;
+                boolean hasPreviousPage = page > 0;
+
+                model.addAttribute("audits", audits);
+                model.addAttribute("className", simpleName);
+                model.addAttribute("currentClass", domainName);
+                model.addAttribute("currentPage", page);
+                model.addAttribute("pageSize", size);
+                model.addAttribute("hasNextPage", hasNextPage);
+                model.addAttribute("hasPreviousPage", hasPreviousPage);
+                model.addAttribute("totalCount", totalCount);
+                model.addAttribute("totalPages", totalPages);
+            } catch (ClassNotFoundException e) {
+                model.addAttribute("errorMessage", "Class not found: " + domainName);
+            }
         }
+
         return VIEW;
     }
 }

@@ -49,3 +49,10 @@ if (currentClass) {
     input.value = currentClass;
     hiddenInput.value = currentClass;
 }
+
+// Required for pagination
+
+function goToPage(page) {
+    document.getElementById('pageInput').value = page;
+    document.getElementById('auditForm').submit();
+}

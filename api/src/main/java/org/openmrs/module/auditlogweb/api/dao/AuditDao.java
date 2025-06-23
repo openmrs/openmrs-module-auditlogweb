@@ -36,16 +36,24 @@ public class AuditDao {
     }
 
     /**
-     * Retrieves all revision entries for a given audited entity class.
+     * Retrieves a paginated list of all revisions for a given audited entity class.
      *
-     * @param entityClass the entity class to retrieve revisions for
+     * @param entityClass the audited entity class to retrieve revisions for
+     * @param page        the page number (0-based)
+     * @param size        the number of results per page
      * @param <T>         the type of the audited entity
-     * @return a list of {@link AuditEntity} objects containing revision data for the entity
+     * @return a list of {@link AuditEntity} containing revision data
      */
     @SuppressWarnings("unchecked")
-    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass) {
+    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
-        AuditQuery auditQuery = auditReader.createQuery().forRevisionsOfEntity(entityClass, false, true);
+
+        AuditQuery auditQuery = auditReader.createQuery()
+                .forRevisionsOfEntity(entityClass, false, true)
+                .addOrder(org.hibernate.envers.query.AuditEntity.revisionNumber().desc())
+                .setFirstResult(page * size)
+                .setMaxResults(size);
+
         return (List<AuditEntity<T>>) auditQuery.getResultList().stream().map(result -> {
             Object[] array = (Object[]) result;
             T entity = entityClass.cast(array[0]);
@@ -57,41 +65,59 @@ public class AuditDao {
     }
 
     /**
-     * Retrieves a specific revision of an entity by its entity ID and revision number.
+     * Counts the total number of revisions for a given audited entity class.
      *
-     * @param entityClass the entity class type
-     * @param entityId    the unique ID of the entity
-     * @param revisionId  the specific revision number to fetch
-     * @param <T>         the type of the audited entity
-     * @return the entity instance at the specified revision, or null if not found
+     * @param entityClass the audited entity class
+     * @return the total number of revisions
      */
-    public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
+    public int countAllRevisions(Class<?> entityClass) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
-        T entity = auditReader.find(entityClass, entityId, revisionId);
-        return entity;
+
+        AuditQuery countQuery = auditReader.createQuery()
+                .forRevisionsOfEntity(entityClass, false, true)
+                .addProjection(org.hibernate.envers.query.AuditEntity.revisionNumber().count());
+
+        Number countResult = (Number) countQuery.getSingleResult();
+        return countResult != null ? countResult.intValue() : 0;
     }
 
     /**
-     * Retrieves an {@link AuditEntity} object that includes revision metadata for a given entity
-     * and revision ID.
+     * Retrieves a specific revision of an entity by its entity ID and revision number.
      *
      * @param entityClass the class of the audited entity
-     * @param entityId    the ID of the specific entity
+     * @param entityId    the ID of the entity
+     * @param revisionId  the revision number to fetch
+     * @param <T>         the type of the audited entity
+     * @return the entity instance at the specified revision, or {@code null} if not found
+     */
+    public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
+        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        return auditReader.find(entityClass, entityId, revisionId);
+    }
+
+    /**
+     * Retrieves a specific {@link AuditEntity} that includes revision metadata for
+     * a given entity and revision ID.
+     *
+     * @param entityClass the class of the audited entity
+     * @param entityId    the ID of the entity
      * @param revisionId  the revision number to retrieve
      * @param <T>         the type of the audited entity
-     * @return an {@link AuditEntity} object containing the entity, revision info, and author
+     * @return an {@link AuditEntity} containing the entity, revision metadata, and user info
      */
-    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId){
+    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         AuditQuery auditQuery = auditReader.createQuery()
                 .forRevisionsOfEntity(entityClass, false, true)
                 .add(org.hibernate.envers.query.AuditEntity.id().eq(entityId))
                 .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
+
         Object[] result = (Object[]) auditQuery.getSingleResult();
         T entity = entityClass.cast(result[0]);
         OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
         RevisionType revisionType = (RevisionType) result[2];
         String changedBy = Context.getUserService().getUser(revisionEntity.getChangedBy()).toString();
+
         return new AuditEntity<>(entity, revisionEntity, revisionType, changedBy);
     }
 }
