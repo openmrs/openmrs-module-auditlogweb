@@ -85,7 +85,7 @@ public class AuditlogwebController {
 
                 String simpleName = domainName.substring(domainName.lastIndexOf('.') + 1);
                 List audits = auditService.getAllRevisions(clazz, page, size);
-                int totalCount = auditService.countAllRevisions(clazz);
+                long totalCount = auditService.countAllRevisions(clazz);
 
                 int totalPages = (int) Math.ceil((double) totalCount / size);
                 boolean hasNextPage = (page + 1) < totalPages;

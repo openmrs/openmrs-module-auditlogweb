@@ -8,6 +8,7 @@
  */
 package org.openmrs.module.auditlogweb.api.dao;
 
+import lombok.RequiredArgsConstructor;
 import org.hibernate.SessionFactory;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
@@ -27,13 +28,10 @@ import java.util.stream.Collectors;
  * who made the change, what was changed, and when it occurred.
  */
 @Repository("auditlogweb.AuditlogwebDao")
+@RequiredArgsConstructor
 public class AuditDao {
 
     private final SessionFactory sessionFactory;
-
-    public AuditDao(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
 
     /**
      * Retrieves a paginated list of all revisions for a given audited entity class.
@@ -68,17 +66,15 @@ public class AuditDao {
      * Counts the total number of revisions for a given audited entity class.
      *
      * @param entityClass the audited entity class
-     * @return the total number of revisions
+     * @return the total number of revisions as a long value
      */
-    public int countAllRevisions(Class<?> entityClass) {
+    public long countAllRevisions(Class<?> entityClass) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
 
-        AuditQuery countQuery = auditReader.createQuery()
+        return (long) auditReader.createQuery()
                 .forRevisionsOfEntity(entityClass, false, true)
-                .addProjection(org.hibernate.envers.query.AuditEntity.revisionNumber().count());
-
-        Number countResult = (Number) countQuery.getSingleResult();
-        return countResult != null ? countResult.intValue() : 0;
+                .addProjection(org.hibernate.envers.query.AuditEntity.revisionNumber().count())
+                .getSingleResult();
     }
 
     /**

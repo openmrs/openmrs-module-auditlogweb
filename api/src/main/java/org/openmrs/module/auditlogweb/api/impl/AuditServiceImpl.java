@@ -29,7 +29,6 @@ import java.util.List;
 public class AuditServiceImpl extends BaseOpenmrsService implements AuditService {
 
     private final Logger log = LoggerFactory.getLogger(AuditServiceImpl.class);
-
     private final AuditDao auditDao;
 
     /**
@@ -80,7 +79,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      * {@inheritDoc}
      */
     @Override
-    public <T> int countAllRevisions(Class<T> entityClass) {
+    public <T> long countAllRevisions(Class<T> entityClass) {
         return auditDao.countAllRevisions(entityClass);
     }
 
@@ -90,13 +89,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      * @param entityClassName the fully qualified name of the audited entity class
      * @return number of revisions, or 0 if class not found
      */
-    public int countAllRevisions(String entityClassName) {
+    public long countAllRevisions(String entityClassName) {
         try {
             Class<?> clazz = Class.forName(entityClassName);
             return countAllRevisions(clazz);
         } catch (ClassNotFoundException e) {
             log.error("Entity class not found: {}", entityClassName, e);
-            return 0;
+            return 0L;
         }
     }
 }

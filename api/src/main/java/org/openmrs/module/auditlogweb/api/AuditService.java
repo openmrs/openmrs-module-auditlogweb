@@ -55,7 +55,7 @@ public interface AuditService {
      * @param entityId    the unique identifier of the entity
      * @param revisionId  the revision number to retrieve
      * @param <T>         the type of the audited entity
-     * @return the entity instance at the specified revision, or null if not found
+     * @return the entity instance at the specified revision, or {@code null} if not found
      */
     <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId);
 
@@ -66,7 +66,7 @@ public interface AuditService {
      * @param entityId    the unique identifier of the entity
      * @param revisionId  the revision number to retrieve
      * @param <T>         the type of the audited entity
-     * @return an {@link AuditEntity} object containing the entity, revision info, and audit metadata
+     * @return an {@link AuditEntity} containing the entity, revision info, and audit metadata
      */
     <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId);
 
@@ -77,5 +77,5 @@ public interface AuditService {
      * @param <T>         the type of the audited entity
      * @return the total number of revisions recorded
      */
-    <T> int countAllRevisions(Class<T> entityClass);
+    <T> long countAllRevisions(Class<T> entityClass);
 }
