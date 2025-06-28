@@ -78,4 +78,14 @@ public interface AuditService {
      * @return the total number of revisions recorded
      */
     <T> long countAllRevisions(Class<T> entityClass);
+
+    /**
+     * Resolves the username associated with a given user ID.
+     * If the user ID is null or no user is found, returns "Unknown".
+     * If the username is blank, falls back to the user's system ID.
+     *
+     * @param userId the ID of the user to resolve
+     * @return the resolved username, system ID, or "Unknown" if none available
+     */
+    String resolveUsername(Integer userId);
 }

@@ -22,8 +22,8 @@ import java.util.List;
 import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 
 /**
- * This class configured as controller using annotation and mapped with the URL of
- * 'module/${rootArtifactid}/${rootArtifactid}Link.form'.
+ * Controller for managing audit log web views.
+ * Handles requests to display audit logs and audited entity classes.
  */
 @Controller("auditlogweb.AuditlogwebController")
 @RequestMapping(value = MODULE_PATH + "/auditlogs.form")
@@ -31,7 +31,6 @@ import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 public class AuditlogwebController {
 
     private final String VIEW = MODULE_PATH + "/auditlogs";
-
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
     private final AuditService auditService;
@@ -50,8 +49,8 @@ public class AuditlogwebController {
      * Provides a list of all audited entity classes annotated with @Audited.
      * This list is added to the model attribute "classes" for use in views.
      *
-     * @return a list of fully qualified class names of audited entities
-     * @throws Exception if an error occurs while retrieving audited classes
+     * @return list of fully qualified class names of audited entities
+     * @throws Exception if an error occurs while scanning classes
      */
     @ModelAttribute("classes")
     protected List<String> getClasses() throws Exception {
@@ -59,11 +58,14 @@ public class AuditlogwebController {
     }
 
     /**
-     * Handles HTTP POST requests for displaying audit logs of a selected entity class.
-     * If Envers auditing is disabled, shows an error message to the user.
-     * Otherwise, fetches and adds audit logs for the selected class to the model.
+     * Handles HTTP POST requests to display audit logs for a selected audited entity class.
+     * If Envers auditing is disabled, adds an error message and returns a special view.
+     * Otherwise, fetches audit logs and pagination details, adds them to the model,
+     * and returns the audit logs view.
      *
      * @param domainName the fully qualified name of the audited entity class selected
+     * @param page       the page number (zero-based) for pagination
+     * @param size       the number of audit logs per page
      * @param model      the Spring MVC model to populate attributes for the view
      * @return the view name to display audit logs or the Envers-disabled notification view
      */
@@ -82,16 +84,32 @@ public class AuditlogwebController {
         if (domainName != null && !domainName.isEmpty()) {
             try {
                 Class<?> clazz = Class.forName(domainName);
-
                 String simpleName = domainName.substring(domainName.lastIndexOf('.') + 1);
-                List audits = auditService.getAllRevisions(clazz, page, size);
+
+                @SuppressWarnings("unchecked")
+                List<org.openmrs.module.auditlogweb.AuditEntity<?>> audits =
+                        (List<org.openmrs.module.auditlogweb.AuditEntity<?>>) (List<?>) auditService.getAllRevisions(clazz, page, size);
                 long totalCount = auditService.countAllRevisions(clazz);
+
+                // Map audit entities to DTOs with resolved usernames
+                List<org.openmrs.module.auditlogweb.web.dto.AuditLogDto> auditDtos = audits.stream().map(audit -> {
+                    Integer userId = audit.getChangedBy();
+                    String username = auditService.resolveUsername(userId);
+
+                    return new org.openmrs.module.auditlogweb.web.dto.AuditLogDto(
+                            audit.getEntity(),
+                            audit.getRevisionType(),
+                            username,
+                            audit.getRevisionEntity().getChangedOn(),
+                            audit.getRevisionEntity()
+                    );
+                }).collect(java.util.stream.Collectors.toList());
 
                 int totalPages = (int) Math.ceil((double) totalCount / size);
                 boolean hasNextPage = (page + 1) < totalPages;
                 boolean hasPreviousPage = page > 0;
 
-                model.addAttribute("audits", audits);
+                model.addAttribute("audits", auditDtos);
                 model.addAttribute("className", simpleName);
                 model.addAttribute("currentClass", domainName);
                 model.addAttribute("currentPage", page);
@@ -100,6 +118,7 @@ public class AuditlogwebController {
                 model.addAttribute("hasPreviousPage", hasPreviousPage);
                 model.addAttribute("totalCount", totalCount);
                 model.addAttribute("totalPages", totalPages);
+
             } catch (ClassNotFoundException e) {
                 model.addAttribute("errorMessage", "Class not found: " + domainName);
             }

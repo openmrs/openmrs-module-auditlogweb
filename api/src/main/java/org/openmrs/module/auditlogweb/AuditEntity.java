@@ -10,8 +10,6 @@ package org.openmrs.module.auditlogweb;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.hibernate.envers.RevisionType;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 
@@ -25,6 +23,6 @@ public class AuditEntity<T> {
 
     private RevisionType revisionType;
 
-    private String changedBy;
+    private Integer changedBy;
 
 }

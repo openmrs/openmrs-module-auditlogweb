@@ -57,8 +57,8 @@ public class AuditDao {
             T entity = entityClass.cast(array[0]);
             OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) array[1];
             RevisionType revisionType = (RevisionType) array[2];
-            String changedBy = Context.getUserService().getUser(revisionEntity.getChangedBy()).toString();
-            return new AuditEntity<>(entity, revisionEntity, revisionType, changedBy);
+            Integer userId = revisionEntity.getChangedBy();
+            return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
         }).collect(Collectors.toList());
     }
 
@@ -112,8 +112,7 @@ public class AuditDao {
         T entity = entityClass.cast(result[0]);
         OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
         RevisionType revisionType = (RevisionType) result[2];
-        String changedBy = Context.getUserService().getUser(revisionEntity.getChangedBy()).toString();
-
-        return new AuditEntity<>(entity, revisionEntity, revisionType, changedBy);
+        Integer userId = revisionEntity.getChangedBy();
+        return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
     }
 }

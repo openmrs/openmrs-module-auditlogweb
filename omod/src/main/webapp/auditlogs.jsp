@@ -118,7 +118,7 @@
                             <td>${audit.entity.id}</td>
                             <td>${audit.entity.getClass().getSimpleName()}</td>
                             <td>${audit.changedBy}</td>
-                            <td>${audit.revisionEntity.changedOn}</td>
+                            <td>${audit.changedOn}</td>
                             <td>${audit.revisionType.name()}</td>
                         </tr>
                     </c:forEach>

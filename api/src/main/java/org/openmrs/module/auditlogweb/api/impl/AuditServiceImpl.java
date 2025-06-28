@@ -9,6 +9,8 @@
 package org.openmrs.module.auditlogweb.api.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.openmrs.User;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
@@ -32,7 +34,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     private final AuditDao auditDao;
 
     /**
-     * {@inheritDoc}
+     * Retrieves a paginated list of all audit revisions for a given audited entity class.
+     *
+     * @param entityClass the audited entity class
+     * @param page        the page number (zero-based)
+     * @param size        the number of results per page
+     * @param <T>         the type of the audited entity
+     * @return a list of {@link AuditEntity} containing audit revision data
      */
     @Override
     public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size) {
@@ -40,13 +48,14 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     /**
-     * Retrieves all revisions for the given entity class name (as string), paginated.
+     * Retrieves a paginated list of all audit revisions for a given audited entity class name.
+     * If the class cannot be found, returns an empty list.
      *
      * @param entityClassName fully qualified class name of the audited entity
-     * @param page            page number (zero-based)
-     * @param size            number of results per page
-     * @param <T>             type of the audited entity
-     * @return list of {@link AuditEntity} or empty list if class not found
+     * @param page            the page number (zero-based)
+     * @param size            the number of results per page
+     * @param <T>             the type of the audited entity
+     * @return a list of {@link AuditEntity} containing audit revision data or empty list if class not found
      */
     @Override
     public <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size) {
@@ -60,7 +69,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     /**
-     * {@inheritDoc}
+     * Retrieves a specific revision of an audited entity by its entity ID and revision number.
+     *
+     * @param entityClass the audited entity class
+     * @param entityId    the ID of the audited entity
+     * @param revisionId  the revision number to fetch
+     * @param <T>         the type of the audited entity
+     * @return the entity instance at the specified revision, or {@code null} if not found
      */
     @Override
     public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
@@ -68,7 +83,14 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     /**
-     * {@inheritDoc}
+     * Retrieves an {@link AuditEntity} containing the audited entity and its revision metadata
+     * by entity ID and revision number.
+     *
+     * @param entityClass the audited entity class
+     * @param entityId    the ID of the audited entity
+     * @param revisionId  the revision number to fetch
+     * @param <T>         the type of the audited entity
+     * @return an {@link AuditEntity} including entity and revision info, or {@code null} if not found
      */
     @Override
     public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId) {
@@ -76,7 +98,11 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     /**
-     * {@inheritDoc}
+     * Counts the total number of revisions for a given audited entity class.
+     *
+     * @param entityClass the audited entity class
+     * @param <T>         the type of the audited entity
+     * @return the total number of revisions
      */
     @Override
     public <T> long countAllRevisions(Class<T> entityClass) {
@@ -84,10 +110,11 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     /**
-     * Counts total revisions for a given entity class by its fully qualified name.
+     * Counts the total number of revisions for a given audited entity class name.
+     * Returns 0 if the class cannot be found.
      *
-     * @param entityClassName the fully qualified name of the audited entity class
-     * @return number of revisions, or 0 if class not found
+     * @param entityClassName fully qualified class name of the audited entity
+     * @return the total number of revisions, or 0 if class not found
      */
     public long countAllRevisions(String entityClassName) {
         try {
@@ -97,5 +124,28 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
             log.error("Entity class not found: {}", entityClassName, e);
             return 0L;
         }
+    }
+
+    /**
+     * Resolves a user ID to a displayable username.
+     * If the user or username is missing, falls back to the user's systemId.
+     * If both are missing, returns "Unknown".
+     *
+     * @param userId the ID of the user
+     * @return the resolved username, systemId, or "Unknown" if not found
+     */
+    @Override
+    public String resolveUsername(Integer userId) {
+        if (userId == null) {
+            return "Unknown";
+        }
+
+        User user = Context.getUserService().getUser(userId);
+        String username = user.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            // fall back to systemId if username is empty
+            return user.getSystemId() != null ? user.getSystemId() : "Unknown";
+        }
+        return username;
     }
 }
