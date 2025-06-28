@@ -1,0 +1,131 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
+.auditlog-container {
+    max-width: none;
+    margin-top: 8px;
+    margin-bottom: 30px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 32px 24px 24px 24px;
+}
+.search-group {
+    position: relative;
+    margin-bottom: 24px;
+}
+.search-label{
+    display: block;
+    font-size: 1em;
+    margin-bottom: 8px;
+    color: #444;
+}
+.search-dropdown-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font-size: 1.1em;
+    box-sizing: border-box;
+}
+.dropdown-list {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #bbb;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: none;
+}
+.view-btn {
+    background: #0a9a7e;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-size: 1.1em;
+    cursor: pointer;
+    margin-top: 8px;
+    display: block;
+}
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.audit-table th, .audit-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+.audit-table tr {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.audit-table tr:hover {
+    background: #f5f7fa;
+}
+.filter-field input[type="text"],
+.filter-field input[type="date"] {
+    max-width: 160px;
+    width: 100%;
+    padding: 12px;
+    font-size: 0.98em;
+    box-sizing: border-box;
+}
+.filter-group {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    align-items: flex-end;
+}
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+}
+.filter-label {
+    font-size: 1em;
+    margin-bottom: 4px;
+    color: #444;
+}
+
+/* Pagination styles */
+.pagination-controls {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.pagination-btn {
+    padding: 8px 16px;
+    border: none;
+    background-color: #0a9a7e;
+    color: white;
+    font-size: 1em;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.pagination-btn:hover {
+    background-color: #087a64;
+}
+.pagination-btn.active-page {
+    background-color: #ffffff;
+    color: black;
+    font-weight: bold;
+    border: 1px solid #ffffff;
+}
