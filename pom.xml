@@ -27,6 +27,10 @@
 		<legacyUiVersion>1.23.0</legacyUiVersion>
 		<javaCompilerVersion>1.8</javaCompilerVersion>
 		<lombokVersion>1.18.38</lombokVersion>
+		<slf4jVersion>2.0.17</slf4jVersion>
+		<javaxServletVersion>4.0.1</javaxServletVersion>
+		<mockitoInlineVersion>4.8.0</mockitoInlineVersion>
+		<byteBuddyVersion>1.17.6</byteBuddyVersion>
 	</properties>
 
 	<repositories>
@@ -62,6 +66,16 @@
 				<version>${openmrsPlatformVersion}</version>
 				<type>jar</type>
 				<scope>provided</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>org.powermock</groupId>
+						<artifactId>powermock-api-mockito</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.powermock</groupId>
+						<artifactId>powermock-api-mockito2</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 
 			<dependency>
@@ -78,6 +92,16 @@
 				<version>${openmrsPlatformVersion}</version>
 				<type>test-jar</type>
 				<scope>test</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>org.powermock</groupId>
+						<artifactId>powermock-api-mockito</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.powermock</groupId>
+						<artifactId>powermock-api-mockito2</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 
 			<dependency>
@@ -94,8 +118,28 @@
 				<version>${openmrsPlatformVersion}</version>
 				<type>pom</type>
 				<scope>test</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>org.powermock</groupId>
+						<artifactId>powermock-api-mockito</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.powermock</groupId>
+						<artifactId>powermock-api-mockito2</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
-
+			<dependency>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok</artifactId>
+				<version>${lombokVersion}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-inline</artifactId>
+				<version>${mockitoInlineVersion}</version>
+				<scope>test</scope>
+			</dependency>
 			<dependency>
 				<groupId>org.openmrs.module</groupId>
 				<artifactId>legacyui-omod</artifactId>
@@ -106,13 +150,19 @@
 			<dependency>
 				<groupId>javax.servlet</groupId>
 				<artifactId>javax.servlet-api</artifactId>
-				<version>4.0.1</version>
+				<version>${javaxServletVersion}</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
-				<groupId>org.projectlombok</groupId>
-				<artifactId>lombok</artifactId>
-				<version>${lombokVersion}</version>
+				<groupId>net.bytebuddy</groupId>
+				<artifactId>byte-buddy</artifactId>
+				<version>${byteBuddyVersion}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4jVersion}</version>
 				<scope>provided</scope>
 			</dependency>
 		</dependencies>
