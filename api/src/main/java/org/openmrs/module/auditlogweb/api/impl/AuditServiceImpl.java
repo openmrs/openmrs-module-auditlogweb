@@ -9,6 +9,7 @@
 package org.openmrs.module.auditlogweb.api.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
@@ -142,9 +143,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
         User user = Context.getUserService().getUser(userId);
         String username = user.getUsername();
-        if (username == null || username.trim().isEmpty()) {
-            // fall back to systemId if username is empty
-            return user.getSystemId() != null ? user.getSystemId() : "Unknown";
+        if (StringUtils.isBlank(username)) {
+            return  StringUtils.defaultIfBlank(user.getSystemId(), "Unknown");
         }
         return username;
     }

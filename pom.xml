@@ -144,17 +144,26 @@
 				<groupId>org.openmrs.module</groupId>
 				<artifactId>legacyui-omod</artifactId>
 				<version>${legacyUiVersion}</version>
+				<scope>provided</scope>
 			</dependency>
 
 			<dependency>
 				<groupId>javax.servlet</groupId>
 				<artifactId>javax.servlet-api</artifactId>
 				<version>${javaxServletVersion}</version>
+				<scope>provided</scope>
 			</dependency>
 			<dependency>
 				<groupId>net.bytebuddy</groupId>
 				<artifactId>byte-buddy</artifactId>
 				<version>${byteBuddyVersion}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4jVersion}</version>
+				<scope>provided</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
