@@ -42,7 +42,7 @@ class AuditServiceImplTest {
     static class TestAuditedEntity {}
 
     @Test
-    void testGetAllRevisions_DelegatesToDao() {
+    void shouldReturnAuditEntitiesGivenValidEntityClassAndPagination() {
         AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
         when(auditDao.getAllRevisions(TestAuditedEntity.class, 0, 5))
                 .thenReturn(Arrays.asList(mockEntity));
@@ -53,14 +53,14 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void testGetAllRevisions_ByClassName_ReturnsEmptyListOnClassNotFound() {
+    void shouldReturnEmptyListGivenInvalidEntityClassName() {
         List<?> result = auditService.getAllRevisions("non.existent.ClassName", 0, 5);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
 
     @Test
-    void testGetRevisionById_DelegatesToDao() {
+    void shouldReturnRevisionGivenEntityIdAndRevisionId() {
         TestAuditedEntity mockEntity = new TestAuditedEntity();
         when(auditDao.getRevisionById(TestAuditedEntity.class, 1, 2)).thenReturn(mockEntity);
 
@@ -69,7 +69,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void testGetAuditEntityRevisionById_DelegatesToDao() {
+    void shouldReturnAuditEntityRevisionGivenEntityIdAndRevisionId() {
         AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
         when(auditDao.getAuditEntityRevisionById(TestAuditedEntity.class, 1, 3)).thenReturn(mockEntity);
 
@@ -79,25 +79,25 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void testCountAllRevisions_DelegatesToDao() {
+    void shouldReturnTotalRevisionCountGivenEntityClass() {
         when(auditDao.countAllRevisions(TestAuditedEntity.class)).thenReturn(10L);
         long result = auditService.countAllRevisions(TestAuditedEntity.class);
         assertEquals(10L, result);
     }
 
     @Test
-    void testCountAllRevisions_ByClassName_ReturnsZeroOnClassNotFound() {
+    void shouldReturnZeroGivenInvalidEntityClassName() {
         long result = auditService.countAllRevisions("invalid.Class");
         assertEquals(0L, result);
     }
 
     @Test
-    void testResolveUsername_WithNullUserId_ReturnsUnknown() {
+    void shouldReturnUnknownGivenNullUserId() {
         assertEquals("Unknown", auditService.resolveUsername(null));
     }
 
     @Test
-    void testResolveUsername_WithValidUser_ReturnsUsername() {
+    void shouldReturnUsernameGivenValidUserId() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
@@ -112,7 +112,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void testResolveUsername_FallsBackToSystemId() {
+    void shouldReturnSystemIdGivenEmptyUsername() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
@@ -128,7 +128,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void testResolveUsername_ReturnsUnknownIfNoUsernameOrSystemId() {
+    void shouldReturnUnknownGivenUserWithoutUsernameOrSystemId() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);

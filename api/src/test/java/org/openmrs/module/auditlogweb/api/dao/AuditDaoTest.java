@@ -72,7 +72,7 @@ class AuditDaoTest {
     static class TestAuditedEntity {}
 
     @Test
-    void testGetAllRevisions_returnsAuditEntities() {
+    void shouldReturnAuditEntitiesGivenEntityClassAndPagination() {
         TestAuditedEntity entity = new TestAuditedEntity();
         OpenmrsRevisionEntity revEntity = mock(OpenmrsRevisionEntity.class);
         when(revEntity.getChangedBy()).thenReturn(42);
@@ -91,7 +91,7 @@ class AuditDaoTest {
     }
 
     @Test
-    void testCountAllRevisions_returnsCorrectCount() {
+    void shouldReturnTotalRevisionCountGivenEntityClass() {
         when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
         when(auditQuery.addProjection(any())).thenReturn(auditQuery);
         when(auditQuery.getSingleResult()).thenReturn(5L);
@@ -101,7 +101,7 @@ class AuditDaoTest {
     }
 
     @Test
-    void testGetRevisionById_returnsEntity() {
+    void shouldReturnEntityAtSpecificRevisionGivenEntityIdAndRevisionId() {
         TestAuditedEntity entity = new TestAuditedEntity();
         when(auditReader.find(TestAuditedEntity.class, 1, 10)).thenReturn(entity);
 
@@ -111,7 +111,7 @@ class AuditDaoTest {
     }
 
     @Test
-    void testGetAuditEntityRevisionById_returnsAuditEntity() {
+    void shouldReturnAuditEntityAtSpecificRevisionGivenEntityIdAndRevisionId() {
         TestAuditedEntity entity = new TestAuditedEntity();
         OpenmrsRevisionEntity revEntity = mock(OpenmrsRevisionEntity.class);
         when(revEntity.getChangedBy()).thenReturn(7);
