@@ -108,9 +108,11 @@ public class ViewAuditController {
             }
 
             // Add metadata and results to model
+            String username = auditService.resolveUsername(auditEntity.getChangedBy());
+
             model.addAttribute("entityType", className.substring(className.lastIndexOf('.') + 1));
             model.addAttribute("auditType", auditType);
-            model.addAttribute("changedBy", auditEntity.getChangedBy());
+            model.addAttribute("changedBy", username);
             model.addAttribute("changedOn", auditEntity.getRevisionEntity().getChangedOn());
             model.addAttribute("diffs", diffs);
 
