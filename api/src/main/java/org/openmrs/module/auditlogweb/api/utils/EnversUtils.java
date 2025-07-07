@@ -35,21 +35,4 @@ public class EnversUtils {
     public static boolean isCurrentUserSystemAdmin() {
         return Context.isAuthenticated() && Context.getAuthenticatedUser().hasRole("System Developer");
     }
-
-    /**
-     * Provides guidance for enabling audit logging, intended to be shown only
-     * to users with system administrator privileges.
-     *
-     * @return - a formatted HTML string with setup instructions if the current user is an admin;
-     *         - an empty string otherwise
-     */
-    public static String getAdminHint() {
-        if (isCurrentUserSystemAdmin()) {
-            return "As a System Administrator, you can enable audit logging by adding the following lines to your"
-                    + " <code>openmrs-runtime.properties</code> file:"
-                    + "<br/><code>hibernate.integration.envers.enabled=true</code>"
-                    + "<br/><code>hibernate.hbm2ddl.auto=update</code>";
-        }
-        return "";
-    }
 }

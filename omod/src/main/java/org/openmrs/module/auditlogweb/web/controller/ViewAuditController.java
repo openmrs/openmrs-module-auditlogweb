@@ -15,6 +15,7 @@ import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
+import org.openmrs.module.auditlogweb.web.EnversUiHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -36,6 +37,7 @@ public class ViewAuditController {
     private static final Logger logger = LoggerFactory.getLogger(ViewAuditController.class);
 
     private final AuditService auditService;
+    private final EnversUiHelper  enversUiHelper;
 
     private static final String VIEW = MODULE_PATH + "/viewAudit";
     private static final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
@@ -53,7 +55,7 @@ public class ViewAuditController {
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
         // Check if auditing is enabled
         if (!EnversUtils.isEnversEnabled()) {
-            model.addAttribute("errorMessage", EnversUtils.getAdminHint());
+            model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
             return new ModelAndView(ENVERS_DISABLED_VIEW, model);
         }
 

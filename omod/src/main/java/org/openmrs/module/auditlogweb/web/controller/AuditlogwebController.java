@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
+import org.openmrs.module.auditlogweb.web.EnversUiHelper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -34,6 +35,7 @@ public class AuditlogwebController {
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
     private final AuditService auditService;
+    private final EnversUiHelper enversUiHelper;
 
     /**
      * Handles HTTP GET requests to display the main audit logs page.
@@ -77,7 +79,7 @@ public class AuditlogwebController {
             Model model) {
 
         if (!EnversUtils.isEnversEnabled()) {
-            model.addAttribute("errorMessage", EnversUtils.getAdminHint());
+            model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
             return ENVERS_DISABLED_VIEW;
         }
 
