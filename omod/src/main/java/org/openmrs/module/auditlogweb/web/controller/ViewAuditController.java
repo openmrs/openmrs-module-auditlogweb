@@ -13,6 +13,7 @@ import org.hibernate.QueryException;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
+import org.openmrs.module.auditlogweb.api.utils.AuditTypeMapper;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.web.EnversUiHelper;
@@ -98,16 +99,7 @@ public class ViewAuditController {
             List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
 
             // Determine edit or revision type
-            String auditType;
-            if (oldEntity == null && currentEntity != null) {
-                auditType = "Record was added";
-            } else if (oldEntity != null && currentEntity == null) {
-                auditType = "Record was deleted";
-            } else if (oldEntity != null && currentEntity != null) {
-                auditType = "Record was modified";
-            } else {
-                auditType = "No change";
-            }
+            String auditType = AuditTypeMapper.toHumanReadable(auditEntity.getRevisionType());
 
             // Add metadata and results to model
             String username = auditService.resolveUsername(auditEntity.getChangedBy());
