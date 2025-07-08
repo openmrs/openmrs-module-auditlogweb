@@ -95,7 +95,7 @@ public class UtilClass {
             boolean failedCurr = false;
 
             try {
-                currVal = currentEntity != null ? String.valueOf(field.get(currentEntity)) : null;
+                currVal =  String.valueOf(field.get(currentEntity));
             } catch (Exception e) {
                 log.warn("Failed to read current value of field '{}': {}", field.getName(), e.getMessage());
                 failedCurr = true;
