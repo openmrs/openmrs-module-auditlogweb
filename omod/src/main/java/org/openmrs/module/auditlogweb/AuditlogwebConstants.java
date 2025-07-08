@@ -8,21 +8,10 @@
  */
 package org.openmrs.module.auditlogweb;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import org.hibernate.envers.RevisionType;
-import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
+public final class AuditlogwebConstants {
 
-@Data
-@AllArgsConstructor
-public class AuditEntity<T> {
+    private AuditlogwebConstants() {}
 
-    private T entity;
-
-    private OpenmrsRevisionEntity revisionEntity;
-
-    private RevisionType revisionType;
-
-    private Integer changedBy;
+    public static final String MODULE_PATH = "/module/auditlogweb";
 
 }

@@ -6,23 +6,18 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.auditlogweb;
+package org.openmrs.module.auditlogweb.api.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.hibernate.envers.RevisionType;
-import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
-public class AuditEntity<T> {
-
-    private T entity;
-
-    private OpenmrsRevisionEntity revisionEntity;
-
-    private RevisionType revisionType;
-
-    private Integer changedBy;
-
+public class AuditFieldDiff {
+    private String fieldName;
+    private String oldValue;
+    private String currentValue;
+    private boolean changed;
 }

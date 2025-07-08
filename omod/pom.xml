@@ -79,9 +79,6 @@
 			<resource>
 				<directory>src/main/webapp</directory>
 				<filtering>false</filtering>
-				<excludes>
-					<exclude>resources</exclude>
-				</excludes>
 				<targetPath>web/module</targetPath>
 			</resource>
 		</resources>
