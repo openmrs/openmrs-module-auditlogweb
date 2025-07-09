@@ -14,12 +14,13 @@ import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.query.AuditQuery;
-import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 /**
@@ -114,5 +115,62 @@ public class AuditDao {
         RevisionType revisionType = (RevisionType) result[2];
         Integer userId = revisionEntity.getChangedBy();
         return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
+    }
+
+    /**
+     * Retrieves a paginated list of revisions filtered by user ID and/or date range.
+     *
+     * @param entityClass the class of the audited entity
+     * @param page        the page number (0-based)
+     * @param size        the number of records per page
+     * @param userId      optional user ID to filter by who made the change
+     * @param startDate   optional start date for filtering changes
+     * @param endDate     optional end date for filtering changes
+     * @param <T>         the type of the audited entity
+     * @return a list of {@link AuditEntity} revisions matching the filters
+     */
+    public <T> List<AuditEntity<T>> getRevisionsWithFilters(
+            Class<T> entityClass, int page, int size,
+            Integer userId, Date startDate, Date endDate) {
+
+        AuditReader reader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        AuditQuery query = EnversUtils.buildFilteredAuditQuery(reader, entityClass, userId, startDate, endDate, page, size);
+        List<Object[]> results = query.getResultList();
+
+        return results.stream()
+                .map(result -> mapToAuditEntity(entityClass, result))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Counts the number of entity revisions that match the given filters.
+     *
+     * @param entityClass the class of the audited entity
+     * @param userId      optional user ID to filter changes by user
+     * @param startDate   optional filter to include changes from this date onward
+     * @param endDate     optional filter to include changes up to this date
+     * @param <T>         the type of the audited entity
+     * @return the count of matching revisions
+     */
+    public <T> long countRevisionsWithFilters(Class<T> entityClass, Integer userId, Date startDate, Date endDate) {
+        AuditReader reader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        AuditQuery query = EnversUtils.buildCountQueryWithFilters(reader, entityClass, userId, startDate, endDate);
+        Number countResult = (Number) query.getSingleResult();
+        return countResult != null ? countResult.longValue() : 0L;
+    }
+
+    /**
+     * Helper method to convert raw Envers result arrays into {@link AuditEntity} objects.
+     *
+     * @param entityClass the audited entity class
+     * @param auditResult an Object[] array containing entity, revision, and revision type
+     * @param <T>         the type of the audited entity
+     * @return a fully populated {@link AuditEntity}
+     */
+    private <T> AuditEntity<T> mapToAuditEntity(Class<T> entityClass, Object[] auditResult) {
+        T entity = entityClass.cast(auditResult[0]);
+        OpenmrsRevisionEntity revision = (OpenmrsRevisionEntity) auditResult[1];
+        RevisionType type = (RevisionType) auditResult[2];
+        return new AuditEntity<>(entity, revision, type, revision.getChangedBy());
     }
 }

@@ -11,14 +11,15 @@ package org.openmrs.module.auditlogweb.api;
 import org.openmrs.module.auditlogweb.AuditEntity;
 
 import java.util.List;
+import java.util.Date;
 
 /**
  * AuditService provides methods to retrieve audit logs for entities
  * tracked by Hibernate Envers. It allows querying historical changes,
  * revisions, and associated metadata for persisted OpenMRS domain objects.
  *
- * This service is intended for use by other modules that need to access
- * audit trail data.
+ * <p>This service is intended for use by other modules that need to access
+ * audit trail data for entities annotated with {@code @Audited}.
  *
  * @see org.openmrs.module.auditlogweb.api.impl.AuditServiceImpl
  */
@@ -80,12 +81,49 @@ public interface AuditService {
     <T> long countAllRevisions(Class<T> entityClass);
 
     /**
+     * Retrieves a paginated list of revisions for a given entity class,
+     * filtered by user ID and/or a date range.
+     *
+     * @param clazz      the audited entity class
+     * @param page       the page number (zero-based)
+     * @param size       the number of records per page
+     * @param userId     optional user ID to filter by who made the change (can be {@code null})
+     * @param startDate  optional start date for the revision's timestamp (can be {@code null})
+     * @param endDate    optional end date for the revision's timestamp (can be {@code null})
+     * @param <T>        the type of the audited entity
+     * @return a filtered, paginated list of {@link AuditEntity} records
+     */
+    <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> clazz, int page, int size, Integer userId, Date startDate, Date endDate);
+
+    /**
+     * Counts the number of revisions for a given entity class,
+     * filtered by user ID and/or date range.
+     *
+     * @param clazz      the audited entity class
+     * @param userId     optional user ID to filter by who made the change (can be {@code null})
+     * @param startDate  optional start date for the revision's timestamp (can be {@code null})
+     * @param endDate    optional end date for the revision's timestamp (can be {@code null})
+     * @param <T>        the type of the audited entity
+     * @return the number of revisions matching the filter criteria
+     */
+    <T> long countRevisionsWithFilters(Class<T> clazz, Integer userId, Date startDate, Date endDate);
+
+    /**
      * Resolves the username associated with a given user ID.
-     * If the user ID is null or no user is found, returns "Unknown".
-     * If the username is blank, falls back to the user's system ID.
+     *
+     * <p>If the user is not found, returns "Unknown".
+     * If the username is blank or not set, falls back to returning the system ID.
      *
      * @param userId the ID of the user to resolve
-     * @return the resolved username, system ID, or "Unknown" if none available
+     * @return the resolved username, system ID, or "Unknown" if none are available
      */
     String resolveUsername(Integer userId);
+
+    /**
+     * Resolves the numeric user ID associated with a given username.
+     *
+     * @param username the username to resolve
+     * @return the corresponding user ID, or {@code null} if not found
+     */
+    Integer resolveUserId(String username);
 }
