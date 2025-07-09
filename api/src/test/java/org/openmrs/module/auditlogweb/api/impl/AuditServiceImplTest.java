@@ -21,15 +21,15 @@ import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 class AuditServiceImplTest {
 
@@ -47,7 +47,7 @@ class AuditServiceImplTest {
     static class TestAuditedEntity {}
 
     @Test
-    void shouldReturnAuditEntitiesGivenValidEntityClassAndPagination() {
+    void shouldReturnAuditEntities_GivenValidEntityClassAndPagination() {
         AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
         when(auditDao.getAllRevisions(TestAuditedEntity.class, 0, 5))
                 .thenReturn(Arrays.asList(mockEntity));
@@ -58,7 +58,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnEmptyListGivenInvalidEntityClassName() {
+    void shouldReturnEmptyList_GivenInvalidEntityClassName() {
         List<?> result = auditService.getAllRevisions("non.existent.ClassName", 0, 5);
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -74,7 +74,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnAuditEntityRevisionGivenEntityIdAndRevisionId() {
+    void shouldReturnAuditEntityRevision_GivenEntityIdAndRevisionId() {
         AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
         when(auditDao.getAuditEntityRevisionById(TestAuditedEntity.class, 1, 3)).thenReturn(mockEntity);
 
@@ -84,7 +84,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnTotalRevisionCountGivenEntityClass() {
+    void shouldReturnTotalRevisionCount_GivenEntityClass() {
         when(auditDao.countAllRevisions(TestAuditedEntity.class)).thenReturn(10L);
         long result = auditService.countAllRevisions(TestAuditedEntity.class);
         assertEquals(10L, result);
@@ -97,12 +97,12 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnUnknownGivenNullUserId() {
+    void shouldReturnUnknown_GivenNullUserId() {
         assertEquals("Unknown", auditService.resolveUsername(null));
     }
 
     @Test
-    void shouldReturnUsernameGivenValidUserId() {
+    void shouldReturnUsername_GivenValidUserId() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
@@ -117,7 +117,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnSystemIdGivenEmptyUsername() {
+    void shouldReturnSystemId_GivenEmptyUsername() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
@@ -133,7 +133,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnUnknownGivenUserWithoutUsernameOrSystemId() {
+    void shouldReturnUnknown_GivenUserWithoutUsernameOrSystemId() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
@@ -146,5 +146,61 @@ class AuditServiceImplTest {
             String result = auditService.resolveUsername(8);
             assertEquals("Unknown", result);
         }
+    }
+
+    @Test
+    void shouldDelegateGetRevisionsWithFilters() {
+        AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
+        when(auditDao.getRevisionsWithFilters(TestAuditedEntity.class, 1, 10, 2, null, null))
+                .thenReturn(Collections.singletonList(mockEntity));
+
+        List<AuditEntity<TestAuditedEntity>> result =
+                auditService.getRevisionsWithFilters(TestAuditedEntity.class, 1, 10, 2, null, null);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertSame(mockEntity, result.get(0));
+    }
+
+    @Test
+    void shouldDelegateCountRevisionsWithFilters() {
+        when(auditDao.countRevisionsWithFilters(TestAuditedEntity.class, 3, null, null))
+                .thenReturn(15L);
+
+        long count = auditService.countRevisionsWithFilters(TestAuditedEntity.class, 3, null, null);
+        assertEquals(15L, count);
+    }
+
+    @Test
+    void shouldResolveUserId_GivenMatchingUsers() {
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            User user1 = mock(User.class);
+
+            when(user1.getUserId()).thenReturn(99);
+            context.when(Context::getUserService).thenReturn(userService);
+            when(userService.getUsers("someUser", null, false)).thenReturn(Arrays.asList(user1));
+
+            Integer userId = auditService.resolveUserId("someUser");
+            assertEquals(99, userId);
+        }
+    }
+
+    @Test
+    void shouldReturnNullWhenNoUsersFoundOnResolveUserId() {
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            context.when(Context::getUserService).thenReturn(userService);
+            when(userService.getUsers("unknown", null, false)).thenReturn(Collections.emptyList());
+
+            Integer userId = auditService.resolveUserId("unknown");
+            assertEquals(null, userId);
+        }
+    }
+
+    @Test
+    void shouldReturnNull_WhenInputIsBlankInResolveUserId() {
+        Integer userId = auditService.resolveUserId("");
+        assertEquals(null, userId);
     }
 }
