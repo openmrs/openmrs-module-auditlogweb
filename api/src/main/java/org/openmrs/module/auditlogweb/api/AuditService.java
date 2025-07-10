@@ -126,4 +126,16 @@ public interface AuditService {
      * @return the corresponding user ID, or {@code null} if not found
      */
     Integer resolveUserId(String username);
+
+    /**
+     * Suggests a list of usernames that partially match the given query string.
+     *
+     * <p>This method supports autocomplete functionality by returning
+     * a limited number of username suggestions based on the input query.
+     *
+     * @param query the partial username string to search for
+     * @param limit the maximum number of username suggestions to return
+     * @return a list of matching usernames, possibly empty if no matches found
+     */
+    List<String> suggestUsernames(String query, int limit);
 }

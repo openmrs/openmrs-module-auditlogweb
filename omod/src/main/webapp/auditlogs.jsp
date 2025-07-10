@@ -19,6 +19,7 @@
             <div class="filter-field">
                 <label for="username" class="filter-label">Search by User:</label>
                 <input type="text" id="username" name="username" placeholder="Enter username" value="${param.username}">
+                <div id="usernameDropdown" class="dropdown-list"></div>
             </div>
             <div class="filter-field">
                 <label for="startDate" class="filter-label">From:</label>

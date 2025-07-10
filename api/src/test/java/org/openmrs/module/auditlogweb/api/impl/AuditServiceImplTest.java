@@ -203,4 +203,28 @@ class AuditServiceImplTest {
         Integer userId = auditService.resolveUserId("");
         assertEquals(null, userId);
     }
+
+    @Test
+    void shouldReturnSuggestedUsernames_GivenQueryAndLimit() {
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            User user1 = mock(User.class);
+            User user2 = mock(User.class);
+
+            when(user1.getUsername()).thenReturn("salif");
+            when(user2.getUsername()).thenReturn("user");
+
+            List<User> users = Arrays.asList(user1, user2);
+
+            context.when(Context::getUserService).thenReturn(userService);
+            when(userService.getUsers("sa", null, true)).thenReturn(users);
+
+            List<String> result = auditService.suggestUsernames("sa", 10);
+
+            assertNotNull(result);
+            assertEquals(2, result.size());
+            assertTrue(result.contains("salif"));
+            assertTrue(result.contains("user"));
+        }
+    }
 }
