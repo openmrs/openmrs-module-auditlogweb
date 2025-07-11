@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Date;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 /**
  * Utility class providing methods for working with Envers-audited classes,
@@ -176,4 +177,24 @@ public class UtilClass {
     public static Date toEndDate(LocalDate date) {
         return date == null ? null : Date.from(date.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
     }
+
+    /**
+     * Paginates a given list in-memory.
+     *
+     * @param allResults the full list of items to paginate
+     * @param page       the page number (0-based)
+     * @param size       the number of items per page
+     * @param <T>        the type of items in the list
+     * @return a sublist representing the requested page
+     */
+    public static <T> List<T> paginate(List<T> allResults, int page, int size) {
+        if (allResults == null || allResults.isEmpty()) {
+            return Collections.emptyList();  //  returning an emtpy list safely
+        }
+
+        int fromIndex = Math.min(page * size, allResults.size());
+        int toIndex = Math.min(fromIndex + size, allResults.size());
+        return allResults.subList(fromIndex, toIndex);
+    }
+
 }

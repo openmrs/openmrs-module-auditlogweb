@@ -13,12 +13,18 @@ import org.hibernate.SessionFactory;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.RevisionType;
+import org.hibernate.envers.exception.NotAuditedException;
 import org.hibernate.envers.query.AuditQuery;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
 import java.util.stream.Collectors;
@@ -33,6 +39,8 @@ import java.util.stream.Collectors;
 public class AuditDao {
 
     private final SessionFactory sessionFactory;
+
+    private final Logger log = LoggerFactory.getLogger(AuditDao.class);
 
     /**
      * Retrieves a paginated list of all revisions for a given audited entity class.
@@ -172,5 +180,80 @@ public class AuditDao {
         OpenmrsRevisionEntity revision = (OpenmrsRevisionEntity) auditResult[1];
         RevisionType type = (RevisionType) auditResult[2];
         return new AuditEntity<>(entity, revision, type, revision.getChangedBy());
+    }
+
+    /**
+     * Retrieves paginated audit entries across all dynamically discovered audited entity classes.
+     *
+     * @param page the page number (0-based)
+     * @param size number of records per page
+     * @param userId optional user ID filter
+     * @param startDate optional start date filter
+     * @param endDate optional end date filter
+     * @return paginated list of {@link AuditEntity} records
+     */
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate) {
+        List<String> auditedClassNames = UtilClass.findClassesWithAnnotation()
+                .stream()
+                .filter(className -> {
+                    try {
+                        Class<?> clazz = Class.forName(className);
+                        return !Modifier.isAbstract(clazz.getModifiers());
+                    } catch (ClassNotFoundException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toList());
+
+        List<AuditEntity<?>> combined = new ArrayList<>();
+        for (String className : auditedClassNames) {
+            try {
+                Class<?> clazz = Class.forName(className);
+                List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate);
+                combined.addAll(revisions);
+            } catch (ClassNotFoundException e) {
+                log.warn("Could not load audited class: {}", className, e);
+            } catch (NotAuditedException e) {
+                log.warn("Class is not audited by Envers, skipping: {}", className);
+            }
+        }
+        combined.sort((a, b) -> b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate()));
+
+        return UtilClass.paginate(combined, page, size);
+    }
+
+    /**
+     * Counts total audit entries across all dynamically discovered audited entity classes.
+     *
+     * @param userId optional user ID filter
+     * @param startDate optional start date filter
+     * @param endDate optional end date filter
+     * @return total number of matching audit entries
+     */
+    public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate) {
+        List<String> auditedClassNames = UtilClass.findClassesWithAnnotation()
+                .stream()
+                .filter(className -> {
+                    try {
+                        Class<?> clazz = Class.forName(className);
+                        return !Modifier.isAbstract(clazz.getModifiers());
+                    } catch (ClassNotFoundException e) {
+                        return false;
+                    }
+                })
+                .collect(Collectors.toList());
+
+        return auditedClassNames.stream().mapToLong(className -> {
+            try {
+                Class<?> clazz = Class.forName(className);
+                return countRevisionsWithFilters(clazz, userId, startDate, endDate);
+            } catch (ClassNotFoundException e) {
+                log.warn("Could not load audited class: {}", className, e);
+                return 0L;
+            } catch (NotAuditedException e) {
+                log.warn("Class is not audited by Envers, skipping: {}", className);
+                return 0L;
+            }
+        }).sum();
     }
 }

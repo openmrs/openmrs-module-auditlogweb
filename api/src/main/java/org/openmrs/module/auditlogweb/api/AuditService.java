@@ -138,4 +138,7 @@ public interface AuditService {
      * @return a list of matching usernames, possibly empty if no matches found
      */
     List<String> suggestUsernames(String query, int limit);
+
+    List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate);
+    long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
 }

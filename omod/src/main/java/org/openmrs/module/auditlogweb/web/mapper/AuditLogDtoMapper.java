@@ -45,12 +45,14 @@ public class AuditLogDtoMapper {
      * @return a populated {@link AuditLogDto} representing the audit entry
      */
     public AuditLogDto toDto(AuditEntity<?> entity) {
+        String classSimpleName = (entity.getEntity() != null ? entity.getEntity().getClass().getSimpleName() : "Unknown");
         return new AuditLogDto(
                 entity.getEntity(),
                 entity.getRevisionType(),
                 auditService.resolveUsername(entity.getChangedBy()),
                 entity.getRevisionEntity().getChangedOn(),
-                entity.getRevisionEntity()
+                entity.getRevisionEntity(),
+                classSimpleName
         );
     }
 

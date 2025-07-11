@@ -186,4 +186,34 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                 .limit(limit)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Retrieves a paginated list of audit entries across all Envers-audited entity types.
+     *
+     * @param page       the page number (0-based)
+     * @param size       the number of records per page
+     * @param userId     optional user ID to filter by the user who made the change
+     * @param startDate  optional start date to filter changes from
+     * @param endDate    optional end date to filter changes up to
+     * @return a paginated list of {@link AuditEntity} objects across all audited entities
+     */
+    @Override
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate) {
+        return auditDao.getAllRevisionsAcrossEntities(page, size, userId, startDate, endDate);
+    }
+
+    /**
+     * Counts the total number of audit entries across all Envers-audited entity types,
+     * filtered optionally by user and date range.
+     *
+     * @param userId     optional user ID to filter by the user who made the change
+     * @param startDate  optional start date to filter changes from
+     * @param endDate    optional end date to filter changes up to
+     * @return the total number of matching audit entries
+     */
+    @Override
+    public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate) {
+        return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate);
+    }
+
 }

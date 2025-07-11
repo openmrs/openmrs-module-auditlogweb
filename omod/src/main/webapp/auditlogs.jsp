@@ -34,7 +34,7 @@
         <div class="search-group">
             <label for="entitySearch" class="search-label">Search and Select an Entity:</label>
             <input type="text" id="entitySearch" class="search-dropdown-input" placeholder="Type entity name to search..." readonly>
-            <input type="hidden" name="selectedClass" id="selectedClass" required>
+            <input type="hidden" name="selectedClass" id="selectedClass">
 
             <input type="hidden" name="page" id="pageInput" value="${currentPage != null ? currentPage : 0}" />
             <input type="hidden" name="size" id="hiddenPageSize" value="${pageSize != null ? pageSize : 15}" />
@@ -45,7 +45,12 @@
     </form>
 
     <c:if test="${not empty audits}">
-        <h2>Audit Table for ${className}</h2>
+        <h2>
+            <c:choose>
+                <c:when test="${not empty className}">Audit Table for ${className}</c:when>
+                <c:otherwise>Audit Logs Table</c:otherwise>
+            </c:choose>
+        </h2>
         <table class="audit-table">
             <thead>
             <tr>
@@ -57,8 +62,27 @@
             </thead>
             <tbody>
             <c:forEach var="audit" items="${audits}">
-                <tr onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${currentClass}'">
-                    <td>${audit.entity.id}</td>
+                <c:set var="className" value="${audit.entity.getClass().getName()}" />
+                <tr
+                        <c:choose>
+                            <c:when test="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}">
+                                onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${className}'"
+                            </c:when>
+                            <c:otherwise>
+                                onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=NA&class=${className}'"
+                            </c:otherwise>
+                        </c:choose>
+                >
+                    <td>
+                        <c:choose>
+                            <c:when test="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}">
+                                ${audit.entity.id}
+                            </c:when>
+                            <c:otherwise>
+                                <i>N/A</i>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
                     <td>${audit.changedBy}</td>
                     <td>${audit.revisionEntity.changedOn}</td>
                     <td>
@@ -115,9 +139,27 @@
                     </thead>
                     <tbody>
                     <c:forEach var="audit" items="${recentAudits}">
-                        <tr onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${audit.entity.getClass().getName()}'">
-                            <td>${audit.entity.id}</td>
-                            <td>${audit.entity.getClass().getSimpleName()}</td>
+                        <tr
+                                <c:choose>
+                                    <c:when test="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}">
+                                        onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${audit.entity.getClass().getName()}'"
+                                    </c:when>
+                                    <c:otherwise>
+                                        onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=NA&class=${audit.entity.getClass().getName()}'"
+                                    </c:otherwise>
+                                </c:choose>
+                        >
+                            <td>
+                                <c:choose>
+                                    <c:when test="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}">
+                                        ${audit.entity.id}
+                                    </c:when>
+                                    <c:otherwise>
+                                        <i>N/A</i>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+                            <td>${audit.entityClassSimpleName}</td>
                             <td>${audit.changedBy}</td>
                             <td>${audit.changedOn}</td>
                             <td>${audit.revisionType.name()}</td>

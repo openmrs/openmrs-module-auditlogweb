@@ -11,8 +11,12 @@ package org.openmrs.module.auditlogweb.web.service;
 import lombok.RequiredArgsConstructor;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
+import org.openmrs.module.auditlogweb.web.dto.AuditFilter;
+import org.openmrs.module.auditlogweb.web.dto.PaginatedAuditResult;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -80,5 +84,59 @@ public class AuditLogViewService {
     private Integer resolveUserId(String username) {
         if (username == null || username.trim().isEmpty()) return null;
         return auditService.resolveUserId(username);
+    }
+
+    /**
+     * Combined method to fetch audit logs either for a specific audited entity class
+     * or across all audited entities (global search) with optional filters.
+     *
+     * @param domainClassName fully qualified class name of audited entity (nullable)
+     * @param username       optional username to filter by
+     * @param startDateStr   optional start date string (e.g. "2024-01-01")
+     * @param endDateStr     optional end date string (e.g. "2024-01-31")
+     * @param page           zero-based page index
+     * @param size           page size (number of records per page)
+     * @return PaginatedAuditResult containing list of AuditEntity and total count
+     * @throws ClassNotFoundException if domainClassName is invalid
+     */
+    public PaginatedAuditResult fetchAuditLogsGlobal(
+            String domainClassName,
+            String username,
+            String startDateStr,
+            String endDateStr,
+            int page,
+            int size) throws ClassNotFoundException {
+
+        AuditFilter filters = parseFilters(username, startDateStr, endDateStr);
+
+        if (domainClassName != null && !domainClassName.isEmpty()) {
+            Class<?> clazz = Class.forName(domainClassName);
+            List<AuditEntity<?>> audits = fetchAuditLogs(clazz, page, size, username, filters.getStartDate(), filters.getEndDate());
+            long totalCount = countAuditLogs(clazz, username, filters.getStartDate(), filters.getEndDate());
+            return new PaginatedAuditResult(audits, totalCount);
+        } else if (filters.getUserId() != null || filters.getStartDate() != null || filters.getEndDate() != null) {
+            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate());
+            long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
+            return new PaginatedAuditResult(audits, totalCount);
+        } else {
+            return new PaginatedAuditResult(Collections.emptyList(), 0);
+        }
+    }
+
+    /**
+     * Parses raw filter input strings into an AuditFilter object.
+     * Resolves username to userId and parses dates.
+     *
+     * @param username     username filter string
+     * @param startDateStr start date string in ISO format or null
+     * @param endDateStr   end date string in ISO format or null
+     * @return AuditFilter DTO with parsed userId and Date fields
+     */
+    private AuditFilter parseFilters(String username, String startDateStr, String endDateStr) {
+        AuditFilter filter = new AuditFilter();
+        filter.setUserId(auditService.resolveUserId(username));
+        filter.setStartDate(UtilClass.toStartDate(UtilClass.parse(startDateStr)));
+        filter.setEndDate(UtilClass.toEndDate(UtilClass.parse(endDateStr)));
+        return filter;
     }
 }

@@ -14,8 +14,11 @@ import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.web.EnversUiHelper;
 import org.openmrs.module.auditlogweb.web.dto.AuditLogDto;
+import org.openmrs.module.auditlogweb.web.dto.PaginatedAuditResult;
 import org.openmrs.module.auditlogweb.web.mapper.AuditLogDtoMapper;
 import org.openmrs.module.auditlogweb.web.service.AuditLogViewService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -53,6 +56,7 @@ import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 @RequestMapping(value = MODULE_PATH + "/auditlogs.form")
 @RequiredArgsConstructor
 public class AuditlogwebController {
+    private final Logger log = LoggerFactory.getLogger(AuditlogwebController.class);
 
     private final String VIEW = MODULE_PATH + "/auditlogs";
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
@@ -121,40 +125,32 @@ public class AuditlogwebController {
             return ENVERS_DISABLED_VIEW;
         }
 
-        if (domainName == null || domainName.isEmpty()) {
-            return VIEW;
-        }
-
         try {
-            Class<?> clazz = Class.forName(domainName);
-            String simpleName = domainName.substring(domainName.lastIndexOf('.') + 1);
+            PaginatedAuditResult result = viewService.fetchAuditLogsGlobal(domainName, username, startDateStr, endDateStr, page, size);
 
-            LocalDate startLocal = UtilClass.parse(startDateStr);
-            LocalDate endLocal = UtilClass.parse(endDateStr);
-
-            Date startDate = UtilClass.toStartDate(startLocal);
-            Date endDate = UtilClass.toEndDate(endLocal);
-
-            List<org.openmrs.module.auditlogweb.AuditEntity<?>> audits = viewService.fetchAuditLogs(clazz, page, size, username, startDate, endDate);
-            long totalCount = viewService.countAuditLogs(clazz, username, startDate, endDate);
-            List<AuditLogDto> auditDtos = dtoMapper.toDtoList(audits);
-            int totalPages = UtilClass.computeTotalPages(totalCount, size);
+            List<AuditLogDto> auditDtos = dtoMapper.toDtoList(result.getAudits());
+            int totalPages = UtilClass.computeTotalPages(result.getTotalCount(), size);
 
             model.addAttribute("audits", auditDtos);
-            model.addAttribute("className", simpleName);
-            model.addAttribute("currentClass", domainName);
+            model.addAttribute("totalCount", result.getTotalCount());
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("hasNextPage", (page + 1) < totalPages);
+            model.addAttribute("hasPreviousPage", page > 0);
             model.addAttribute("username", username);
             model.addAttribute("startDate", startDateStr);
             model.addAttribute("endDate", endDateStr);
             model.addAttribute("currentPage", page);
             model.addAttribute("pageSize", size);
-            model.addAttribute("hasNextPage", (page + 1) < totalPages);
-            model.addAttribute("hasPreviousPage", page > 0);
-            model.addAttribute("totalCount", totalCount);
-            model.addAttribute("totalPages", totalPages);
+
+            if (domainName != null && !domainName.isEmpty()) {
+                model.addAttribute("currentClass", domainName);
+                String simpleName = domainName.substring(domainName.lastIndexOf('.') + 1);
+                model.addAttribute("className", simpleName);
+            }
 
         } catch (ClassNotFoundException e) {
-            model.addAttribute("errorMessage", "Class not found: " + domainName);
+            log.error("Class not found: {}", domainName, e);
+            model.addAttribute("errorMessage", "Invalid class selected.");
         }
 
         return VIEW;

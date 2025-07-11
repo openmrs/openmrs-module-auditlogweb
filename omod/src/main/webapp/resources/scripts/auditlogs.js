@@ -38,7 +38,15 @@ function selectEntity(cls) {
 
 entityInput.addEventListener('focus', () => renderEntityDropdown(entityInput.value));
 entityInput.addEventListener('click', () => renderEntityDropdown(entityInput.value));
-entityInput.addEventListener('input', () => renderEntityDropdown(entityInput.value));
+
+// Updated input listener: clears hidden input if no exact match
+entityInput.addEventListener('input', () => {
+    renderEntityDropdown(entityInput.value);
+    if (!classes.includes(entityInput.value)) {
+        hiddenEntityInput.value = '';
+    }
+});
+
 entityInput.removeAttribute('readonly');
 
 if (currentClass) {

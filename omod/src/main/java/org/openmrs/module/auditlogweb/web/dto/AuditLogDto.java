@@ -14,4 +14,5 @@ public class AuditLogDto {
     private String changedBy;
     private Date changedOn;
     private Object revisionEntity;
+    private String entityClassSimpleName;
 }
