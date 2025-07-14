@@ -20,8 +20,11 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -226,5 +229,55 @@ class AuditServiceImplTest {
             assertTrue(result.contains("salif"));
             assertTrue(result.contains("user"));
         }
+    }
+
+    @Test
+    void shouldReturnAuditEntitiesAcrossEntities_GivenUserIdAndDateRange() throws ParseException {
+        AuditEntity<?> mockEntity = mock(AuditEntity.class);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Date startDate = sdf.parse("01/01/2025");
+        Date endDate = sdf.parse("10/07/2025");
+
+        when(auditDao.getAllRevisionsAcrossEntities(0, 5, 10, startDate, endDate))
+                .thenReturn(Collections.singletonList(mockEntity));
+
+        List<AuditEntity<?>> result = auditService.getAllRevisionsAcrossEntities(0, 5, 10, startDate, endDate);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void shouldReturnCountAcrossEntities_GivenFixedDateRangeAndUserId() throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Date startDate = sdf.parse("01/01/2025");
+        Date endDate = sdf.parse("10/07/2025");
+
+        when(auditDao.countRevisionsAcrossEntities(12, startDate, endDate)).thenReturn(42L);
+
+        long count = auditService.countRevisionsAcrossEntities(12, startDate, endDate);
+        assertEquals(42L, count);
+    }
+
+    @Test
+    void shouldReturnAuditEntitiesAcrossEntities_GivenPaginationAndOptionalFilters() {
+        AuditEntity<?> mockEntity = mock(AuditEntity.class);
+        when(auditDao.getAllRevisionsAcrossEntities(0, 5, null, null, null))
+                .thenReturn(Collections.singletonList(mockEntity));
+
+        List<AuditEntity<?>> result =
+                auditService.getAllRevisionsAcrossEntities(0, 5, null, null, null);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertSame(mockEntity, result.get(0));
+    }
+
+    @Test
+    void shouldReturnCountAcrossEntities_GivenUserIdAndDateRange() {
+        when(auditDao.countRevisionsAcrossEntities(1, null, null)).thenReturn(25L);
+
+        long count = auditService.countRevisionsAcrossEntities(1, null, null);
+        assertEquals(25L, count);
     }
 }

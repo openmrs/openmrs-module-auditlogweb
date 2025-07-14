@@ -12,6 +12,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
+import org.hibernate.envers.Audited;
 import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.envers.query.AuditQueryCreator;
@@ -25,9 +26,12 @@ import org.mockito.MockitoAnnotations;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Arrays;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
@@ -36,9 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class AuditDaoTest {
 
@@ -84,6 +86,7 @@ class AuditDaoTest {
         }
     }
 
+    @Audited
     static class TestAuditedEntity {}
 
     @Test
@@ -199,5 +202,72 @@ class AuditDaoTest {
         long count = auditDao.countRevisionsWithFilters(TestAuditedEntity.class, null, null, null);
 
         assertThat(count, is(0L));
+    }
+
+    @Test
+    void shouldReturnAuditEntitiesAcrossAllEntities_WithPagination() {
+        try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
+            utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Arrays.asList(TestAuditedEntity.class.getName()));
+
+            TestAuditedEntity entity = new TestAuditedEntity();
+            OpenmrsRevisionEntity revEntity = mock(OpenmrsRevisionEntity.class);
+            when(revEntity.getChangedBy()).thenReturn(42);
+            when(revEntity.getRevisionDate()).thenReturn(new Date());
+            Object[] mockResult = new Object[] { entity, revEntity, RevisionType.ADD };
+
+            // Mock the EnversUtils call
+            when(auditQuery.getResultList()).thenReturn(Collections.singletonList(mockResult));
+            enversUtilsMockedStatic.when(() -> EnversUtils.buildFilteredAuditQuery(
+                            auditReader, TestAuditedEntity.class, null, null, null, 0, Integer.MAX_VALUE))
+                    .thenReturn(auditQuery);
+
+            AuditEntity<TestAuditedEntity> auditEntity = new AuditEntity<>(entity, revEntity, RevisionType.ADD, 42);
+            utilClassMockedStatic.when(() -> UtilClass.paginate(any(), eq(0), eq(10)))
+                    .thenReturn(Collections.singletonList(auditEntity));
+
+            List<AuditEntity<?>> result = auditDao.getAllRevisionsAcrossEntities(0, 10, null, null, null);
+
+            assertNotNull(result);
+            assertThat(result, hasSize(1));
+        }
+    }
+
+    @Test
+    void shouldReturnCountAcrossAllEntities() {
+        try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
+            utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Arrays.asList(TestAuditedEntity.class.getName()));
+            when(auditQuery.getSingleResult()).thenReturn(5L);
+            enversUtilsMockedStatic.when(() -> EnversUtils.buildCountQueryWithFilters(
+                            auditReader, TestAuditedEntity.class, null, null, null))
+                    .thenReturn(auditQuery);
+
+            long result = auditDao.countRevisionsAcrossEntities(null, null, null);
+            assertThat(result, is(5L));
+        }
+    }
+
+    @Test
+    void shouldReturnEmptyList_WhenNoAuditedClassesFound() {
+        try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
+            utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Collections.emptyList());
+
+            List<AuditEntity<?>> result = auditDao.getAllRevisionsAcrossEntities(0, 10, null, null, null);
+            assertNotNull(result);
+            assertThat(result, empty());
+        }
+    }
+
+    @Test
+    void shouldReturnZeroCount_WhenNoAuditedClassesFound() {
+        try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
+            utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Collections.emptyList());
+
+            long result = auditDao.countRevisionsAcrossEntities(null, null, null);
+            assertThat(result, is(0L));
+        }
     }
 }

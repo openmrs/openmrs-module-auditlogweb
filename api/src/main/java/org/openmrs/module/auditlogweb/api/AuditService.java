@@ -139,6 +139,27 @@ public interface AuditService {
      */
     List<String> suggestUsernames(String query, int limit);
 
+    /**
+     * Retrieves a paginated list of audit revisions across all audited entity types,
+     * optionally filtered by user ID and/or date range.
+     *
+     * @param page       the page number (zero-based)
+     * @param size       the number of records per page
+     * @param userId     optional user ID to filter revisions by (can be {@code null})
+     * @param startDate  optional start date to filter revisions by (can be {@code null})
+     * @param endDate    optional end date to filter revisions by (can be {@code null})
+     * @return a list of {@link AuditEntity} revisions from multiple entity types
+     */
     List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate);
+
+    /**
+     * Counts the total number of audit revisions across all entity types,
+     * optionally filtered by user ID and/or date range.
+     *
+     * @param userId     optional user ID to filter revisions by (can be {@code null})
+     * @param startDate  optional start date to filter revisions by (can be {@code null})
+     * @param endDate    optional end date to filter revisions by (can be {@code null})
+     * @return the count of matching revisions across all entities
+     */
     long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
 }
