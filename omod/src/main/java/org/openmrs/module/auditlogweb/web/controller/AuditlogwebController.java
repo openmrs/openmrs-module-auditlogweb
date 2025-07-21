@@ -37,6 +37,8 @@ public class AuditlogwebController {
     private final AuditService auditService;
     private final EnversUiHelper enversUiHelper;
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuditlogwebController.class);
+
     /**
      * Handles HTTP GET requests to display the main audit logs page.
      *
@@ -122,7 +124,14 @@ public class AuditlogwebController {
                 model.addAttribute("totalPages", totalPages);
 
             } catch (ClassNotFoundException e) {
+                log.error("Class not found: {}", domainName, e);
                 model.addAttribute("errorMessage", "Class not found: " + domainName);
+            } catch (ClassCastException e) {
+                log.error("Class cast issue with audit entity for class: {}", domainName, e);
+                model.addAttribute("errorMessage", "Class cast error : " + domainName);
+            } catch (Exception e) {
+                log.error("Unexpected error while fetching audits for: {}", domainName, e);
+                model.addAttribute("errorMessage", "Exception occurred : " + domainName);
             }
         }
 
