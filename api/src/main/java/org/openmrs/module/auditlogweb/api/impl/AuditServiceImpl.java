@@ -164,29 +164,6 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
         return null;
     }
-
-    /**
-     * Suggests a list of usernames that partially match the given query string.
-     *
-     * <p>This implementation fetches users from the OpenMRS UserService
-     * whose usernames contain the query string. It filters out null or empty usernames,
-     * removes duplicates, and limits the results to the specified count.
-     *
-     * @param query the partial username string to search for
-     * @param limit the maximum number of username suggestions to return
-     * @return a list of matching usernames, possibly empty if no matches found
-     */
-    @Override
-    public List<String> suggestUsernames(String query, int limit) {
-        return Context.getUserService().getUsers(query, null, true)
-                .stream()
-                .map(user -> user.getUsername())
-                .filter(username -> username != null && !username.isEmpty())
-                .distinct()
-                .limit(limit)
-                .collect(Collectors.toList());
-    }
-
     /**
      * Retrieves a paginated list of audit entries across all Envers-audited entity types.
      *

@@ -155,10 +155,4 @@ public class AuditlogwebController {
 
         return VIEW;
     }
-
-    @RequestMapping(value ="/suggestUsers.form", method = RequestMethod.GET)
-    @ResponseBody
-    public  List<String> suggestUsernames(@RequestParam("q") String query) {
-        return auditService.suggestUsernames(query, 10);
-    }
 }
