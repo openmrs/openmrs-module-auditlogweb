@@ -47,47 +47,48 @@
         </div>
     </form>
 
-    <c:if test="${not empty audits}">
-        <h2>
-            <c:choose>
-                <c:when test="${not empty className}">Audit Table for ${className}</c:when>
-                <c:otherwise>Audit Logs Table</c:otherwise>
-            </c:choose>
-        </h2>
-        <table class="audit-table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <c:if test="${empty className}">
-                    <th>Entity Class</th>
-                </c:if>
-                <th>Changed By</th>
-                <th>Changed On</th>
-                <th>Revision Type</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tbody>
-            <c:forEach var="audit" items="${audits}">
-                <c:set var="entitySimpleName" value="${audit.entityClassSimpleName}" />
-                <tr
-                        <c:choose>
-                            <c:when test="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}">
-                                onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${audit.entity.getClass().getName()}'"
-                            </c:when>
-                            <c:otherwise>
-                                onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=NA&class=${audit.entity.getClass().getName()}'"
-                            </c:otherwise>
-                        </c:choose>
-                >
-                    <td>
-                        <c:choose>
-                            <c:when test="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}">
-                                ${audit.entity.id}
-                            </c:when>
-                            <c:otherwise><i>N/A</i></c:otherwise>
-                        </c:choose>
-                    </td>
+    <c:choose>
+        <c:when test="${not empty audits}">
+            <h2>
+                <c:choose>
+                    <c:when test="${not empty className}">Audit Table for ${className}</c:when>
+                    <c:otherwise>Audit Logs Table</c:otherwise>
+                </c:choose>
+            </h2>
+
+            <table class="audit-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <c:if test="${empty className}">
+                        <th>Entity Type</th>
+                    </c:if>
+                    <th>Changed By</th>
+                    <th>Changed On</th>
+                    <th>Revision Type</th>
+                </tr>
+                </thead>
+                <tbody>
+                <c:forEach var="audit" items="${audits}">
+                    <c:set var="entitySimpleName" value="${audit.entityClassSimpleName}" />
+                    <c:set var="isNavigable" value="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}" />
+                    <c:choose>
+                        <c:when test="${isNavigable}">
+                            <c:set var="rowUrl" value="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${audit.entity.getClass().getName()}" />
+                        </c:when>
+                        <c:otherwise>
+                            <c:set var="rowUrl" value="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=NA&class=${audit.entity.getClass().getName()}" />
+                        </c:otherwise>
+                    </c:choose>
+                    <tr onclick="window.location.href='${rowUrl}'">
+                        <td>
+                            <c:choose>
+                                <c:when test="${isNavigable}">
+                                    ${audit.entity.id}
+                                </c:when>
+                                <c:otherwise><i>N/A</i></c:otherwise>
+                            </c:choose>
+                        </td>
 
                     <c:if test="${empty className}">
                         <td>${entitySimpleName}</td>
@@ -130,8 +131,14 @@
                     <option value="50" <c:if test="${pageSize == 50}">selected</c:if>>50</option>
                 </select>
             </div>
-        </div>
-    </c:if>
+        </c:when>
+
+        <c:otherwise>
+            <div class="no-results-message">
+                <p>No audit logs found for the given criteria.</p>
+            </div>
+        </c:otherwise>
+    </c:choose>
 </div>
 
 <%@ include file="/WEB-INF/template/footer.jsp"%>

@@ -87,17 +87,22 @@ public class AuditLogViewService {
     }
 
     /**
-     * Combined method to fetch audit logs either for a specific audited entity class
-     * or across all audited entities (global search) with optional filters.
+     * Fetches audit logs either for a specific audited entity class or across all audited entities,
+     * with optional filtering by username and date range.
+     * <p>
+     * If {@code domainClassName} is provided, logs are fetched for that specific entity class.
+     * Otherwise, logs are fetched across all audited entities, with or without filters.
+     * <p>
+     * Supports pagination via {@code page} and {@code size} parameters.
      *
-     * @param domainClassName fully qualified class name of audited entity (nullable)
-     * @param username       optional username to filter by
-     * @param startDateStr   optional start date string (e.g. "2024-01-01")
-     * @param endDateStr     optional end date string (e.g. "2024-01-31")
-     * @param page           zero-based page index
-     * @param size           page size (number of records per page)
-     * @return PaginatedAuditResult containing list of AuditEntity and total count
-     * @throws ClassNotFoundException if domainClassName is invalid
+     * @param domainClassName the fully qualified name of the audited entity class (nullable for global logs)
+     * @param username        optional username to filter by user who made the change
+     * @param startDateStr    optional start date string (e.g., "2024-01-01")
+     * @param endDateStr      optional end date string (e.g., "2024-01-31")
+     * @param page            zero-based page index for pagination
+     * @param size            number of records per page
+     * @return a {@link PaginatedAuditResult} containing the list of audit entries and the total count
+     * @throws ClassNotFoundException if {@code domainClassName} is provided but the class cannot be found
      */
     public PaginatedAuditResult fetchAuditLogsGlobal(
             String domainClassName,
@@ -119,7 +124,10 @@ public class AuditLogViewService {
             long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
             return new PaginatedAuditResult(audits, totalCount);
         } else {
-            return new PaginatedAuditResult(Collections.emptyList(), 0);
+            // get all logs with or without filters
+            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate());
+            long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
+            return new PaginatedAuditResult(audits, totalCount);
         }
     }
 

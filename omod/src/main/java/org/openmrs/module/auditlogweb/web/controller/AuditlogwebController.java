@@ -67,12 +67,46 @@ public class AuditlogwebController {
     private final AuditLogDtoMapper dtoMapper;
 
     /**
-     * Handles HTTP GET requests to display the main audit logs page.
+     * Handles HTTP GET requests to display the default audit logs page.
+     * <p>
+     * This method is invoked when the audit logs page is first loaded without any filters.
+     * It fetches the most recent audit log entries across all audited entities (if Envers is enabled),
+     * paginates the result, and populates the model with the logs and pagination metadata
+     * for rendering in the UI.
+     * <p>
+     * If Envers is not enabled in the system, a helpful message is shown instead.
      *
-     * @return the name of the view that renders the audit logs page
+     * @param model the Spring MVC model used to pass attributes to the view
+     * @return the logical view name of the audit logs JSP page
      */
     @RequestMapping(method = RequestMethod.GET)
-    public String onGet() {
+    public String onGet(Model model) {
+        if (!EnversUtils.isEnversEnabled()) {
+            model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
+            return ENVERS_DISABLED_VIEW;
+        }
+        int page = 0;
+        int size = 15;
+        try {
+            PaginatedAuditResult result = viewService.fetchAuditLogsGlobal(
+                    null,null,null,null, page, size);
+
+            List<AuditLogDto> audits = dtoMapper.toDtoList(result.getAudits());
+            int totalPages = UtilClass.computeTotalPages(result.getTotalCount(), size);
+
+            model.addAttribute("audits", audits);
+            model.addAttribute("totalCount", result.getTotalCount());
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("hasNextPage", page + 1 < totalPages);
+            model.addAttribute("hasPreviousPage", page > 0);
+            model.addAttribute("currentPage", page);
+            model.addAttribute("pageSize", size);
+
+        } catch (Exception e) {
+            log.error("Failed to load default audit logs", e);
+            model.addAttribute("errorMessage", "An error occurred while loading audit logs.");
+        }
+
         return VIEW;
     }
 
