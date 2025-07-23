@@ -15,6 +15,7 @@ import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.exception.NotAuditedException;
 import org.hibernate.envers.query.AuditQuery;
+import org.hibernate.exception.SQLGrammarException;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.lang.reflect.Modifier;
+import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
@@ -209,16 +211,26 @@ public class AuditDao {
         for (String className : auditedClassNames) {
             try {
                 Class<?> clazz = Class.forName(className);
-                List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate);
-                combined.addAll(revisions);
+                try {
+                    List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate);
+                    combined.addAll(revisions);
+                } catch (Exception ex) {
+                    if (isMissingAuditTableException(ex)) {
+                        log.warn("Skipping class {} due to missing audit table or SQL error: {}", className, ex.getMessage());
+                    } else {
+                        throw ex;
+                    }
+                }
             } catch (ClassNotFoundException e) {
                 log.warn("Could not load audited class: {}", className, e);
             } catch (NotAuditedException e) {
                 log.warn("Class is not audited by Envers, skipping: {}", className);
+            } catch (Exception e) {
+                log.error("Unexpected error while fetching audit logs for class {}: {}", className, e.getMessage(), e);
             }
         }
-        combined.sort((a, b) -> b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate()));
 
+        combined.sort((a, b) -> b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate()));
         return UtilClass.paginate(combined, page, size);
     }
 
@@ -253,7 +265,33 @@ public class AuditDao {
             } catch (NotAuditedException e) {
                 log.warn("Class is not audited by Envers, skipping: {}", className);
                 return 0L;
+            } catch (Exception ex) {
+                if (isMissingAuditTableException(ex)) {
+                    log.warn("Skipping count for class {} due to missing audit table or SQL error: {}", className, ex.getMessage());
+                    return 0L;
+                } else {
+                    log.error("Unexpected error while counting audit logs for class {}: {}", className, ex.getMessage(), ex);
+                    return 0L;
+                }
             }
         }).sum();
+    }
+
+    /**
+     * Helper method to check if an exception is caused by a missing audit table.
+     */
+    private boolean isMissingAuditTableException(Throwable ex) {
+        Throwable cause = ex;
+        while (cause != null) {
+            if ((cause instanceof SQLGrammarException || cause instanceof SQLSyntaxErrorException)
+                    && cause.getMessage() != null
+                    && (cause.getMessage().toLowerCase().contains("doesn't exist")
+                    || cause.getMessage().toLowerCase().contains("missing")
+                    || cause.getMessage().toLowerCase().contains("unknown table"))) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }
