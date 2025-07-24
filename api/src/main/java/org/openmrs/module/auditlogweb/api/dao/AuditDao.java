@@ -24,6 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+import org.openmrs.GlobalProperty;
+import org.openmrs.Role;
+
 import java.lang.reflect.Modifier;
 import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
@@ -293,5 +296,45 @@ public class AuditDao {
             cause = cause.getCause();
         }
         return false;
+    }
+
+    public Role getRoleRevisionById(String roleName, int revisionId) {
+        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        return auditReader.find(Role.class, roleName, revisionId);
+    }
+
+    public GlobalProperty getGlobalPropertyRevisionById(String propertyName, int revisionId) {
+        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        return auditReader.find(GlobalProperty.class, propertyName, revisionId);
+    }
+
+    public AuditEntity<Role> getRoleAuditEntityRevisionById(String roleName, int revisionId) {
+        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        AuditQuery auditQuery = auditReader.createQuery()
+                .forRevisionsOfEntity(Role.class, false, true)
+                .add(org.hibernate.envers.query.AuditEntity.id().eq(roleName))
+                .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
+
+        Object[] result = (Object[]) auditQuery.getSingleResult();
+        Role entity = Role.class.cast(result[0]);
+        OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
+        RevisionType revisionType = (RevisionType) result[2];
+        Integer userId = revisionEntity.getChangedBy();
+        return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
+    }
+
+    public AuditEntity<GlobalProperty> getGlobalPropertyAuditEntityRevisionById(String propertyName, int revisionId) {
+        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        AuditQuery auditQuery = auditReader.createQuery()
+                .forRevisionsOfEntity(GlobalProperty.class, false, true)
+                .add(org.hibernate.envers.query.AuditEntity.id().eq(propertyName))
+                .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
+
+        Object[] result = (Object[]) auditQuery.getSingleResult();
+        GlobalProperty entity = GlobalProperty.class.cast(result[0]);
+        OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
+        RevisionType revisionType = (RevisionType) result[2];
+        Integer userId = revisionEntity.getChangedBy();
+        return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
     }
 }

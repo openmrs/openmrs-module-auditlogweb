@@ -10,6 +10,8 @@ package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.hibernate.QueryException;
+import org.openmrs.GlobalProperty;
+import org.openmrs.Role;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
@@ -38,20 +40,11 @@ public class ViewAuditController {
     private static final Logger logger = LoggerFactory.getLogger(ViewAuditController.class);
 
     private final AuditService auditService;
-    private final EnversUiHelper  enversUiHelper;
+    private final EnversUiHelper enversUiHelper;
 
     private static final String VIEW = MODULE_PATH + "/viewAudit";
     private static final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
 
-    /**
-     * Handles HTTP GET requests to display audit details for a selected entity revision.
-     * Validates required parameters, checks if audit logging is enabled, and fetches
-     * both the current and previous entity revisions to compute and display differences.
-     *
-     * @param request the HttpServletRequest containing parameters: auditId, entityId, and class
-     * @param model   the Spring ModelMap to add attributes for the view rendering
-     * @return ModelAndView for either the audit detail view or the Envers-disabled/error view
-     */
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
         // Check if auditing is enabled
@@ -73,8 +66,16 @@ public class ViewAuditController {
 
         try {
             int auditId = Integer.parseInt(auditIdParam);
-            int entityId = Integer.parseInt(entityIdParam);
             Class<?> clazz = Class.forName(className);
+
+            // Handle different ID types
+            Object entityId;
+            if (org.openmrs.Role.class.isAssignableFrom(clazz) ||
+                    org.openmrs.GlobalProperty.class.isAssignableFrom(clazz)) {
+                entityId = entityIdParam;
+            } else {
+                entityId = Integer.parseInt(entityIdParam);
+            }
 
             // Fetch current revision with full audit info
             AuditEntity<?> auditEntity;
@@ -89,7 +90,7 @@ public class ViewAuditController {
 
             // Try to fetch the previous revision
             Object oldEntity = null;
-            if (auditId - 1 > 0) {
+            if (entityId != null && auditId - 1 > 0) {
                 try {
                     oldEntity = auditService.getRevisionById(clazz, entityId, auditId - 1);
                 } catch (org.hibernate.ObjectNotFoundException ignored) {}
@@ -112,6 +113,9 @@ public class ViewAuditController {
 
             return new ModelAndView(VIEW, model);
 
+        } catch (NumberFormatException e) {
+            model.addAttribute("errorMessage", "Invalid ID format for this entity type.");
+            return new ModelAndView(VIEW, model);
         } catch (IllegalArgumentException e) {
             if (e.getCause() instanceof QueryException) {
                 model.addAttribute("errorMessage", "Some referenced data could not be loaded. Please contact your administrator.");

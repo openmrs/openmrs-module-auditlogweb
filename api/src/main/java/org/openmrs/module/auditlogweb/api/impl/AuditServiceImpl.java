@@ -10,6 +10,8 @@ package org.openmrs.module.auditlogweb.api.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.GlobalProperty;
+import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
@@ -64,17 +66,39 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
-        return auditDao.getRevisionById(entityClass, entityId, revisionId);
+    public <T> T getRevisionById(Class<T> entityClass, Object entityId, int revisionId) {
+        if (entityId instanceof Integer) {
+            return auditDao.getRevisionById(entityClass, (Integer) entityId, revisionId);
+        } else if (entityId instanceof String) {
+            // Handle string IDs for Role and GlobalProperty
+            if (Role.class.isAssignableFrom(entityClass)) {
+                return (T) auditDao.getRoleRevisionById((String) entityId, revisionId);
+            } else if (GlobalProperty.class.isAssignableFrom(entityClass)) {
+                return (T) auditDao.getGlobalPropertyRevisionById((String) entityId, revisionId);
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID type for entity: " + entityClass.getName());
     }
 
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId) {
-        return auditDao.getAuditEntityRevisionById(entityClass, entityId, revisionId);
+    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object entityId, int revisionId) {
+        if (entityId instanceof Integer) {
+            return auditDao.getAuditEntityRevisionById(entityClass, (Integer) entityId, revisionId);
+        } else if (entityId instanceof String) {
+            // Handle string IDs for Role and GlobalProperty
+            if (Role.class.isAssignableFrom(entityClass)) {
+                return (AuditEntity<T>) auditDao.getRoleAuditEntityRevisionById((String) entityId, revisionId);
+            } else if (GlobalProperty.class.isAssignableFrom(entityClass)) {
+                return (AuditEntity<T>) auditDao.getGlobalPropertyAuditEntityRevisionById((String) entityId, revisionId);
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID type for entity: " + entityClass.getName());
     }
 
     /**

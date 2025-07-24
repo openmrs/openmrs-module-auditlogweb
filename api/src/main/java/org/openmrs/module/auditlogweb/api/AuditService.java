@@ -52,24 +52,24 @@ public interface AuditService {
     /**
      * Retrieves a specific revision of an entity by its ID and revision number.
      *
-     * @param entityClass the class type of the audited entity
+     * @param clazz the class type of the audited entity
      * @param entityId    the unique identifier of the entity
-     * @param revisionId  the revision number to retrieve
+     * @param auditId  the revision number to retrieve
      * @param <T>         the type of the audited entity
      * @return the entity instance at the specified revision, or {@code null} if not found
      */
-    <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId);
+    <T> T getRevisionById(Class<T> clazz, Object entityId, int auditId);
 
     /**
      * Retrieves the full audit metadata and revision state for a specific entity revision.
      *
-     * @param entityClass the class type of the audited entity
+     * @param clazz the class type of the audited entity
      * @param entityId    the unique identifier of the entity
-     * @param revisionId  the revision number to retrieve
+     * @param auditId  the revision number to retrieve
      * @param <T>         the type of the audited entity
      * @return an {@link AuditEntity} containing the entity, revision info, and audit metadata
      */
-    <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId);
+    <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> clazz, Object entityId, int auditId);
 
     /**
      * Counts the total number of revisions available for a given audited entity class.

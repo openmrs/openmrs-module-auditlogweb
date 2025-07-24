@@ -71,40 +71,25 @@
                 <tbody>
                 <c:forEach var="audit" items="${audits}">
                     <c:set var="entitySimpleName" value="${audit.entityClassSimpleName}" />
-                    <c:set var="isNavigable" value="${not fn:contains('Role,GlobalProperty', audit.entityClassSimpleName)}" />
-                    <c:choose>
-                        <c:when test="${isNavigable}">
-                            <c:set var="rowUrl" value="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${audit.entity.getClass().getName()}" />
-                        </c:when>
-                        <c:otherwise>
-                            <c:set var="rowUrl" value="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=NA&class=${audit.entity.getClass().getName()}" />
-                        </c:otherwise>
-                    </c:choose>
+                    <c:set var="rowUrl"
+                           value="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entityIdentifier}&class=${audit.entity.getClass().getName()}" />
+
                     <tr onclick="window.location.href='${rowUrl}'">
+                        <td>${audit.revisionEntity.id}</td>
+                        <c:if test="${empty className}">
+                            <td>${entitySimpleName}</td>
+                        </c:if>
+                        <td>${audit.changedBy}</td>
+                        <td>${audit.revisionEntity.changedOn}</td>
                         <td>
                             <c:choose>
-                                <c:when test="${isNavigable}">
-                                    ${audit.entity.id}
-                                </c:when>
-                                <c:otherwise><i>N/A</i></c:otherwise>
+                                <c:when test="${audit.revisionType.name() == 'ADD'}"><spring:message code="auditlogweb.revisionType.add"/></c:when>
+                                <c:when test="${audit.revisionType.name() == 'MOD'}"><spring:message code="auditlogweb.revisionType.mod"/></c:when>
+                                <c:when test="${audit.revisionType.name() == 'DEL'}"><spring:message code="auditlogweb.revisionType.del"/></c:when>
+                                <c:otherwise>${audit.revisionType.name()}</c:otherwise>
                             </c:choose>
                         </td>
-
-                    <c:if test="${empty className}">
-                        <td>${entitySimpleName}</td>
-                    </c:if>
-
-                    <td>${audit.changedBy}</td>
-                    <td>${audit.revisionEntity.changedOn}</td>
-                    <td>
-                        <c:choose>
-                            <c:when test="${audit.revisionType.name() == 'ADD'}"><spring:message code="auditlogweb.revisionType.add"/></c:when>
-                            <c:when test="${audit.revisionType.name() == 'MOD'}"><spring:message code="auditlogweb.revisionType.mod"/></c:when>
-                            <c:when test="${audit.revisionType.name() == 'DEL'}"><spring:message code="auditlogweb.revisionType.del"/></c:when>
-                            <c:otherwise>${audit.revisionType.name()}</c:otherwise>
-                        </c:choose>
-                    </td>
-                </tr>
+                    </tr>
             </c:forEach>
             </tbody>
         </table>
