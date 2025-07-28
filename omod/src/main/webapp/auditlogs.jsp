@@ -32,6 +32,13 @@
                 <label for="endDate" class="filter-label">To:</label>
                 <input type="date" id="endDate" name="endDate" value="${param.endDate}">
             </div>
+            <div class="filter-field">
+                <label for="sortOrder" class="filter-label">Sort By:</label>
+                <select id="sortOrder" name="sortOrder">
+                    <option value="desc" <c:if test="${sortOrder == null || sortOrder == 'desc'}">selected</c:if>>Descending</option>
+                    <option value="asc" <c:if test="${sortOrder == 'asc'}">selected</c:if>>Ascending</option>
+                </select>
+            </div>
         </div>
 
         <div class="search-group">

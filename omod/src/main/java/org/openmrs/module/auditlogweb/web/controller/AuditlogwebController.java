@@ -80,7 +80,10 @@ public class AuditlogwebController {
      * @return the logical view name of the audit logs JSP page
      */
     @RequestMapping(method = RequestMethod.GET)
-    public String onGet(Model model) {
+    public String onGet(
+            @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,
+            Model model) {
+
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
             return ENVERS_DISABLED_VIEW;
@@ -89,7 +92,7 @@ public class AuditlogwebController {
         int size = 15;
         try {
             PaginatedAuditResult result = viewService.fetchAuditLogsGlobal(
-                    null,null,null,null, page, size);
+                    null, null, null, null, page, size, sortOrder);
 
             List<AuditLogDto> audits = dtoMapper.toDtoList(result.getAudits());
             int totalPages = UtilClass.computeTotalPages(result.getTotalCount(), size);
@@ -101,6 +104,7 @@ public class AuditlogwebController {
             model.addAttribute("hasPreviousPage", page > 0);
             model.addAttribute("currentPage", page);
             model.addAttribute("pageSize", size);
+            model.addAttribute("sortOrder", sortOrder);
 
         } catch (Exception e) {
             log.error("Failed to load default audit logs", e);
@@ -152,6 +156,7 @@ public class AuditlogwebController {
             @RequestParam(value = "endDate", required = false) String endDateStr,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "15") int size,
+            @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,   // <-- New param
             Model model) {
 
         if (!EnversUtils.isEnversEnabled()) {
@@ -160,7 +165,7 @@ public class AuditlogwebController {
         }
 
         try {
-            PaginatedAuditResult result = viewService.fetchAuditLogsGlobal(domainName, username, startDateStr, endDateStr, page, size);
+            PaginatedAuditResult result = viewService.fetchAuditLogsGlobal(domainName, username, startDateStr, endDateStr, page, size, sortOrder);
 
             List<AuditLogDto> auditDtos = dtoMapper.toDtoList(result.getAudits());
             int totalPages = UtilClass.computeTotalPages(result.getTotalCount(), size);
@@ -175,6 +180,7 @@ public class AuditlogwebController {
             model.addAttribute("endDate", endDateStr);
             model.addAttribute("currentPage", page);
             model.addAttribute("pageSize", size);
+            model.addAttribute("sortOrder", sortOrder);
 
             if (domainName != null && !domainName.isEmpty()) {
                 model.addAttribute("currentClass", domainName);

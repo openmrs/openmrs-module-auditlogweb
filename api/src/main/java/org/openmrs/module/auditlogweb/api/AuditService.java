@@ -34,7 +34,7 @@ public interface AuditService {
      * @param <T>         the type of the audited entity
      * @return a list of {@link AuditEntity} representing revisions of the entity
      */
-    <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size);
+    <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size, String sortOrder);
 
     /**
      * Retrieves a paginated list of all revisions for the specified audited entity class
@@ -47,7 +47,7 @@ public interface AuditService {
      * @return a list of {@link AuditEntity} representing revisions of the entity,
      *         or an empty list if the class is not found
      */
-    <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size);
+    <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size, String sortOrder);
 
     /**
      * Retrieves a specific revision of an entity by its ID and revision number.
@@ -63,13 +63,13 @@ public interface AuditService {
     /**
      * Retrieves the full audit metadata and revision state for a specific entity revision.
      *
-     * @param clazz the class type of the audited entity
-     * @param entityId    the unique identifier of the entity
-     * @param auditId  the revision number to retrieve
+     * @param entityClass the class type of the audited entity
+     * @param id          the unique identifier of the entity (Integer or String)
+     * @param revisionId  the revision number to retrieve
      * @param <T>         the type of the audited entity
      * @return an {@link AuditEntity} containing the entity, revision info, and audit metadata
      */
-    <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> clazz, Object entityId, int auditId);
+    <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object id, int revisionId);
 
     /**
      * Counts the total number of revisions available for a given audited entity class.
@@ -84,7 +84,7 @@ public interface AuditService {
      * Retrieves a paginated list of revisions for a given entity class,
      * filtered by user ID and/or a date range.
      *
-     * @param clazz      the audited entity class
+     * @param entityClass      the audited entity class
      * @param page       the page number (zero-based)
      * @param size       the number of records per page
      * @param userId     optional user ID to filter by who made the change (can be {@code null})
@@ -93,7 +93,7 @@ public interface AuditService {
      * @param <T>        the type of the audited entity
      * @return a filtered, paginated list of {@link AuditEntity} records
      */
-    <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> clazz, int page, int size, Integer userId, Date startDate, Date endDate);
+    <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> entityClass, int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder);
 
     /**
      * Counts the number of revisions for a given entity class,
@@ -137,7 +137,8 @@ public interface AuditService {
      * @param endDate    optional end date to filter revisions by (can be {@code null})
      * @return a list of {@link AuditEntity} revisions from multiple entity types
      */
-    List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate);
+    List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder);
+
 
     /**
      * Counts the total number of audit revisions across all entity types,

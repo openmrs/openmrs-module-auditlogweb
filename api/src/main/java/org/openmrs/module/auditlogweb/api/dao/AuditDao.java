@@ -57,13 +57,19 @@ public class AuditDao {
      * @return a list of {@link AuditEntity} containing revision data
      */
     @SuppressWarnings("unchecked")
-    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size) {
+    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size, String sortOrder) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
 
         AuditQuery auditQuery = auditReader.createQuery()
-                .forRevisionsOfEntity(entityClass, false, true)
-                .addOrder(org.hibernate.envers.query.AuditEntity.revisionNumber().desc())
-                .setFirstResult(page * size)
+                .forRevisionsOfEntity(entityClass, false, true);
+
+        if ("asc".equalsIgnoreCase(sortOrder)) {
+            auditQuery.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").asc());
+        } else {
+            auditQuery.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").desc());
+        }
+
+        auditQuery.setFirstResult(page * size)
                 .setMaxResults(size);
 
         return (List<AuditEntity<T>>) auditQuery.getResultList().stream().map(result -> {
@@ -74,6 +80,10 @@ public class AuditDao {
             Integer userId = revisionEntity.getChangedBy();
             return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
         }).collect(Collectors.toList());
+    }
+
+    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size) {
+        return getAllRevisions(entityClass, page, size, "desc");
     }
 
     /**
@@ -144,15 +154,28 @@ public class AuditDao {
      */
     public <T> List<AuditEntity<T>> getRevisionsWithFilters(
             Class<T> entityClass, int page, int size,
-            Integer userId, Date startDate, Date endDate) {
+            Integer userId, Date startDate, Date endDate, String sortOrder) {
 
         AuditReader reader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         AuditQuery query = EnversUtils.buildFilteredAuditQuery(reader, entityClass, userId, startDate, endDate, page, size);
+
+        if ("asc".equalsIgnoreCase(sortOrder)) {
+            query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").asc());
+        } else {
+            query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").desc());
+        }
+
         List<Object[]> results = query.getResultList();
 
         return results.stream()
                 .map(result -> mapToAuditEntity(entityClass, result))
                 .collect(Collectors.toList());
+    }
+
+    public <T> List<AuditEntity<T>> getRevisionsWithFilters(
+            Class<T> entityClass, int page, int size,
+            Integer userId, Date startDate, Date endDate) {
+        return getRevisionsWithFilters(entityClass, page, size, userId, startDate, endDate, "desc");
     }
 
     /**
@@ -197,7 +220,7 @@ public class AuditDao {
      * @param endDate optional end date filter
      * @return paginated list of {@link AuditEntity} records
      */
-    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate) {
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
         List<String> auditedClassNames = UtilClass.findClassesWithAnnotation()
                 .stream()
                 .filter(className -> {
@@ -215,7 +238,7 @@ public class AuditDao {
             try {
                 Class<?> clazz = Class.forName(className);
                 try {
-                    List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate);
+                    List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate, sortOrder);
                     combined.addAll(revisions);
                 } catch (Exception ex) {
                     if (isMissingAuditTableException(ex)) {
@@ -233,7 +256,11 @@ public class AuditDao {
             }
         }
 
-        combined.sort((a, b) -> b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate()));
+        combined.sort((a, b) -> {
+            int compare = b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate());
+            return "asc".equalsIgnoreCase(sortOrder) ? -compare : compare;
+        });
+
         return UtilClass.paginate(combined, page, size);
     }
 
@@ -298,16 +325,38 @@ public class AuditDao {
         return false;
     }
 
+    /**
+     * Retrieves a specific revision of a {@link Role} entity by its role name and revision ID.
+     *
+     * @param roleName    the name of the role
+     * @param revisionId  the revision number
+     * @return the {@link Role} instance at the specified revision, or {@code null} if not found
+     */
     public Role getRoleRevisionById(String roleName, int revisionId) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         return auditReader.find(Role.class, roleName, revisionId);
     }
 
+    /**
+     * Retrieves a specific revision of a {@link GlobalProperty} by its property name and revision ID.
+     *
+     * @param propertyName the name of the global property
+     * @param revisionId   the revision number
+     * @return the {@link GlobalProperty} instance at the specified revision, or {@code null} if not found
+     */
     public GlobalProperty getGlobalPropertyRevisionById(String propertyName, int revisionId) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         return auditReader.find(GlobalProperty.class, propertyName, revisionId);
     }
 
+    /**
+     * Retrieves a full {@link AuditEntity} for a specific revision of a {@link Role} entity.
+     * Includes role data, revision metadata, and user info.
+     *
+     * @param roleName   the name of the role
+     * @param revisionId the revision number
+     * @return an {@link AuditEntity} for the specified revision
+     */
     public AuditEntity<Role> getRoleAuditEntityRevisionById(String roleName, int revisionId) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         AuditQuery auditQuery = auditReader.createQuery()
@@ -323,6 +372,14 @@ public class AuditDao {
         return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
     }
 
+    /**
+     * Retrieves a full {@link AuditEntity} for a specific revision of a {@link GlobalProperty}.
+     * Includes property data, revision metadata, and user info.
+     *
+     * @param propertyName the name of the global property
+     * @param revisionId   the revision number
+     * @return an {@link AuditEntity} for the specified revision
+     */
     public AuditEntity<GlobalProperty> getGlobalPropertyAuditEntityRevisionById(String propertyName, int revisionId) {
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
         AuditQuery auditQuery = auditReader.createQuery()

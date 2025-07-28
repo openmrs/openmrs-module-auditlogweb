@@ -45,14 +45,14 @@ public class AuditLogViewService {
      * @param endDate    optional end date for filtering changes
      * @return a paginated list of {@link AuditEntity} entries, possibly filtered
      */
-    public List<AuditEntity<?>> fetchAuditLogs(Class<?> clazz, int page, int size, String username, Date startDate, Date endDate) {
+    public List<AuditEntity<?>> fetchAuditLogs(Class<?> clazz, int page, int size, String username, Date startDate, Date endDate, String sortOrder) {
         Integer userId = resolveUserId(username);
         boolean hasFilters = userId != null || startDate != null || endDate != null;
 
         if (hasFilters) {
-            return (List<AuditEntity<?>>)(List<?>) auditService.getRevisionsWithFilters(clazz, page, size, userId, startDate, endDate);
+            return (List<AuditEntity<?>>)(List<?>) auditService.getRevisionsWithFilters(clazz, page, size, userId, startDate, endDate, sortOrder);
         }
-        return (List<AuditEntity<?>>)(List<?>) auditService.getAllRevisions(clazz, page, size);
+        return (List<AuditEntity<?>>)(List<?>) auditService.getAllRevisions(clazz, page, size, sortOrder);
     }
 
     /**
@@ -110,22 +110,22 @@ public class AuditLogViewService {
             String startDateStr,
             String endDateStr,
             int page,
-            int size) throws ClassNotFoundException {
+            int size,
+            String sortOrder) throws ClassNotFoundException {
 
         AuditFilter filters = parseFilters(username, startDateStr, endDateStr);
 
         if (domainClassName != null && !domainClassName.isEmpty()) {
             Class<?> clazz = Class.forName(domainClassName);
-            List<AuditEntity<?>> audits = fetchAuditLogs(clazz, page, size, username, filters.getStartDate(), filters.getEndDate());
+            List<AuditEntity<?>> audits = fetchAuditLogs(clazz, page, size, username, filters.getStartDate(), filters.getEndDate(), sortOrder);
             long totalCount = countAuditLogs(clazz, username, filters.getStartDate(), filters.getEndDate());
             return new PaginatedAuditResult(audits, totalCount);
         } else if (filters.getUserId() != null || filters.getStartDate() != null || filters.getEndDate() != null) {
-            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate());
+            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate(), sortOrder);
             long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
             return new PaginatedAuditResult(audits, totalCount);
         } else {
-            // get all logs with or without filters
-            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate());
+            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate(), sortOrder);
             long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
             return new PaginatedAuditResult(audits, totalCount);
         }

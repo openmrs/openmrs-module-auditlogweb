@@ -45,18 +45,18 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      * {@inheritDoc}
      */
     @Override
-    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size) {
-        return auditDao.getAllRevisions(entityClass, page, size);
+    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size, String sortOrder) {
+        return auditDao.getAllRevisions(entityClass, page, size, sortOrder);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size) {
+    public <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size, String sortOrder) {
         try {
             Class<T> clazz = (Class<T>) Class.forName(entityClassName);
-            return getAllRevisions(clazz, page, size);
+            return getAllRevisions(clazz, page, size, sortOrder);
         } catch (ClassNotFoundException e) {
             log.error("Entity class not found: {}", entityClassName, e);
             return new ArrayList<>();
@@ -87,18 +87,17 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object entityId, int revisionId) {
-        if (entityId instanceof Integer) {
-            return auditDao.getAuditEntityRevisionById(entityClass, (Integer) entityId, revisionId);
-        } else if (entityId instanceof String) {
-            // Handle string IDs for Role and GlobalProperty
-            if (Role.class.isAssignableFrom(entityClass)) {
-                return (AuditEntity<T>) auditDao.getRoleAuditEntityRevisionById((String) entityId, revisionId);
-            } else if (GlobalProperty.class.isAssignableFrom(entityClass)) {
-                return (AuditEntity<T>) auditDao.getGlobalPropertyAuditEntityRevisionById((String) entityId, revisionId);
+    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object id, int revisionId) {
+        if (id instanceof Integer) {
+            return auditDao.getAuditEntityRevisionById(entityClass, (Integer) id, revisionId);
+        } else if (id instanceof String) {
+            if (entityClass == Role.class) {
+                return (AuditEntity<T>) auditDao.getRoleAuditEntityRevisionById((String) id, revisionId);
+            } else if (entityClass == GlobalProperty.class) {
+                return (AuditEntity<T>) auditDao.getGlobalPropertyAuditEntityRevisionById((String) id, revisionId);
             }
         }
-        throw new IllegalArgumentException("Unsupported ID type for entity: " + entityClass.getName());
+        throw new IllegalArgumentException("Unsupported ID type for revision retrieval: " + id.getClass().getSimpleName());
     }
 
     /**
@@ -156,8 +155,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      * {@inheritDoc}
      */
     @Override
-    public <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> clazz, int page, int size, Integer userId, Date startDate, Date endDate) {
-        return auditDao.getRevisionsWithFilters(clazz, page, size, userId, startDate, endDate);
+    public <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> clazz, int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
+        return auditDao.getRevisionsWithFilters(clazz, page, size, userId, startDate, endDate, sortOrder);
     }
 
     /**
@@ -199,8 +198,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      * @return a paginated list of {@link AuditEntity} objects across all audited entities
      */
     @Override
-    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate) {
-        return auditDao.getAllRevisionsAcrossEntities(page, size, userId, startDate, endDate);
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
+        return auditDao.getAllRevisionsAcrossEntities(page, size, userId, startDate, endDate, sortOrder);
     }
 
     /**
