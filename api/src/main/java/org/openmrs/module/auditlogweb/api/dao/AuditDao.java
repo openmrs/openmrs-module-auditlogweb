@@ -157,13 +157,7 @@ public class AuditDao {
             Integer userId, Date startDate, Date endDate, String sortOrder) {
 
         AuditReader reader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
-        AuditQuery query = EnversUtils.buildFilteredAuditQuery(reader, entityClass, userId, startDate, endDate, page, size);
-
-        if ("asc".equalsIgnoreCase(sortOrder)) {
-            query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").asc());
-        } else {
-            query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").desc());
-        }
+        AuditQuery query = EnversUtils.buildFilteredAuditQuery(reader, entityClass, userId, startDate, endDate, page, size, sortOrder);
 
         List<Object[]> results = query.getResultList();
 

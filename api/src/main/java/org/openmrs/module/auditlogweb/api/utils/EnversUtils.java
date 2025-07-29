@@ -63,11 +63,17 @@ public class EnversUtils {
             Date startDate,
             Date endDate,
             int page,
-            int size
+            int size,
+            String sortOrder
     ) {
         AuditQuery query = auditReader.createQuery()
-                .forRevisionsOfEntity(entityClass, false, true)
-                .addOrder(AuditEntity.revisionNumber().desc());
+                .forRevisionsOfEntity(entityClass, false, true);
+
+        if ("asc".equalsIgnoreCase(sortOrder)) {
+            query.addOrder(AuditEntity.revisionNumber().asc());
+        } else {
+            query.addOrder(AuditEntity.revisionNumber().desc());
+        }
 
         applyCommonFilters(query, userId, startDate, endDate);
         query.setFirstResult(page * size);

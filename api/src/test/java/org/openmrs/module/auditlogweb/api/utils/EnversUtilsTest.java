@@ -94,7 +94,7 @@ public class EnversUtilsTest {
         when(auditQuery.setMaxResults(anyInt())).thenReturn(auditQuery);
         when(auditQuery.add(any())).thenReturn(auditQuery);
 
-        AuditQuery result = EnversUtils.buildFilteredAuditQuery(auditReader, String.class,1, new Date(), new Date(),0,10);
+        AuditQuery result = EnversUtils.buildFilteredAuditQuery(auditReader, String.class,1, new Date(), new Date(),0,10, "desc");
         assertNotNull(result);
     }
 
