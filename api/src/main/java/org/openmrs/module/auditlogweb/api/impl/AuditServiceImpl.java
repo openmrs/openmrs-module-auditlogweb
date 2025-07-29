@@ -144,7 +144,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
             return "Unknown";
         }
 
-        String username = user.getUsername();
+        String username = user.getDisplayString();
         if (StringUtils.isBlank(username)) {
             return StringUtils.defaultIfBlank(user.getSystemId(), "Unknown");
         }

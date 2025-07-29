@@ -110,12 +110,12 @@ class AuditServiceImplTest {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
 
-            when(user.getUsername()).thenReturn("testuser");
+            when(user.getDisplayString()).thenReturn("Supper User (testuser)");
             context.when(Context::getUserService).thenReturn(userService);
             when(userService.getUser(10)).thenReturn(user);
 
             String result = auditService.resolveUsername(10);
-            assertEquals("testuser", result);
+            assertEquals("Supper User (testuser)", result);
         }
     }
 
