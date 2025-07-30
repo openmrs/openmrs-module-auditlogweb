@@ -90,7 +90,7 @@ public class ViewAuditController {
 
             // Try to fetch the previous revision
             Object oldEntity = null;
-            if (entityId != null && auditId - 1 > 0) {
+            if (auditId - 1 > 0) {
                 try {
                     oldEntity = auditService.getRevisionById(clazz, entityId, auditId - 1);
                 } catch (org.hibernate.ObjectNotFoundException ignored) {}

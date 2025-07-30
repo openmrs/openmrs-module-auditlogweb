@@ -215,38 +215,19 @@ public class AuditDao {
      * @return paginated list of {@link AuditEntity} records
      */
     public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
-        List<String> auditedClassNames = UtilClass.findClassesWithAnnotation()
-                .stream()
-                .filter(className -> {
-                    try {
-                        Class<?> clazz = Class.forName(className);
-                        return !Modifier.isAbstract(clazz.getModifiers());
-                    } catch (ClassNotFoundException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
+        List<Class<?>> auditedClasses = getNonAbstractAuditedClasses();
 
         List<AuditEntity<?>> combined = new ArrayList<>();
-        for (String className : auditedClassNames) {
+        for (Class<?> clazz : auditedClasses) {
             try {
-                Class<?> clazz = Class.forName(className);
-                try {
-                    List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate, sortOrder);
-                    combined.addAll(revisions);
-                } catch (Exception ex) {
-                    if (isMissingAuditTableException(ex)) {
-                        log.warn("Skipping class {} due to missing audit table or SQL error: {}", className, ex.getMessage());
-                    } else {
-                        throw ex;
-                    }
+                List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate, sortOrder);
+                combined.addAll(revisions);
+            } catch (Exception ex) {
+                if (isMissingAuditTableException(ex)) {
+                    log.warn("Skipping class {} due to missing audit table or SQL error: {}", clazz.getName(), ex.getMessage());
+                } else {
+                    log.error("Unexpected error while fetching audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
                 }
-            } catch (ClassNotFoundException e) {
-                log.warn("Could not load audited class: {}", className, e);
-            } catch (NotAuditedException e) {
-                log.warn("Class is not audited by Envers, skipping: {}", className);
-            } catch (Exception e) {
-                log.error("Unexpected error while fetching audit logs for class {}: {}", className, e.getMessage(), e);
             }
         }
 
@@ -267,34 +248,18 @@ public class AuditDao {
      * @return total number of matching audit entries
      */
     public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate) {
-        List<String> auditedClassNames = UtilClass.findClassesWithAnnotation()
-                .stream()
-                .filter(className -> {
-                    try {
-                        Class<?> clazz = Class.forName(className);
-                        return !Modifier.isAbstract(clazz.getModifiers());
-                    } catch (ClassNotFoundException e) {
-                        return false;
-                    }
-                })
-                .collect(Collectors.toList());
-
-        return auditedClassNames.stream().mapToLong(className -> {
+        return getNonAbstractAuditedClasses().stream().mapToLong(clazz -> {
             try {
-                Class<?> clazz = Class.forName(className);
                 return countRevisionsWithFilters(clazz, userId, startDate, endDate);
-            } catch (ClassNotFoundException e) {
-                log.warn("Could not load audited class: {}", className, e);
-                return 0L;
             } catch (NotAuditedException e) {
-                log.warn("Class is not audited by Envers, skipping: {}", className);
+                log.warn("Class is not audited by Envers, skipping: {}", clazz.getName());
                 return 0L;
             } catch (Exception ex) {
                 if (isMissingAuditTableException(ex)) {
-                    log.warn("Skipping count for class {} due to missing audit table or SQL error: {}", className, ex.getMessage());
+                    log.warn("Skipping count for class {} due to missing audit table or SQL error: {}", clazz.getName(), ex.getMessage());
                     return 0L;
                 } else {
-                    log.error("Unexpected error while counting audit logs for class {}: {}", className, ex.getMessage(), ex);
+                    log.error("Unexpected error while counting audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
                     return 0L;
                 }
             }
@@ -359,7 +324,7 @@ public class AuditDao {
                 .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
 
         Object[] result = (Object[]) auditQuery.getSingleResult();
-        Role entity = Role.class.cast(result[0]);
+        Role entity = (Role) result[0];
         OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
         RevisionType revisionType = (RevisionType) result[2];
         Integer userId = revisionEntity.getChangedBy();
@@ -382,10 +347,30 @@ public class AuditDao {
                 .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
 
         Object[] result = (Object[]) auditQuery.getSingleResult();
-        GlobalProperty entity = GlobalProperty.class.cast(result[0]);
+        GlobalProperty entity = (GlobalProperty) result[0];
         OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
         RevisionType revisionType = (RevisionType) result[2];
         Integer userId = revisionEntity.getChangedBy();
         return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
+    }
+
+    /**
+     * Retrieves the list of classes annotated as audited entities.
+     *
+     * @return list of class names that are audited and not abstract
+     */
+    private List<Class<?>> getNonAbstractAuditedClasses() {
+        return UtilClass.findClassesWithAnnotation()
+                .stream()
+                .map(className -> {
+                    try {
+                        return Class.forName(className);
+                    } catch (ClassNotFoundException e) {
+                        log.warn("Could not load class: {}", className, e);
+                        return null;
+                    }
+                })
+                .filter(clazz -> clazz != null && !Modifier.isAbstract(clazz.getModifiers()))
+                .collect(Collectors.toList());
     }
 }

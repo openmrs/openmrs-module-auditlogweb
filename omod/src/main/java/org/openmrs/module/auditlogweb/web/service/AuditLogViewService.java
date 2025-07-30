@@ -120,10 +120,6 @@ public class AuditLogViewService {
             List<AuditEntity<?>> audits = fetchAuditLogs(clazz, page, size, username, filters.getStartDate(), filters.getEndDate(), sortOrder);
             long totalCount = countAuditLogs(clazz, username, filters.getStartDate(), filters.getEndDate());
             return new PaginatedAuditResult(audits, totalCount);
-        } else if (filters.getUserId() != null || filters.getStartDate() != null || filters.getEndDate() != null) {
-            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate(), sortOrder);
-            long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
-            return new PaginatedAuditResult(audits, totalCount);
         } else {
             List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate(), sortOrder);
             long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
