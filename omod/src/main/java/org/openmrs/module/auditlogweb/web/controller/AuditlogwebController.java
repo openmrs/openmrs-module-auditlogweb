@@ -82,14 +82,15 @@ public class AuditlogwebController {
     @RequestMapping(method = RequestMethod.GET)
     public String onGet(
             @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "15") int size,
             Model model) {
 
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
             return ENVERS_DISABLED_VIEW;
         }
-        int page = 0;
-        int size = 15;
+
         try {
             PaginatedAuditResult result = viewService.fetchAuditLogsGlobal(
                     null, null, null, null, page, size, sortOrder);
