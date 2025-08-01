@@ -20,16 +20,19 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 class AuditServiceImplTest {
 
@@ -47,19 +50,19 @@ class AuditServiceImplTest {
     static class TestAuditedEntity {}
 
     @Test
-    void shouldReturnAuditEntitiesGivenValidEntityClassAndPagination() {
+    void shouldReturnAuditEntities_GivenValidEntityClassAndPagination() {
         AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
-        when(auditDao.getAllRevisions(TestAuditedEntity.class, 0, 5))
-                .thenReturn(Arrays.asList(mockEntity));
+        when(auditDao.getAllRevisions(TestAuditedEntity.class, 0, 5, "desc"))
+                .thenReturn(Collections.singletonList(mockEntity));
 
-        List<AuditEntity<TestAuditedEntity>> result = auditService.getAllRevisions(TestAuditedEntity.class, 0, 5);
+        List<AuditEntity<TestAuditedEntity>> result = auditService.getAllRevisions(TestAuditedEntity.class, 0, 5, "desc");
         assertEquals(1, result.size());
         assertSame(mockEntity, result.get(0));
     }
 
     @Test
-    void shouldReturnEmptyListGivenInvalidEntityClassName() {
-        List<?> result = auditService.getAllRevisions("non.existent.ClassName", 0, 5);
+    void shouldReturnEmptyList_GivenInvalidEntityClassName() {
+        List<?> result = auditService.getAllRevisions("non.existent.ClassName", 0, 5,  "desc");
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
@@ -74,7 +77,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnAuditEntityRevisionGivenEntityIdAndRevisionId() {
+    void shouldReturnAuditEntityRevision_GivenEntityIdAndRevisionId() {
         AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
         when(auditDao.getAuditEntityRevisionById(TestAuditedEntity.class, 1, 3)).thenReturn(mockEntity);
 
@@ -84,7 +87,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnTotalRevisionCountGivenEntityClass() {
+    void shouldReturnTotalRevisionCount_GivenEntityClass() {
         when(auditDao.countAllRevisions(TestAuditedEntity.class)).thenReturn(10L);
         long result = auditService.countAllRevisions(TestAuditedEntity.class);
         assertEquals(10L, result);
@@ -97,27 +100,27 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnUnknownGivenNullUserId() {
+    void shouldReturnUnknown_GivenNullUserId() {
         assertEquals("Unknown", auditService.resolveUsername(null));
     }
 
     @Test
-    void shouldReturnUsernameGivenValidUserId() {
+    void shouldReturnUsername_GivenValidUserId() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
 
-            when(user.getUsername()).thenReturn("testuser");
+            when(user.getDisplayString()).thenReturn("Supper User (testuser)");
             context.when(Context::getUserService).thenReturn(userService);
             when(userService.getUser(10)).thenReturn(user);
 
             String result = auditService.resolveUsername(10);
-            assertEquals("testuser", result);
+            assertEquals("Supper User (testuser)", result);
         }
     }
 
     @Test
-    void shouldReturnSystemIdGivenEmptyUsername() {
+    void shouldReturnSystemId_GivenEmptyUsername() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
@@ -133,7 +136,7 @@ class AuditServiceImplTest {
     }
 
     @Test
-    void shouldReturnUnknownGivenUserWithoutUsernameOrSystemId() {
+    void shouldReturnUnknown_GivenUserWithoutUsernameOrSystemId() {
         try (MockedStatic<Context> context = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User user = mock(User.class);
@@ -146,5 +149,111 @@ class AuditServiceImplTest {
             String result = auditService.resolveUsername(8);
             assertEquals("Unknown", result);
         }
+    }
+
+    @Test
+    void shouldDelegateGetRevisionsWithFilters() {
+        AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
+        when(auditDao.getRevisionsWithFilters(TestAuditedEntity.class, 1, 10, 2, null, null, "desc"))
+                .thenReturn(Collections.singletonList(mockEntity));
+
+        List<AuditEntity<TestAuditedEntity>> result =
+                auditService.getRevisionsWithFilters(TestAuditedEntity.class, 1, 10, 2, null, null, "desc");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertSame(mockEntity, result.get(0));
+    }
+
+    @Test
+    void shouldDelegateCountRevisionsWithFilters() {
+        when(auditDao.countRevisionsWithFilters(TestAuditedEntity.class, 3, null, null))
+                .thenReturn(15L);
+
+        long count = auditService.countRevisionsWithFilters(TestAuditedEntity.class, 3, null, null);
+        assertEquals(15L, count);
+    }
+
+    @Test
+    void shouldResolveUserId_GivenMatchingUsers() {
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            User user1 = mock(User.class);
+
+            when(user1.getUserId()).thenReturn(99);
+            context.when(Context::getUserService).thenReturn(userService);
+            when(userService.getUsers("someUser", null, false)).thenReturn(Arrays.asList(user1));
+
+            Integer userId = auditService.resolveUserId("someUser");
+            assertEquals(99, userId);
+        }
+    }
+
+    @Test
+    void shouldReturnNullWhenNoUsersFoundOnResolveUserId() {
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            context.when(Context::getUserService).thenReturn(userService);
+            when(userService.getUsers("unknown", null, false)).thenReturn(Collections.emptyList());
+
+            Integer userId = auditService.resolveUserId("unknown");
+            assertEquals(null, userId);
+        }
+    }
+
+    @Test
+    void shouldReturnNull_WhenInputIsBlankInResolveUserId() {
+        Integer userId = auditService.resolveUserId("");
+        assertEquals(null, userId);
+    }
+
+    @Test
+    void shouldReturnAuditEntitiesAcrossEntities_GivenUserIdAndDateRange() throws ParseException {
+        AuditEntity<?> mockEntity = mock(AuditEntity.class);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Date startDate = sdf.parse("01/01/2025");
+        Date endDate = sdf.parse("10/07/2025");
+
+        when(auditDao.getAllRevisionsAcrossEntities(0, 5, 10, startDate, endDate, "desc"))
+                .thenReturn(Collections.singletonList(mockEntity));
+
+        List<AuditEntity<?>> result = auditService.getAllRevisionsAcrossEntities(0, 5, 10, startDate, endDate,  "desc");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void shouldReturnCountAcrossEntities_GivenFixedDateRangeAndUserId() throws ParseException {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Date startDate = sdf.parse("01/01/2025");
+        Date endDate = sdf.parse("10/07/2025");
+
+        when(auditDao.countRevisionsAcrossEntities(12, startDate, endDate)).thenReturn(42L);
+
+        long count = auditService.countRevisionsAcrossEntities(12, startDate, endDate);
+        assertEquals(42L, count);
+    }
+
+    @Test
+    void shouldReturnAuditEntitiesAcrossEntities_GivenPaginationAndOptionalFilters() {
+        AuditEntity<?> mockEntity = mock(AuditEntity.class);
+        when(auditDao.getAllRevisionsAcrossEntities(0, 5, null, null, null, "desc"))
+                .thenReturn(Collections.singletonList(mockEntity));
+
+        List<AuditEntity<?>> result =
+                auditService.getAllRevisionsAcrossEntities(0, 5, null, null, null, "desc");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertSame(mockEntity, result.get(0));
+    }
+
+    @Test
+    void shouldReturnCountAcrossEntities_GivenUserIdAndDateRange() {
+        when(auditDao.countRevisionsAcrossEntities(1, null, null)).thenReturn(25L);
+
+        long count = auditService.countRevisionsAcrossEntities(1, null, null);
+        assertEquals(25L, count);
     }
 }

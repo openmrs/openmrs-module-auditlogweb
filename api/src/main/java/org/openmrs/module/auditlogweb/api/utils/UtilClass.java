@@ -18,14 +18,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.Date;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 /**
- * Utility class providing methods for working with Envers-audited classes and computing field-level differences.
+ * Utility class providing methods for working with Envers-audited classes,
+ * computing field-level differences, and date parsing/formatting for audit filtering.
  */
 public class UtilClass {
 
@@ -34,8 +41,8 @@ public class UtilClass {
     private static List<String> classesWithAuditAnnotation;
 
     /**
-     * Scans the {@code org.openmrs} package for all classes annotated with {@link Audited} and returns their names.
-     * The results are cached to avoid redundant scanning.
+     * Scans the {@code org.openmrs} package for all classes annotated with {@link Audited}
+     * using Reflections and caches the result.
      *
      * @return a sorted list of fully qualified class names that are annotated with {@link Audited}
      */
@@ -60,27 +67,27 @@ public class UtilClass {
     }
 
     /**
-     * Checks whether the given class is annotated with {@link Audited}.
+     * Checks if a given class is annotated with {@link Audited}.
      *
-     * @param clazz the class to check
-     * @return true if the class is annotated with {@code @Audited}, false otherwise
+     * @param clazz the class to inspect
+     * @return {@code true} if the class is annotated with {@link Audited}, {@code false} otherwise
      */
     public static boolean doesClassContainsAuditedAnnotation(Class<?> clazz) {
         return clazz.isAnnotationPresent(Audited.class);
     }
 
     /**
-     * Compares two instances of a class and returns a list of field differences between them.
-     * If a field cannot be read due to access restrictions or exceptions, a placeholder is used.
+     * Compares two instances of the same class and returns a list of field-level differences.
+     * Fields that are static or synthetic are ignored. Values that cannot be accessed
+     * are marked as "Unable to read".
      *
-     * @param clazz        the class of the objects being compared
-     * @param oldEntity    the previous version of the object
+     * @param clazz         the class of the compared objects
+     * @param oldEntity     the previous version of the object
      * @param currentEntity the current version of the object
-     * @return a list of {@link AuditFieldDiff} representing changes between the old and current object states
+     * @return a list of {@link AuditFieldDiff} showing name, old value, new value, and change flag
      */
     public static List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
         List<AuditFieldDiff> diffs = new ArrayList<>();
-
         if (currentEntity == null) return diffs;
 
         Field[] fields = clazz.getDeclaredFields();
@@ -95,7 +102,7 @@ public class UtilClass {
             boolean failedCurr = false;
 
             try {
-                currVal =  String.valueOf(field.get(currentEntity));
+                currVal = String.valueOf(field.get(currentEntity));
             } catch (Exception e) {
                 log.warn("Failed to read current value of field '{}': {}", field.getName(), e.getMessage());
                 failedCurr = true;
@@ -118,4 +125,76 @@ public class UtilClass {
         }
         return diffs;
     }
+
+    /**
+     * Computes the total number of pages for a paginated dataset.
+     *
+     * @param total the total number of records
+     * @param size  the number of records per page
+     * @return the total number of pages
+     */
+    public static int computeTotalPages(long total, int size) {
+        return (int) Math.ceil((double) total / size);
+    }
+
+    /**
+     * Parses a date string into a {@link LocalDate}. Supports ISO format and "dd/MM/yyyy".
+     *
+     * @param dateStr the date string to parse
+     * @return the parsed {@link LocalDate}, or {@code null} if parsing fails
+     */
+    public static LocalDate parse(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+
+        try {
+            return LocalDate.parse(dateStr.trim());
+        } catch (Exception e1) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                return LocalDate.parse(dateStr.trim(), formatter);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Converts a {@link LocalDate} to a {@link Date} representing the start of the day.
+     *
+     * @param date the local date
+     * @return the corresponding {@link Date} at 00:00, or {@code null} if input is null
+     */
+    public static Date toStartDate(LocalDate date) {
+        return date == null ? null : Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    /**
+     * Converts a {@link LocalDate} to a {@link Date} representing the end of the day (23:59:59.999).
+     *
+     * @param date the local date
+     * @return the corresponding {@link Date} at end of day, or {@code null} if input is null
+     */
+    public static Date toEndDate(LocalDate date) {
+        return date == null ? null : Date.from(date.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    /**
+     * Paginates a given list in-memory.
+     *
+     * @param allResults the full list of items to paginate
+     * @param page       the page number (0-based)
+     * @param size       the number of items per page
+     * @param <T>        the type of items in the list
+     * @return a sublist representing the requested page
+     */
+    public static <T> List<T> paginate(List<T> allResults, int page, int size) {
+        if (allResults == null || allResults.isEmpty()) {
+            return Collections.emptyList();  //  returning an emtpy list safely
+        }
+
+        int fromIndex = Math.min(page * size, allResults.size());
+        int toIndex = Math.min(fromIndex + size, allResults.size());
+        return allResults.subList(fromIndex, toIndex);
+    }
+
 }

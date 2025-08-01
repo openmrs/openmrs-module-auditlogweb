@@ -18,7 +18,11 @@
         <div class="filter-group">
             <div class="filter-field">
                 <label for="username" class="filter-label">Search by User:</label>
-                <input type="text" id="username" name="username" placeholder="Enter username" value="${param.username}">
+                <openmrs_tag:userField
+                        formFieldName="username"
+                        initialValue="${param.username}"
+                        linkUrl="${pageContext.request.contextPath}/admin/users/user.form"
+                />
             </div>
             <div class="filter-field">
                 <label for="startDate" class="filter-label">From:</label>
@@ -28,12 +32,19 @@
                 <label for="endDate" class="filter-label">To:</label>
                 <input type="date" id="endDate" name="endDate" value="${param.endDate}">
             </div>
+            <div class="filter-field">
+                <label for="sortOrder" class="filter-label">Sort By:</label>
+                <select id="sortOrder" name="sortOrder">
+                    <option value="desc" <c:if test="${sortOrder == null || sortOrder == 'desc'}">selected</c:if>>Descending</option>
+                    <option value="asc" <c:if test="${sortOrder == 'asc'}">selected</c:if>>Ascending</option>
+                </select>
+            </div>
         </div>
 
         <div class="search-group">
             <label for="entitySearch" class="search-label">Search and Select an Entity:</label>
             <input type="text" id="entitySearch" class="search-dropdown-input" placeholder="Type entity name to search..." readonly>
-            <input type="hidden" name="selectedClass" id="selectedClass" required>
+            <input type="hidden" name="selectedClass" id="selectedClass">
 
             <input type="hidden" name="page" id="pageInput" value="${currentPage != null ? currentPage : 0}" />
             <input type="hidden" name="size" id="hiddenPageSize" value="${pageSize != null ? pageSize : 15}" />
@@ -43,32 +54,49 @@
         </div>
     </form>
 
-    <c:if test="${not empty audits}">
-        <h2>Audit Table for ${className}</h2>
-        <table class="audit-table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Changed By</th>
-                <th>Changed On</th>
-                <th>Revision Type</th>
-            </tr>
-            </thead>
-            <tbody>
-            <c:forEach var="audit" items="${audits}">
-                <tr onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${currentClass}'">
-                    <td>${audit.entity.id}</td>
-                    <td>${audit.changedBy}</td>
-                    <td>${audit.revisionEntity.changedOn}</td>
-                    <td>
-                        <c:choose>
-                            <c:when test="${audit.revisionType.name() == 'ADD'}"><spring:message code="auditlogweb.revisionType.add"/></c:when>
-                            <c:when test="${audit.revisionType.name() == 'MOD'}"><spring:message code="auditlogweb.revisionType.mod"/></c:when>
-                            <c:when test="${audit.revisionType.name() == 'DEL'}"><spring:message code="auditlogweb.revisionType.del"/></c:when>
-                            <c:otherwise>${audit.revisionType.name()}</c:otherwise>
-                        </c:choose>
-                    </td>
+    <c:choose>
+        <c:when test="${not empty audits}">
+            <h2>
+                <c:choose>
+                    <c:when test="${not empty className}">Audit Table for ${className}</c:when>
+                    <c:otherwise>Audit Logs Table</c:otherwise>
+                </c:choose>
+            </h2>
+
+            <table class="audit-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <c:if test="${empty className}">
+                        <th>Entity Type</th>
+                    </c:if>
+                    <th>Changed By</th>
+                    <th>Changed On</th>
+                    <th>Revision Type</th>
                 </tr>
+                </thead>
+                <tbody>
+                <c:forEach var="audit" items="${audits}">
+                    <c:set var="entitySimpleName" value="${audit.entityClassSimpleName}" />
+                    <c:set var="rowUrl"
+                           value="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entityIdentifier}&class=${audit.entity.getClass().getName()}" />
+
+                    <tr onclick="window.location.href='${rowUrl}'">
+                        <td>${audit.revisionEntity.id}</td>
+                        <c:if test="${empty className}">
+                            <td>${entitySimpleName}</td>
+                        </c:if>
+                        <td>${audit.changedBy}</td>
+                        <td>${audit.revisionEntity.changedOn}</td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${audit.revisionType.name() == 'ADD'}"><spring:message code="auditlogweb.revisionType.add"/></c:when>
+                                <c:when test="${audit.revisionType.name() == 'MOD'}"><spring:message code="auditlogweb.revisionType.mod"/></c:when>
+                                <c:when test="${audit.revisionType.name() == 'DEL'}"><spring:message code="auditlogweb.revisionType.del"/></c:when>
+                                <c:otherwise>${audit.revisionType.name()}</c:otherwise>
+                            </c:choose>
+                        </td>
+                    </tr>
             </c:forEach>
             </tbody>
         </table>
@@ -95,41 +123,14 @@
                     <option value="50" <c:if test="${pageSize == 50}">selected</c:if>>50</option>
                 </select>
             </div>
-        </div>
-    </c:if>
+        </c:when>
 
-    <section class="recent-audits-section">
-        <h2>Recent Audit Trails</h2>
-        <c:choose>
-            <c:when test="${not empty recentAudits}">
-                <table class="audit-table">
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Entity Class</th>
-                        <th>Changed By</th>
-                        <th>Changed On</th>
-                        <th>Revision Type</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <c:forEach var="audit" items="${recentAudits}">
-                        <tr onclick="window.location.href='${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${audit.revisionEntity.id}&entityId=${audit.entity.id}&class=${audit.entity.getClass().getName()}'">
-                            <td>${audit.entity.id}</td>
-                            <td>${audit.entity.getClass().getSimpleName()}</td>
-                            <td>${audit.changedBy}</td>
-                            <td>${audit.changedOn}</td>
-                            <td>${audit.revisionType.name()}</td>
-                        </tr>
-                    </c:forEach>
-                    </tbody>
-                </table>
-            </c:when>
-            <c:otherwise>
-                <div style="padding: 24px; color: #888;">No recent audit events to display.</div>
-            </c:otherwise>
-        </c:choose>
-    </section>
+        <c:otherwise>
+            <div class="no-results-message">
+                <p>No audit logs found for the given criteria.</p>
+            </div>
+        </c:otherwise>
+    </c:choose>
 </div>
 
 <%@ include file="/WEB-INF/template/footer.jsp"%>
