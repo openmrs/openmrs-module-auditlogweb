@@ -10,6 +10,8 @@ package org.openmrs.module.auditlogweb.api.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.GlobalProperty;
+import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
@@ -21,11 +23,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Default implementation of the {@link AuditService} interface.
- * Delegates audit-related operations to the {@link AuditDao} layer.
+ *
+ * <p>This service delegates actual data retrieval to the {@link AuditDao} layer,
+ * and provides fallback logic for resolving user details and filtering audits
+ * by user or date range.
  */
 @RequiredArgsConstructor
 @Service
@@ -35,34 +42,21 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     private final AuditDao auditDao;
 
     /**
-     * Retrieves a paginated list of all audit revisions for a given audited entity class.
-     *
-     * @param entityClass the audited entity class
-     * @param page        the page number (zero-based)
-     * @param size        the number of results per page
-     * @param <T>         the type of the audited entity
-     * @return a list of {@link AuditEntity} containing audit revision data
+     * {@inheritDoc}
      */
     @Override
-    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size) {
-        return auditDao.getAllRevisions(entityClass, page, size);
+    public <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size, String sortOrder) {
+        return auditDao.getAllRevisions(entityClass, page, size, sortOrder);
     }
 
     /**
-     * Retrieves a paginated list of all audit revisions for a given audited entity class name.
-     * If the class cannot be found, returns an empty list.
-     *
-     * @param entityClassName fully qualified class name of the audited entity
-     * @param page            the page number (zero-based)
-     * @param size            the number of results per page
-     * @param <T>             the type of the audited entity
-     * @return a list of {@link AuditEntity} containing audit revision data or empty list if class not found
+     * {@inheritDoc}
      */
     @Override
-    public <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size) {
+    public <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size, String sortOrder) {
         try {
             Class<T> clazz = (Class<T>) Class.forName(entityClassName);
-            return getAllRevisions(clazz, page, size);
+            return getAllRevisions(clazz, page, size, sortOrder);
         } catch (ClassNotFoundException e) {
             log.error("Entity class not found: {}", entityClassName, e);
             return new ArrayList<>();
@@ -70,40 +64,44 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     /**
-     * Retrieves a specific revision of an audited entity by its entity ID and revision number.
-     *
-     * @param entityClass the audited entity class
-     * @param entityId    the ID of the audited entity
-     * @param revisionId  the revision number to fetch
-     * @param <T>         the type of the audited entity
-     * @return the entity instance at the specified revision, or {@code null} if not found
+     * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> T getRevisionById(Class<T> entityClass, int entityId, int revisionId) {
-        return auditDao.getRevisionById(entityClass, entityId, revisionId);
+    public <T> T getRevisionById(Class<T> entityClass, Object entityId, int revisionId) {
+        if (entityId instanceof Integer) {
+            return auditDao.getRevisionById(entityClass, (Integer) entityId, revisionId);
+        } else if (entityId instanceof String) {
+            // Handle string IDs for Role and GlobalProperty
+            if (Role.class.isAssignableFrom(entityClass)) {
+                return (T) auditDao.getRoleRevisionById((String) entityId, revisionId);
+            } else if (GlobalProperty.class.isAssignableFrom(entityClass)) {
+                return (T) auditDao.getGlobalPropertyRevisionById((String) entityId, revisionId);
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID type for entity: " + entityClass.getName());
     }
 
     /**
-     * Retrieves an {@link AuditEntity} containing the audited entity and its revision metadata
-     * by entity ID and revision number.
-     *
-     * @param entityClass the audited entity class
-     * @param entityId    the ID of the audited entity
-     * @param revisionId  the revision number to fetch
-     * @param <T>         the type of the audited entity
-     * @return an {@link AuditEntity} including entity and revision info, or {@code null} if not found
+     * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, int entityId, int revisionId) {
-        return auditDao.getAuditEntityRevisionById(entityClass, entityId, revisionId);
+    public <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object id, int revisionId) {
+        if (id instanceof Integer) {
+            return auditDao.getAuditEntityRevisionById(entityClass, (Integer) id, revisionId);
+        } else if (id instanceof String) {
+            if (entityClass == Role.class) {
+                return (AuditEntity<T>) auditDao.getRoleAuditEntityRevisionById((String) id, revisionId);
+            } else if (entityClass == GlobalProperty.class) {
+                return (AuditEntity<T>) auditDao.getGlobalPropertyAuditEntityRevisionById((String) id, revisionId);
+            }
+        }
+        throw new IllegalArgumentException("Unsupported ID type for revision retrieval: " + id.getClass().getSimpleName());
     }
 
     /**
-     * Counts the total number of revisions for a given audited entity class.
-     *
-     * @param entityClass the audited entity class
-     * @param <T>         the type of the audited entity
-     * @return the total number of revisions
+     * {@inheritDoc}
      */
     @Override
     public <T> long countAllRevisions(Class<T> entityClass) {
@@ -111,11 +109,11 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     /**
-     * Counts the total number of revisions for a given audited entity class name.
-     * Returns 0 if the class cannot be found.
+     * Counts all revisions for a given class name. If the class cannot be loaded,
+     * logs the error and returns 0.
      *
-     * @param entityClassName fully qualified class name of the audited entity
-     * @return the total number of revisions, or 0 if class not found
+     * @param entityClassName fully qualified name of the entity class
+     * @return the total number of revisions, or 0 if the class is not found
      */
     public long countAllRevisions(String entityClassName) {
         try {
@@ -129,11 +127,11 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
     /**
      * Resolves a user ID to a displayable username.
-     * If the user or username is missing, falls back to the user's systemId.
-     * If both are missing, returns "Unknown".
+     * Falls back to the user's system ID if the username is blank.
+     * If the user or ID is not found, returns "Unknown".
      *
-     * @param userId the ID of the user
-     * @return the resolved username, systemId, or "Unknown" if not found
+     * @param userId the OpenMRS user ID
+     * @return the username, system ID, or "Unknown"
      */
     @Override
     public String resolveUsername(Integer userId) {
@@ -142,10 +140,80 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         }
 
         User user = Context.getUserService().getUser(userId);
-        String username = user.getUsername();
+        if (user == null) {
+            return "Unknown";
+        }
+
+        String username = user.getDisplayString();
         if (StringUtils.isBlank(username)) {
-            return  StringUtils.defaultIfBlank(user.getSystemId(), "Unknown");
+            return StringUtils.defaultIfBlank(user.getSystemId(), "Unknown");
         }
         return username;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> clazz, int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
+        return auditDao.getRevisionsWithFilters(clazz, page, size, userId, startDate, endDate, sortOrder);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> long countRevisionsWithFilters(Class<T> clazz, Integer userId, Date startDate, Date endDate) {
+        return auditDao.countRevisionsWithFilters(clazz, userId, startDate, endDate);
+    }
+
+    /**
+     * Resolves a user's ID based on their username or full name using OpenMRS's
+     * partial match functionality. Returns {@code null} if no match is found.
+     *
+     * @param input the username or full name of the user
+     * @return the user's ID, or {@code null} if not found
+     */
+    @Override
+    public Integer resolveUserId(String input) {
+        if (StringUtils.isBlank(input)) {
+            return null;
+        }
+
+        List<User> matchedUsers = Context.getUserService().getUsers(input, null, false);
+        if (!matchedUsers.isEmpty()) {
+            return matchedUsers.get(0).getUserId();
+        }
+
+        return null;
+    }
+    /**
+     * Retrieves a paginated list of audit entries across all Envers-audited entity types.
+     *
+     * @param page       the page number (0-based)
+     * @param size       the number of records per page
+     * @param userId     optional user ID to filter by the user who made the change
+     * @param startDate  optional start date to filter changes from
+     * @param endDate    optional end date to filter changes up to
+     * @return a paginated list of {@link AuditEntity} objects across all audited entities
+     */
+    @Override
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
+        return auditDao.getAllRevisionsAcrossEntities(page, size, userId, startDate, endDate, sortOrder);
+    }
+
+    /**
+     * Counts the total number of audit entries across all Envers-audited entity types,
+     * filtered optionally by user and date range.
+     *
+     * @param userId     optional user ID to filter by the user who made the change
+     * @param startDate  optional start date to filter changes from
+     * @param endDate    optional end date to filter changes up to
+     * @return the total number of matching audit entries
+     */
+    @Override
+    public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate) {
+        return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate);
+    }
+
 }

@@ -3,8 +3,7 @@
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
- * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
- * graphic logo is a trademark of OpenMRS Inc.
+ * Copyright (C) OpenMRS Inc.
  */
 .auditlog-container {
     max-width: none;
@@ -19,7 +18,7 @@
     position: relative;
     margin-bottom: 24px;
 }
-.search-label{
+.search-label {
     display: block;
     font-size: 1em;
     margin-bottom: 8px;
@@ -33,19 +32,7 @@
     font-size: 1.1em;
     box-sizing: border-box;
 }
-.dropdown-list {
-    position: absolute;
-    z-index: 10;
-    width: 100%;
-    max-height: 220px;
-    overflow-y: auto;
-    background: #fff;
-    border: 1px solid #bbb;
-    border-top: none;
-    border-radius: 0 0 4px 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    display: none;
-}
+
 .view-btn {
     background: #0a9a7e;
     color: #fff;
@@ -74,13 +61,39 @@
 .audit-table tr:hover {
     background: #f5f7fa;
 }
-.filter-field input[type="text"],
-.filter-field input[type="date"] {
-    max-width: 160px;
+
+/* Shared dropdown list */
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
     width: 100%;
-    padding: 12px;
-    font-size: 0.98em;
-    box-sizing: border-box;
+    z-index: 10;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #bbb;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: none;
+}
+
+/* Shared dropdown items */
+.dropdown-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.95em;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover,
+.dropdown-item.selected {
+    background-color: #f0f0f0;
 }
 .filter-group {
     display: flex;
@@ -94,6 +107,7 @@
     display: flex;
     flex-direction: column;
     flex: none;
+    position: relative;
 }
 .filter-label {
     font-size: 1em;
@@ -101,7 +115,15 @@
     color: #444;
 }
 
-/* Pagination styles */
+.filter-field input[type="text"],
+.filter-field input[type="date"] {
+    max-width: 160px;
+    width: 100%;
+    padding: 12px;
+    font-size: 0.98em;
+    box-sizing: border-box;
+}
+/* Pagination */
 .pagination-controls {
     margin-top: 20px;
     display: flex;
