@@ -26,6 +26,13 @@
 		<aware_of_module>org.openmrs.module.legacyui</aware_of_module>
 	</aware_of_modules>
 
+	<privileges>
+		<privilege>
+			<name>View Audit Logs</name>
+			<description>Allows viewing audit logs in the system</description>
+		</privilege>
+	</privileges>
+
 	<messages>
 		<lang>en</lang>
 		<file>messages.properties</file>
