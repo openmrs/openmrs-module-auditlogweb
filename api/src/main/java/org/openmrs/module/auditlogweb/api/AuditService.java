@@ -36,7 +36,7 @@ public interface AuditService {
      * @param <T>         the type of the audited entity
      * @return a list of {@link AuditEntity} representing revisions of the entity
      */
-    @Authorized(AuditLogConstants.View_Audit_Logs)
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size, String sortOrder);
 
     /**
@@ -50,7 +50,7 @@ public interface AuditService {
      * @return a list of {@link AuditEntity} representing revisions of the entity,
      *         or an empty list if the class is not found
      */
-    @Authorized(AuditLogConstants.View_Audit_Logs)
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size, String sortOrder);
 
     /**
@@ -62,7 +62,7 @@ public interface AuditService {
      * @param <T>         the type of the audited entity
      * @return the entity instance at the specified revision, or {@code null} if not found
      */
-    @Authorized(AuditLogConstants.View_Audit_Logs)
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     <T> T getRevisionById(Class<T> clazz, Object entityId, int auditId);
 
     /**
@@ -74,7 +74,7 @@ public interface AuditService {
      * @param <T>         the type of the audited entity
      * @return an {@link AuditEntity} containing the entity, revision info, and audit metadata
      */
-    @Authorized(AuditLogConstants.View_Audit_Logs)
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object id, int revisionId);
 
     /**
@@ -99,7 +99,7 @@ public interface AuditService {
      * @param <T>        the type of the audited entity
      * @return a filtered, paginated list of {@link AuditEntity} records
      */
-    @Authorized(AuditLogConstants.View_Audit_Logs)
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> entityClass, int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder);
 
     /**
@@ -144,7 +144,7 @@ public interface AuditService {
      * @param endDate    optional end date to filter revisions by (can be {@code null})
      * @return a list of {@link AuditEntity} revisions from multiple entity types
      */
-    @Authorized(AuditLogConstants.View_Audit_Logs)
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder);
 
 
