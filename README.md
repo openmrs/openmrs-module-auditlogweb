@@ -23,6 +23,14 @@ Pre-requisites:
 5. Git (to clone the repository)
 6. An IDE (like IntelliJ IDEA or Eclipse) for easier development and debugging
 
+### Enabling Audit Table Initialization
+
+To allow the module to auto-create missing Hibernate Envers `_AUD` tables for `@Audited` entities on startup, set the following runtime property in your `openmrs-runtime.properties` 
+
+file:
+
+`auditlogweb.runAuditTableInit=true`
+
 To build the module from source, clone this repo:
 ```
 git clone https://github.com/openmrs/openmrs-module-auditlogweb
