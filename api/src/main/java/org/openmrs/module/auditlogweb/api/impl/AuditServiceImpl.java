@@ -18,10 +18,14 @@ import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Method;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -214,6 +218,56 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     @Override
     public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate) {
         return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate);
+    }
+
+    @Override
+    public List<RestAuditLogDto> getAllAuditLogs(int page, int size) {
+        List<AuditEntity<?>> audits = auditDao.getAllRevisionsAcrossEntities(page, size, null, null, null, "desc");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z").withZone(ZoneId.of("GMT"));
+
+        return audits.stream().map(audit -> {
+            String formattedDate = formatter.format(audit.getRevisionEntity().getRevisionDate().toInstant());
+            String changedByName = "System";
+            if (audit.getChangedBy() != null) {
+                try {
+                    User user = Context.getUserService().getUser(audit.getChangedBy());
+                    if (user != null) {
+                        changedByName = user.getPerson() != null
+                                ? user.getPerson().getPersonName().getFullName()
+                                : user.getUsername();
+                    }
+                } catch (Exception e) {
+                    changedByName = "User ID: " + audit.getChangedBy();
+                }
+            }
+
+            return new RestAuditLogDto(
+                    audit.getEntity().getClass().getSimpleName(),
+                    getEntityIdAsString(audit.getEntity()),
+                    audit.getRevisionType().name(),
+                    changedByName,
+                    formattedDate
+            );
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public long getAuditLogsCount() {
+        return auditDao.countRevisionsAcrossEntities(null, null, null);
+    }
+
+    private String getEntityIdAsString(Object entity) {
+        try {
+            Method getIdMethod = entity.getClass().getMethod("getId");
+            return String.valueOf(getIdMethod.invoke(entity));
+        } catch (Exception e) {
+            try {
+                Method getUuidMethod = entity.getClass().getMethod("getUuid");
+                return String.valueOf(getUuidMethod.invoke(entity));
+            } catch (Exception ex) {
+                return "unknown";
+            }
+        }
     }
 
 }
