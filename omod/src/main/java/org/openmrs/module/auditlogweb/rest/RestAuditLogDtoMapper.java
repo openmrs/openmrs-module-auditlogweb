@@ -29,7 +29,6 @@ public class RestAuditLogDtoMapper {
     public RestAuditLogDto toDto(AuditEntity<?> entity) {
         AuditLogDto base = baseMapper.toDto(entity);
 
-        // Convert Date to formatted String
         String formattedChangedOn = "";
         if (base.getChangedOn() != null) {
             formattedChangedOn = DateTimeFormatter
@@ -43,10 +42,9 @@ public class RestAuditLogDtoMapper {
                 base.getEntityIdentifier(),
                 base.getRevisionType().name(),
                 base.getChangedBy(),
-                formattedChangedOn  // <-- fix: this is now a String
+                formattedChangedOn
         );
     }
-
     public List<RestAuditLogDto> toDtoList(List<AuditEntity<?>> entities) {
         return entities.stream().map(this::toDto).collect(Collectors.toList());
     }

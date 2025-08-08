@@ -8,6 +8,7 @@
  */
 package org.openmrs.module.auditlogweb.rest;
 
+import lombok.RequiredArgsConstructor;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
@@ -18,16 +19,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST controller for exposing audit log entries via the OpenMRS REST API.
+ */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/auditlogs")
 public class AuditLogRestController {
 
     private final AuditService auditService;
 
-    public AuditLogRestController(AuditService auditService) {
-        this.auditService = auditService;
-    }
-
+    /**
+     * Returns a paginated list of audit log entries.
+     *
+     * @param page the page number (zero-based)
+     * @param size the number of items per page
+     * @return paginated response containing audit logs
+     */
     @GetMapping
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     public AuditLogResponseDto getAllAuditLogs(

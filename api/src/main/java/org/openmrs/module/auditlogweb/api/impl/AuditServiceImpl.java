@@ -220,6 +220,17 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate);
     }
 
+    /**
+     * Converts audit entries from multiple entity types into REST-friendly DTOs
+     * and returns a paginated list sorted by revision date (default: descending).
+     *
+     * <p>Each DTO contains entity type, ID, revision type, changedBy info, and
+     * formatted revision date in GMT.
+     *
+     * @param page the page number (zero-based)
+     * @param size the number of records per page
+     * @return a list of {@link RestAuditLogDto} representing audit logs across entities
+     */
     @Override
     public List<RestAuditLogDto> getAllAuditLogs(int page, int size) {
         List<AuditEntity<?>> audits = auditDao.getAllRevisionsAcrossEntities(page, size, null, null, null, "desc");
@@ -251,6 +262,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Returns the total count of audit log entries across all audited entities.
+     *
+     * <p>This is used primarily for pagination metadata in REST responses.
+     *
+     * @return the total number of audit log entries
+     */
     @Override
     public long getAuditLogsCount() {
         return auditDao.countRevisionsAcrossEntities(null, null, null);

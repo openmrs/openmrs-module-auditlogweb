@@ -10,10 +10,11 @@ package org.openmrs.module.auditlogweb.api.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import java.util.Date;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class RestAuditLogDto {
     private String entityType;
     private String entityId;

@@ -160,8 +160,21 @@ public interface AuditService {
      */
     long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
 
+    /**
+     * Retrieves a paginated list of audit logs across all entities,
+     * formatted as {@link RestAuditLogDto} for REST responses.
+     *
+     * @param page the page number (zero-based)
+     * @param size the number of records per page
+     * @return a list of audit logs in DTO format
+     */
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     List<RestAuditLogDto> getAllAuditLogs(int page, int size);
 
+    /**
+     * Returns the total count of audit log entries across all entities.
+     *
+     * @return the total number of audit log records
+     */
     long getAuditLogsCount();
 }
