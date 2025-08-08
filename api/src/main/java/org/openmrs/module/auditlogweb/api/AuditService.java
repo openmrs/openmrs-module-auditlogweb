@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb.api;
 
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
 import java.util.List;
@@ -158,4 +159,22 @@ public interface AuditService {
      * @return the count of matching revisions across all entities
      */
     long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
+
+    /**
+     * Retrieves a paginated list of audit logs across all entities,
+     * formatted as {@link RestAuditLogDto} for REST responses.
+     *
+     * @param page the page number (zero-based)
+     * @param size the number of records per page
+     * @return a list of audit logs in DTO format
+     */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+    List<RestAuditLogDto> getAllAuditLogs(int page, int size);
+
+    /**
+     * Returns the total count of audit log entries across all entities.
+     *
+     * @return the total number of audit log records
+     */
+    long getAuditLogsCount();
 }

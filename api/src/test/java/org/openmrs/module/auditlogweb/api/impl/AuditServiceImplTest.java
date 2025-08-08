@@ -17,8 +17,10 @@ import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -256,4 +258,53 @@ class AuditServiceImplTest {
         long count = auditService.countRevisionsAcrossEntities(1, null, null);
         assertEquals(25L, count);
     }
+
+    @Test
+    void shouldReturnAuditLogsAsDto_GivenValidAuditEntity() {
+        AuditEntity auditEntity = mock(AuditEntity.class);
+
+        TestEntity entityWithId = new TestEntity();
+        when(auditEntity.getEntity()).thenReturn(entityWithId);
+        when(auditEntity.getRevisionType()).thenReturn(org.hibernate.envers.RevisionType.ADD);
+        when(auditEntity.getChangedBy()).thenReturn(1);
+
+        OpenmrsRevisionEntity revisionEntity = mock(OpenmrsRevisionEntity.class);
+        Date now = new Date();
+        when(revisionEntity.getRevisionDate()).thenReturn(now);
+        when(auditEntity.getRevisionEntity()).thenReturn(revisionEntity);
+
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            User user = mock(User.class);
+            when(user.getUsername()).thenReturn("Super User");
+            when(user.getPerson()).thenReturn(null);
+            when(userService.getUser(1)).thenReturn(user);
+
+            context.when(Context::getUserService).thenReturn(userService);
+
+            when(auditDao.getAllRevisionsAcrossEntities(0, 10, null, null, null, "desc"))
+                    .thenReturn(Collections.singletonList(auditEntity));
+
+            List<RestAuditLogDto> result = auditService.getAllAuditLogs(0, 10);
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals("ADD", result.get(0).getEventType());
+            assertEquals("10", result.get(0).getEntityId());
+            assertEquals("Super User", result.get(0).getChangedBy());
+        }
+    }
+
+    @Test
+    void shouldReturnTotalAuditLogsCount() {
+        when(auditDao.countRevisionsAcrossEntities(null, null, null)).thenReturn(100L);
+        long count = auditService.getAuditLogsCount();
+        assertEquals(100L, count);
+    }
+
+    public static class TestEntity {
+        public Integer getId() {
+            return 10;
+        }
+    }
+
 }
