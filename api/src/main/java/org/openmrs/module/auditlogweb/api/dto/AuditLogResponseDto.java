@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AuditLogResponseDto {
     private int totalLogs;
-    private int page;
-    private int size;
+    private int currentPage;
+    private int totalPages;
     private List<RestAuditLogDto> logs;
 }
