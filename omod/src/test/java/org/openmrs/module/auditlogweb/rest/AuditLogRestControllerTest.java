@@ -36,8 +36,8 @@ class AuditLogRestControllerTest {
         AuditLogResponseDto response = controller.getAllAuditLogs(0, 20);
         assertNotNull(response);
         assertEquals(1, response.getTotalLogs());
-        assertEquals(0, response.getPage());
-        assertEquals(20, response.getSize());
+        assertEquals(0, response.getCurrentPage());
+        assertEquals(20, response.getTotalPages());
         assertEquals("ADD", response.getLogs().get(0).getEventType());
     }
 }
