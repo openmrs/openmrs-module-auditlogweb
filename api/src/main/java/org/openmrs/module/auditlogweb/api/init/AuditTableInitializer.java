@@ -48,6 +48,10 @@ public class AuditTableInitializer {
 
                     Set<String> entityNames = entityPersisters.keySet();
 
+                    // Get Envers sufix/prefix config values for audit table naming
+                    String tablePrefix = Context.getRuntimeProperties().getProperty("org.hibernate.envers.audit_table_prefix", "");
+                    String tableSuffix = Context.getRuntimeProperties().getProperty("org.hibernate.envers.audit_table_suffix", "_AUD");
+
                     for (String className : auditedClassNames) {
                         try {
                             if (!entityNames.contains(className)) {
@@ -56,9 +60,10 @@ public class AuditTableInitializer {
                             }
 
                             AbstractEntityPersister persister = entityPersisters.get(className);
-
                             String originalTable = persister.getTableName();
-                            String auditTable = originalTable + "_AUD";
+
+                            // Apply prefix and suffix to audit table name
+                            String auditTable = tablePrefix + originalTable + tableSuffix;
 
                             String auditTableEscaped = "`" + auditTable + "`";
                             String originalTableEscaped = "`" + originalTable + "`";
