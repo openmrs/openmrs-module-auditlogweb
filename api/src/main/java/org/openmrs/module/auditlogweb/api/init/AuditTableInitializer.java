@@ -36,10 +36,46 @@ public class AuditTableInitializer {
                 return;
             }
 
+            // Check if Envers is enabled
+            boolean enversEnabled = Boolean.parseBoolean(Context.getRuntimeProperties()
+                    .getProperty("hibernate.integration.envers.enabled", "false"));
+
+            if (!enversEnabled) {
+                log.info("Envers auditing is not enabled; skipping audit table initialization.");
+                return;
+            }
+
             SessionFactoryImplementor sfi = (SessionFactoryImplementor) sessionFactory;
 
             sessionFactory.openSession().doWork(connection -> {
                 try (Statement stmt = connection.createStatement()) {
+
+                    // Create the revision table if not present
+                    String revisionTable = Context.getRuntimeProperties()
+                            .getProperty("org.hibernate.envers.revision_table_name", "revision_entity");
+
+                    String checkRevTableSql = "SHOW TABLES LIKE '" + revisionTable + "'";
+                    try (ResultSet rs = stmt.executeQuery(checkRevTableSql)) {
+                        if (!rs.next()) {
+                            log.info("Revision table '{}' does not exist. Creating manually.", revisionTable);
+
+                            String createRevisionTableSql =
+                                    "CREATE TABLE `" + revisionTable + "` (" +
+                                            "id INT NOT NULL AUTO_INCREMENT, " +
+                                            "timestamp BIGINT NOT NULL, " +
+                                            "changedBy INT NULL, " +
+                                            "changedOn DATETIME(6) NULL, " +
+                                            "PRIMARY KEY (id)" +
+                                            ")";
+
+                            stmt.executeUpdate(createRevisionTableSql);
+                            log.info("Revision table '{}' created successfully.", revisionTable);
+                        } else {
+                            log.debug("Revision table '{}' already exists.", revisionTable);
+                        }
+                    }
+
+                    // Prepare to create _AUD tables for audited entities
                     List<String> auditedClassNames = UtilClass.findClassesWithAnnotation();
 
                     @SuppressWarnings("unchecked")
@@ -48,9 +84,11 @@ public class AuditTableInitializer {
 
                     Set<String> entityNames = entityPersisters.keySet();
 
-                    // Get Envers sufix/prefix config values for audit table naming
-                    String tablePrefix = Context.getRuntimeProperties().getProperty("org.hibernate.envers.audit_table_prefix", "");
-                    String tableSuffix = Context.getRuntimeProperties().getProperty("org.hibernate.envers.audit_table_suffix", "_AUD");
+                    // Get audit table prefix/suffix from OpenMRS runtime config
+                    String tablePrefix = Context.getRuntimeProperties()
+                            .getProperty("org.hibernate.envers.audit_table_prefix", "");
+                    String tableSuffix = Context.getRuntimeProperties()
+                            .getProperty("org.hibernate.envers.audit_table_suffix", "_AUD");
 
                     for (String className : auditedClassNames) {
                         try {
@@ -61,8 +99,6 @@ public class AuditTableInitializer {
 
                             AbstractEntityPersister persister = entityPersisters.get(className);
                             String originalTable = persister.getTableName();
-
-                            // Apply prefix and suffix to audit table name
                             String auditTable = tablePrefix + originalTable + tableSuffix;
 
                             String auditTableEscaped = "`" + auditTable + "`";
