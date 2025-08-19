@@ -215,21 +215,8 @@ public class AuditDao {
      * @return paginated list of {@link AuditEntity} records
      */
     public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
-        List<Class<?>> auditedClasses = getNonAbstractAuditedClasses();
-
-        List<AuditEntity<?>> combined = new ArrayList<>();
-        for (Class<?> clazz : auditedClasses) {
-            try {
-                List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(clazz, 0, Integer.MAX_VALUE, userId, startDate, endDate, sortOrder);
-                combined.addAll(revisions);
-            } catch (Exception ex) {
-                if (isMissingAuditTableException(ex)) {
-                    log.warn("Skipping class {} due to missing audit table or SQL error: {}", clazz.getName(), ex.getMessage());
-                } else {
-                    log.error("Unexpected error while fetching audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
-                }
-            }
-        }
+        List<Class<?>> classes = getNonAbstractAuditedClasses();
+        List<AuditEntity<?>> combined = fetchAcrossEntities(classes, userId, startDate, endDate, sortOrder, page, size);
 
         combined.sort((a, b) -> {
             int compare = b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate());
@@ -248,22 +235,7 @@ public class AuditDao {
      * @return total number of matching audit entries
      */
     public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate) {
-        return getNonAbstractAuditedClasses().stream().mapToLong(clazz -> {
-            try {
-                return countRevisionsWithFilters(clazz, userId, startDate, endDate);
-            } catch (NotAuditedException e) {
-                log.warn("Class is not audited by Envers, skipping: {}", clazz.getName());
-                return 0L;
-            } catch (Exception ex) {
-                if (isMissingAuditTableException(ex)) {
-                    log.warn("Skipping count for class {} due to missing audit table or SQL error: {}", clazz.getName(), ex.getMessage());
-                    return 0L;
-                } else {
-                    log.error("Unexpected error while counting audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
-                    return 0L;
-                }
-            }
-        }).sum();
+        return countAcrossEntities(getNonAbstractAuditedClasses(), userId, startDate, endDate);
     }
 
     /**
@@ -372,5 +344,66 @@ public class AuditDao {
                 })
                 .filter(clazz -> clazz != null && !Modifier.isAbstract(clazz.getModifiers()))
                 .collect(Collectors.toList());
+    }
+
+    // NEW overload with entityType filter
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder, String entityType) {
+        List<Class<?>> classes = getNonAbstractAuditedClasses().stream()
+                .filter(c -> entityType == null || entityType.isEmpty() || c.getSimpleName().equalsIgnoreCase(entityType))
+                .collect(Collectors.toList());
+
+        List<AuditEntity<?>> combined = fetchAcrossEntities(classes, userId, startDate, endDate, sortOrder, page, size);
+
+        combined.sort((a, b) -> {
+            int compare = b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate());
+            return "asc".equalsIgnoreCase(sortOrder) ? -compare : compare;
+        });
+
+        return UtilClass.paginate(combined, page, size);
+    }
+
+    // NEW overload for count with entityType
+    public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate, String entityType) {
+        List<Class<?>> classes = getNonAbstractAuditedClasses().stream()
+                .filter(c -> entityType == null || entityType.isEmpty() || c.getSimpleName().equalsIgnoreCase(entityType))
+                .collect(Collectors.toList());
+        return countAcrossEntities(classes, userId, startDate, endDate);
+    }
+
+    private List<AuditEntity<?>> fetchAcrossEntities(List<Class<?>> classes, Integer userId, Date startDate, Date endDate, String sortOrder, int page, int size) {
+        List<AuditEntity<?>> combined = new ArrayList<>();
+        for (Class<?> clazz : classes) {
+            try {
+                List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(
+                        clazz, page, size, userId, startDate, endDate, sortOrder);
+                combined.addAll(revisions);
+            } catch (Exception ex) {
+                if (isMissingAuditTableException(ex)) {
+                    log.warn("Skipping class {} due to missing audit table or SQL error: {}", clazz.getName(), ex.getMessage());
+                } else {
+                    log.error("Unexpected error while fetching audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
+                }
+            }
+        }
+        return combined;
+    }
+
+    private long countAcrossEntities(List<Class<?>> classes, Integer userId, Date startDate, Date endDate) {
+        return classes.stream().mapToLong(clazz -> {
+            try {
+                return countRevisionsWithFilters(clazz, userId, startDate, endDate);
+            } catch (NotAuditedException e) {
+                log.warn("Class not audited, skipping: {}", clazz.getName());
+                return 0L;
+            } catch (Exception ex) {
+                if (isMissingAuditTableException(ex)) {
+                    log.warn("Skipping count for class {} due to missing audit table: {}", clazz.getName(), ex.getMessage());
+                    return 0L;
+                } else {
+                    log.error("Unexpected error while counting audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
+                    return 0L;
+                }
+            }
+        }).sum();
     }
 }

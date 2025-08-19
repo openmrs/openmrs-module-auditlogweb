@@ -29,7 +29,7 @@ public class AuditLogDtoMapper {
     private final AuditService auditService;
 
     /**
-     * Constructs a new {@code AuditLogDtoMapper} with the given audit service.
+     * Constructs a new {@code AuditLogMapper} with the given audit service.
      *
      * @param auditService the audit service used to resolve usernames
      */
