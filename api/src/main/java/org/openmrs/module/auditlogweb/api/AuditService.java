@@ -177,6 +177,8 @@ public interface AuditService {
      * @return the total number of audit log records
      */
     long getAuditLogsCount();
+    
     List<RestAuditLogDto> getAllAuditLogs(int page, int size, Integer userId, Date startDate, Date endDate, String entityType);
+    
     long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
 }
