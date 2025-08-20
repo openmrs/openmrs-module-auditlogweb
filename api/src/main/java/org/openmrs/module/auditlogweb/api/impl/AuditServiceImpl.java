@@ -253,6 +253,20 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         return auditDao.countRevisionsAcrossEntities(null, null, null);
     }
 
+    /**
+     * Retrieves a paginated list of audit log entries, filtered by optional user ID, date range, and entity type.
+     * <p>
+     * If a start date is provided without an end date, the current date is used as the end date.
+     * If the end date is before the start date, an empty list is returned.
+     *
+     * @param page       the page number to retrieve (0-based)
+     * @param size       the number of entries per page
+     * @param userId     optional filter for the user ID who made the changes; can be null
+     * @param startDate  optional filter for the start of the date range; can be null
+     * @param endDate    optional filter for the end of the date range; can be null
+     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+     * @return a list of {@link RestAuditLogDto} representing the audit logs matching the given filters
+     */
     @Override
     public List<RestAuditLogDto> getAllAuditLogs(int page, int size, Integer userId, Date startDate, Date endDate, String entityType) {
         if (startDate != null && endDate == null) {
@@ -263,11 +277,21 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         }
 
         List<AuditEntity<?>> audits = auditDao.getAllRevisionsAcrossEntities(page, size, userId, startDate, endDate, "desc", entityType);
-
-        // Use the mapper instead of inline stream mapping
         return dtoMapper.toDtoList(audits);
     }
 
+    /**
+     * Counts the total number of audit log entries matching the given filters.
+     * <p>
+     * If a start date is provided without an end date, the current date is used as the end date.
+     * If the end date is before the start date, zero is returned.
+     *
+     * @param userId     optional filter for the user ID who made the changes; can be null
+     * @param startDate  optional filter for the start of the date range; can be null
+     * @param endDate    optional filter for the end of the date range; can be null
+     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+     * @return the total count of audit log entries matching the filters
+     */
     @Override
     public long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType) {
         if (startDate != null && endDate == null) {
@@ -277,51 +301,6 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
             return 0L;
         }
         return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate, entityType);
-    }
-    private String resolveChangedBy(Integer userId) {
-        if (userId == null) return "System";
-        try {
-            User user = Context.getUserService().getUser(userId);
-            if (user != null) {
-                return user.getPerson() != null
-                        ? user.getPerson().getPersonName().getFullName()
-                        : user.getUsername();
-            }
-            return "User ID: " + userId;
-        } catch (Exception e) {
-            return "User ID: " + userId;
-        }
-    }
-
-    private String formatRevisionDate(Object revisionEntity) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss z")
-                .withZone(ZoneId.of("GMT"));
-        try {
-            return formatter.format(((java.util.Date) revisionEntity.getClass()
-                    .getMethod("getRevisionDate").invoke(revisionEntity)).toInstant());
-        } catch (Exception e1) {
-            try {
-                long ts = (long) revisionEntity.getClass()
-                        .getMethod("getTimestamp").invoke(revisionEntity);
-                return formatter.format(Instant.ofEpochMilli(ts));
-            } catch (Exception e2) {
-                return "unknown";
-            }
-        }
-    }
-
-    private String getEntityIdAsString(Object entity) {
-        try {
-            Method getIdMethod = entity.getClass().getMethod("getId");
-            return String.valueOf(getIdMethod.invoke(entity));
-        } catch (Exception e) {
-            try {
-                Method getUuidMethod = entity.getClass().getMethod("getUuid");
-                return String.valueOf(getUuidMethod.invoke(entity));
-            } catch (Exception ex) {
-                return "unknown";
-            }
-        }
     }
 
 }

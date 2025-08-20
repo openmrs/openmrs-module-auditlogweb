@@ -30,6 +30,13 @@ import java.util.List;
 
 /**
  * REST controller for exposing audit log entries via the OpenMRS REST API.
+ * <p>
+ * Provides endpoints to fetch audit logs with optional filtering by user, date range,
+ * and entity type. Supports pagination.
+ * </p>
+ * <p>
+ * Security: Access to the logs is controlled by the {@link AuditLogConstants#VIEW_AUDIT_LOGS} privilege.
+ * </p>
  */
 @RestController
 @RequiredArgsConstructor
@@ -38,6 +45,18 @@ public class AuditLogRestController {
 
     private final AuditService auditService;
 
+    /**
+     * Retrieves a paginated list of audit log entries.
+     *
+     * @param page       the page index (0-based). Defaults to 0 if negative.
+     * @param size       the number of records per page. Defaults to 20 if zero or negative.
+     * @param userId     optional user ID to filter logs by a specific user
+     * @param username   optional username to filter logs by a specific user; overrides userId if provided
+     * @param startDate  optional start date in "dd/MM/yyyy" format
+     * @param endDate    optional end date in "dd/MM/yyyy" format; if missing and startDate is provided, defaults to today
+     * @param entityType optional entity type to filter logs by entity class name
+     * @return an {@link AuditLogResponseDto} containing the total logs, current page, total pages, and list of audit logs
+     */
     @GetMapping
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     public AuditLogResponseDto getAllAuditLogs(
@@ -71,6 +90,13 @@ public class AuditLogRestController {
         return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, logs);
     }
 
+    /**
+     * Parses a date string in "dd/MM/yyyy" format.
+     *
+     * @param dateStr the date string to parse
+     * @return the parsed {@link Date} object, or null if the input is null or empty
+     * @throws RuntimeException if the date string cannot be parsed
+     */
     private Date parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {

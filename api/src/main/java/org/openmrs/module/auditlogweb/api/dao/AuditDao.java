@@ -345,7 +345,20 @@ public class AuditDao {
                 .filter(clazz -> clazz != null && !Modifier.isAbstract(clazz.getModifiers()))
                 .collect(Collectors.toList());
     }
-
+    /**
+     * Retrieves audit log revisions across multiple entity types with optional filtering.
+     * Supports filtering by user ID, date range, sort order, and entity type.
+     * Results are sorted by revision date and paginated.
+     *
+     * @param page       page number (0-based)
+     * @param size       number of entries per page
+     * @param userId     optional user ID filter; can be null
+     * @param startDate  optional start date; can be null
+     * @param endDate    optional end date; can be null
+     * @param sortOrder  "asc" or "desc" for revision date sorting
+     * @param entityType optional entity type filter by class name; can be null
+     * @return a paginated list of {@link AuditEntity} objects
+     */
     // NEW overload with entityType filter
     public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder, String entityType) {
         List<Class<?>> classes = getNonAbstractAuditedClasses().stream()
@@ -362,6 +375,16 @@ public class AuditDao {
         return UtilClass.paginate(combined, page, size);
     }
 
+    /**
+     * Counts the total number of audit log revisions across multiple entity types
+     * with optional filtering by user ID, date range, and entity type.
+     *
+     * @param userId     optional user ID filter; can be null
+     * @param startDate  optional start date; can be null
+     * @param endDate    optional end date; can be null
+     * @param entityType optional entity type filter by class name; can be null
+     * @return total number of matching audit log revisions
+     */
     // NEW overload for count with entityType
     public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate, String entityType) {
         List<Class<?>> classes = getNonAbstractAuditedClasses().stream()
@@ -370,6 +393,18 @@ public class AuditDao {
         return countAcrossEntities(classes, userId, startDate, endDate);
     }
 
+    /**
+     * Helper method to fetch audit log revisions across multiple entity classes.
+     *
+     * @param classes    list of entity classes to fetch revisions from
+     * @param userId     optional user ID filter
+     * @param startDate  optional start date
+     * @param endDate    optional end date
+     * @param sortOrder  "asc" or "desc" sorting
+     * @param page       page number (0-based)
+     * @param size       number of entries per page
+     * @return list of audit entities for the given classes
+     */
     private List<AuditEntity<?>> fetchAcrossEntities(List<Class<?>> classes, Integer userId, Date startDate, Date endDate, String sortOrder, int page, int size) {
         List<AuditEntity<?>> combined = new ArrayList<>();
         for (Class<?> clazz : classes) {
@@ -388,6 +423,15 @@ public class AuditDao {
         return combined;
     }
 
+    /**
+     * Helper method to count audit log revisions across multiple entity classes.
+     *
+     * @param classes    list of entity classes to count revisions from
+     * @param userId     optional user ID filter
+     * @param startDate  optional start date
+     * @param endDate    optional end date
+     * @return total number of audit log revisions across the given classes
+     */
     private long countAcrossEntities(List<Class<?>> classes, Integer userId, Date startDate, Date endDate) {
         return classes.stream().mapToLong(clazz -> {
             try {

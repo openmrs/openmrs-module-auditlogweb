@@ -177,8 +177,29 @@ public interface AuditService {
      * @return the total number of audit log records
      */
     long getAuditLogsCount();
-    
+
+    /**
+     * Retrieves a paginated list of audit log entries.
+     *
+     * @param page       the page number to retrieve (0-based)
+     * @param size       the number of entries per page
+     * @param userId     optional filter for the user ID who made the changes; can be null
+     * @param startDate  optional filter for the start of the date range; can be null
+     * @param endDate    optional filter for the end of the date range; can be null
+     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+     * @return a list of {@link RestAuditLogDto} representing the audit logs for the given filters
+     */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     List<RestAuditLogDto> getAllAuditLogs(int page, int size, Integer userId, Date startDate, Date endDate, String entityType);
-    
+
+    /**
+     * Counts the total number of audit log entries matching the given filters.
+     *
+     * @param userId     optional filter for the user ID who made the changes; can be null
+     * @param startDate  optional filter for the start of the date range; can be null
+     * @param endDate    optional filter for the end of the date range; can be null
+     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+     * @return the total count of audit log entries matching the filters
+     */
     long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
 }
