@@ -21,6 +21,7 @@ import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
+import org.openmrs.module.auditlogweb.api.utils.AuditLogMapper;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -41,6 +43,8 @@ class AuditServiceImplTest {
     @Mock
     private AuditDao auditDao;
 
+    @Mock
+    private AuditLogMapper dtoMapper;
     @InjectMocks
     private AuditServiceImpl auditService;
 
@@ -264,6 +268,7 @@ class AuditServiceImplTest {
         AuditEntity auditEntity = mock(AuditEntity.class);
 
         TestEntity entityWithId = new TestEntity();
+        entityWithId.setId(3);
         when(auditEntity.getEntity()).thenReturn(entityWithId);
         when(auditEntity.getRevisionType()).thenReturn(org.hibernate.envers.RevisionType.ADD);
         when(auditEntity.getChangedBy()).thenReturn(1);
@@ -279,17 +284,26 @@ class AuditServiceImplTest {
             when(user.getUsername()).thenReturn("Super User");
             when(user.getPerson()).thenReturn(null);
             when(userService.getUser(1)).thenReturn(user);
-
             context.when(Context::getUserService).thenReturn(userService);
 
-            when(auditDao.getAllRevisionsAcrossEntities(0, 10, null, null, null, "desc"))
+            when(auditDao.getAllRevisionsAcrossEntities(0, 3, null, null, null, "desc"))
                     .thenReturn(Collections.singletonList(auditEntity));
 
+            RestAuditLogDto dto = new RestAuditLogDto(
+                    "Patient",
+                    "3",
+                    "ADD",
+                    "Super User",
+                    now.toString()
+            );
+            when(dtoMapper.toDtoList(anyList())).thenReturn(Collections.singletonList(dto));
+
             List<RestAuditLogDto> result = auditService.getAllAuditLogs(0, 10);
+
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals("ADD", result.get(0).getEventType());
-            assertEquals("10", result.get(0).getEntityId());
+            assertEquals("3", result.get(0).getEntityId());
             assertEquals("Super User", result.get(0).getChangedBy());
         }
     }
@@ -302,9 +316,11 @@ class AuditServiceImplTest {
     }
 
     public static class TestEntity {
+        private Integer id;
         public Integer getId() {
-            return 10;
+            return id;
         }
+        public void setId(Integer id) { this.id = id; }
     }
 
 }
