@@ -10,17 +10,18 @@ package org.openmrs.module.auditlogweb.rest;
 
 import org.junit.jupiter.api.Test;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
-import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 
 import java.util.Collections;
+import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.anyInt;
 
 class AuditLogRestControllerTest {
 
@@ -29,24 +30,29 @@ class AuditLogRestControllerTest {
         AuditService mockAuditService = mock(AuditService.class);
         AuditLogRestController controller = new AuditLogRestController(mockAuditService);
 
-        RestAuditLogDto sampleLog = new RestAuditLogDto();
-        sampleLog.setEventType("ADD");
-        sampleLog.setEntityId("3");
+        AuditLogDetailDTO sampleLog = new AuditLogDetailDTO();
+        sampleLog.setRevisionID(3);
+        sampleLog.setEntityType("Person");
+        sampleLog.setEventType("Record added");
         sampleLog.setChangedBy("Super User");
+        sampleLog.setChangedOn(new Date());
+        sampleLog.setChanges(Collections.emptyList());
 
-        when(mockAuditService.getAllAuditLogs(anyInt(), anyInt(), any(), any(), any(), any()))
+        when(mockAuditService.mapAuditEntitiesToDetails(any()))
                 .thenReturn(Collections.singletonList(sampleLog));
+        when(mockAuditService.getAllRevisionsAcrossEntities(anyInt(), anyInt(), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
         when(mockAuditService.getAuditLogsCount(any(), any(), any(), any()))
                 .thenReturn(1L);
 
-        AuditLogResponseDto response = controller.getAllAuditLogs(0, 20, null, null, null, null, null);
+        AuditLogResponseDto response = controller.getAuditLogs(0, 20, null, null, null, null, null);
 
         assertNotNull(response);
         assertEquals(1, response.getTotalLogs());
         assertEquals(0, response.getCurrentPage());
-        assertEquals(1, response.getTotalPages()); // totalPages = ceil(1 / 20) = 1
-        assertEquals("ADD", response.getLogs().get(0).getEventType());
-        assertEquals("3", response.getLogs().get(0).getEntityId());
+        assertEquals(1, response.getTotalPages());
+        assertEquals("Record added", response.getLogs().get(0).getEventType());
+        assertEquals("Person", response.getLogs().get(0).getEntityType());
         assertEquals("Super User", response.getLogs().get(0).getChangedBy());
     }
 }

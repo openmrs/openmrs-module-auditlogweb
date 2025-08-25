@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb.api;
 
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
@@ -161,36 +162,11 @@ public interface AuditService {
     long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
 
     /**
-     * Retrieves a paginated list of audit logs across all entities,
-     * formatted as {@link RestAuditLogDto} for REST responses.
-     *
-     * @param page the page number (zero-based)
-     * @param size the number of records per page
-     * @return a list of audit logs in DTO format
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<RestAuditLogDto> getAllAuditLogs(int page, int size);
-
-    /**
      * Returns the total count of audit log entries across all entities.
      *
      * @return the total number of audit log records
      */
     long getAuditLogsCount();
-
-    /**
-     * Retrieves a paginated list of audit log entries.
-     *
-     * @param page       the page number to retrieve (0-based)
-     * @param size       the number of entries per page
-     * @param userId     optional filter for the user ID who made the changes; can be null
-     * @param startDate  optional filter for the start of the date range; can be null
-     * @param endDate    optional filter for the end of the date range; can be null
-     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
-     * @return a list of {@link RestAuditLogDto} representing the audit logs for the given filters
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<RestAuditLogDto> getAllAuditLogs(int page, int size, Integer userId, Date startDate, Date endDate, String entityType);
 
     /**
      * Counts the total number of audit log entries matching the given filters.
@@ -202,4 +178,6 @@ public interface AuditService {
      * @return the total count of audit log entries matching the filters
      */
     long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
+
+    List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities);
 }

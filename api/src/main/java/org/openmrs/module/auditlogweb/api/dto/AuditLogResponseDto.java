@@ -19,5 +19,5 @@ public class AuditLogResponseDto {
     private int totalLogs;
     private int currentPage;
     private int totalPages;
-    private List<RestAuditLogDto> logs;
+    private List<AuditLogDetailDTO> logs;
 }

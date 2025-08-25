@@ -13,6 +13,7 @@ import org.openmrs.User;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
@@ -27,6 +28,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for exposing audit log entries via the OpenMRS REST API.
@@ -46,20 +48,23 @@ public class AuditLogRestController {
     private final AuditService auditService;
 
     /**
-     * Retrieves a paginated list of audit log entries.
-     *
-     * @param page       the page index (0-based). Defaults to 0 if negative.
-     * @param size       the number of records per page. Defaults to 20 if zero or negative.
-     * @param userId     optional user ID to filter logs by a specific user
-     * @param username   optional username to filter logs by a specific user; overrides userId if provided
-     * @param startDate  optional start date in "dd/MM/yyyy" format
-     * @param endDate    optional end date in "dd/MM/yyyy" format; if missing and startDate is provided, defaults to today
-     * @param entityType optional entity type to filter logs by entity class name
-     * @return an {@link AuditLogResponseDto} containing the total logs, current page, total pages, and list of audit logs
+     * REST controller for exposing audit log entries via the OpenMRS REST API.
+     * <p>
+     * Provides endpoints to fetch audit logs with optional filtering by:
+     * - user ID or username
+     * - date range (startDate/endDate in "dd/MM/yyyy" format)
+     * - entity type
+     * </p>
+     * <p>
+     * Supports pagination via 'page' (0-based) and 'size' parameters.
+     * </p>
+     * <p>
+     * Security: Access to the logs is controlled by the {@link AuditLogConstants#VIEW_AUDIT_LOGS} privilege.
+     * </p>
      */
     @GetMapping
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    public AuditLogResponseDto getAllAuditLogs(
+    public AuditLogResponseDto getAuditLogs(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Integer userId,
@@ -71,23 +76,27 @@ public class AuditLogRestController {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
 
-        Integer effectiveUserId = userId;
-        if (effectiveUserId == null && username != null && !username.isEmpty()) {
-            User u = Context.getUserService().getUserByUsername(username);
-            if (u == null) {
-                return new AuditLogResponseDto(0, page, 0, Collections.emptyList());
-            }
-            effectiveUserId = u.getUserId();
-        }
+        Integer effectiveUserId = resolveUserId(userId, username);
         Date start = parseDate(startDate);
         Date end = parseDate(endDate);
-        List<RestAuditLogDto> logs =
-                auditService.getAllAuditLogs(page, size, effectiveUserId, start, end, entityType);
+
+        boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
+
+        List<AuditLogDetailDTO> auditDetails = auditService.mapAuditEntitiesToDetails(
+                auditService.getAllRevisionsAcrossEntities(page, size, effectiveUserId, start, end, "desc")
+                        .stream()
+                        .filter(a -> entityType == null || a.getEntity().getClass().getSimpleName().equals(entityType))
+                        .collect(Collectors.toList())
+        );
+
+        if (!fullDetails) {
+            auditDetails.forEach(d -> d.setChanges(Collections.emptyList()));
+        }
 
         long total = auditService.getAuditLogsCount(effectiveUserId, start, end, entityType);
         int totalPages = (int) Math.ceil(total / (double) size);
 
-        return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, logs);
+        return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
     }
 
     /**
@@ -104,5 +113,14 @@ public class AuditLogRestController {
         } catch (ParseException e) {
             throw  new RuntimeException(e);
         }
+    }
+
+    private Integer resolveUserId(Integer userId, String username) {
+        if (userId != null) return userId;
+        if (username != null && !username.isEmpty()) {
+            User u = Context.getUserService().getUserByUsername(username);
+            if (u != null) return u.getUserId();
+        }
+        return null;
     }
 }
