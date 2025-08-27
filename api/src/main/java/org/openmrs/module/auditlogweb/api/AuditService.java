@@ -179,5 +179,11 @@ public interface AuditService {
      */
     long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
 
+    /**
+     * Maps a list of {@link AuditEntity} objects to a list of {@link AuditLogDetailDTO} objects.
+     *
+     * @param auditEntities the list of audit entities to be mapped
+     * @return a list of audit log detail DTOs containing structured information from the audit entities
+     */
     List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities);
 }

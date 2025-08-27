@@ -205,7 +205,7 @@ public class UtilClass {
      * @param entity the entity object
      * @return entity ID as String
      */
-    public  static String getEntityIdAsString(Object entity) {
+    public static String getEntityIdAsString(Object entity) {
         try {
             return String.valueOf(entity.getClass().getMethod("getId").invoke(entity));
         } catch (Exception e) {
