@@ -39,6 +39,10 @@ import java.util.stream.Collectors;
  * <p>
  * Security: Access to the logs is controlled by the {@link AuditLogConstants#VIEW_AUDIT_LOGS} privilege.
  * </p>
+ *
+ * <p>
+ * Compatible with OpenMRS Platform 2.7.0 and later.
+ * </p>
  */
 @RestController
 @RequiredArgsConstructor
