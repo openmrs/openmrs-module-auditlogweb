@@ -319,6 +319,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                 })
                 .collect(Collectors.toList());
     }
+    
     private AuditLogDetailDTO buildAuditLogDetailDTO(
             AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields) {
 
