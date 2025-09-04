@@ -10,6 +10,8 @@ package org.openmrs.module.auditlogweb.api;
 
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
 import java.util.List;
@@ -158,4 +160,30 @@ public interface AuditService {
      * @return the count of matching revisions across all entities
      */
     long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
+
+    /**
+     * Returns the total count of audit log entries across all entities.
+     *
+     * @return the total number of audit log records
+     */
+    long getAuditLogsCount();
+
+    /**
+     * Counts the total number of audit log entries matching the given filters.
+     *
+     * @param userId     optional filter for the user ID who made the changes; can be null
+     * @param startDate  optional filter for the start of the date range; can be null
+     * @param endDate    optional filter for the end of the date range; can be null
+     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+     * @return the total count of audit log entries matching the filters
+     */
+    long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
+
+    /**
+     * Maps a list of {@link AuditEntity} objects to a list of {@link AuditLogDetailDTO} objects.
+     *
+     * @param auditEntities the list of audit entities to be mapped
+     * @return a list of audit log detail DTOs containing structured information from the audit entities
+     */
+    List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities);
 }

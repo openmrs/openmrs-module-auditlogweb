@@ -17,8 +17,10 @@ import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -256,4 +258,20 @@ class AuditServiceImplTest {
         long count = auditService.countRevisionsAcrossEntities(1, null, null);
         assertEquals(25L, count);
     }
+
+    @Test
+    void shouldReturnTotalAuditLogsCount() {
+        when(auditDao.countRevisionsAcrossEntities(null, null, null)).thenReturn(100L);
+        long count = auditService.getAuditLogsCount();
+        assertEquals(100L, count);
+    }
+
+    public static class TestEntity {
+        private Integer id;
+        public Integer getId() {
+            return id;
+        }
+        public void setId(Integer id) { this.id = id; }
+    }
+
 }
