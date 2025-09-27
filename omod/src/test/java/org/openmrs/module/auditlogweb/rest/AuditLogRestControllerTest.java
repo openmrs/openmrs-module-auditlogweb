@@ -8,51 +8,71 @@
  */
 package org.openmrs.module.auditlogweb.rest;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
-import java.util.Date;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.anyInt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class AuditLogRestControllerTest {
+@ExtendWith(MockitoExtension.class)
+@ContextConfiguration(classes = {AuditLogRestController.class})
+public class AuditLogRestControllerTest {
+    private MockMvc mockMvc;
+
+    @Mock
+    private AuditService auditService;
+
+    @InjectMocks
+    private AuditLogRestController auditLogRestController;
+
+    @BeforeEach
+    public void setup() {
+        mockMvc = MockMvcBuilders.standaloneSetup(auditLogRestController).build();
+    }
 
     @Test
-    void shouldReturnAuditLogsResponseDto() {
-        AuditService mockAuditService = mock(AuditService.class);
-        AuditLogRestController controller = new AuditLogRestController(mockAuditService);
+    public void shouldReturnAuditLogsSuccessfully() throws Exception {
+        AuditLogDetailDTO detail = new AuditLogDetailDTO();
+        detail.setRevisionID(7);
+        detail.setChanges(Collections.emptyList());
 
-        AuditLogDetailDTO sampleLog = new AuditLogDetailDTO();
-        sampleLog.setRevisionID(3);
-        sampleLog.setEntityType("Person");
-        sampleLog.setEventType("Record added");
-        sampleLog.setChangedBy("Super User");
-        sampleLog.setChangedOn(new Date());
-        sampleLog.setChanges(Collections.emptyList());
+        AuditLogResponseDto responseDto = new AuditLogResponseDto(1, 0, 1, Collections.singletonList(detail));
 
-        when(mockAuditService.mapAuditEntitiesToDetails(any()))
-                .thenReturn(Collections.singletonList(sampleLog));
-        when(mockAuditService.getAllRevisionsAcrossEntities(anyInt(), anyInt(), any(), any(), any(), any()))
+        // Mocking the service behavior
+        when(auditService.getAllRevisionsAcrossEntities(anyInt(), anyInt(), any(), any(), any(), any()))
                 .thenReturn(Collections.emptyList());
-        when(mockAuditService.getAuditLogsCount(any(), any(), any(), any()))
+
+        when(auditService.mapAuditEntitiesToDetails(any()))
+                .thenReturn(Collections.singletonList(detail));
+
+        when(auditService.getAuditLogsCount(any(), any(), any(), any()))
                 .thenReturn(1L);
 
-        AuditLogResponseDto response = controller.getAuditLogs(0, 20, null, null, null, null, null);
-
-        assertNotNull(response);
-        assertEquals(1, response.getTotalLogs());
-        assertEquals(0, response.getCurrentPage());
-        assertEquals(1, response.getTotalPages());
-        assertEquals("Record added", response.getLogs().get(0).getEventType());
-        assertEquals("Person", response.getLogs().get(0).getEntityType());
-        assertEquals("Super User", response.getLogs().get(0).getChangedBy());
+        // Perform GET request to the controller
+        mockMvc.perform(get("/rest/v1/auditlogs")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalLogs", is(1)))
+                .andExpect(jsonPath("$.currentPage", is(0)))
+                .andExpect(jsonPath("$.totalPages", is(1)))
+                .andExpect(jsonPath("$.logs", hasSize(1)));
     }
 }
