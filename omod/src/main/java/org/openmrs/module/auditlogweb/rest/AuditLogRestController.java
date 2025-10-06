@@ -67,7 +67,6 @@ public class AuditLogRestController {
      * </p>
      */
     @GetMapping
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     public AuditLogResponseDto getAuditLogs(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
