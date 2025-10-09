@@ -11,7 +11,6 @@ package org.openmrs.module.auditlogweb.api;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
-import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
 import java.util.List;
@@ -186,4 +185,31 @@ public interface AuditService {
      * @return a list of audit log detail DTOs containing structured information from the audit entities
      */
     List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities);
+
+    /**
+     * Retrieves a paginated list of audit logs filtered by user, date range, and entity type.
+     *
+     * @param page        zero-based page index
+     * @param size        number of records per page
+     * @param userId      optional user ID filter; can be null
+     * @param startDate   optional start date filter; can be null
+     * @param endDate     optional end date filter; can be null
+     * @param entityType  optional entity type filter (e.g., "Patient"); can be null
+     * @param sortOrder   optional sort order ("asc" or "desc"); can be null
+     * @return list of matching {@link AuditEntity} entries
+     */
+    List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
+                                                                     Date startDate, Date endDate, String entityType, String sortOrder);
+
+    /**
+     * Counts audit logs filtered by user, date range, and entity type.
+     *
+     * @param userId     optional user ID filter; can be null
+     * @param startDate  optional start date filter; can be null
+     * @param endDate    optional end date filter; can be null
+     * @param entityType optional entity type filter; can be null
+     * @return count of matching audit log entries
+     */
+    long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType);
+
 }

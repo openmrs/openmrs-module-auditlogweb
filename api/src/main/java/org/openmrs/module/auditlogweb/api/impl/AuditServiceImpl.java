@@ -256,7 +256,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         if (startDate != null && endDate == null) {
             endDate = new Date();
         }
-        if (startDate != null && endDate.before(startDate)) {
+        if (startDate != null && endDate != null && endDate.before(startDate)) {
             return 0L;
         }
         return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate, entityType);
@@ -284,6 +284,24 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
         return dtoList;
     }
+
+    /**
+     * Fetches paginated audit logs across entities with filtering.
+     */
+    @Override
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
+                                                                            Date startDate, Date endDate, String entityType, String sortOrder) {
+        return auditDao.getAllRevisionsAcrossEntitiesWithEntityType(page, size, userId, startDate, endDate, entityType, sortOrder);
+    }
+
+    /**
+     * Counts audit logs across entities with filtering.
+     */
+    @Override
+    public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType) {
+        return auditDao.countRevisionsAcrossEntitiesWithEntityType(userId, startDate, endDate, entityType);
+    }
+
     private Object fetchPreviousRevision(AuditEntity<?> entity, Object currentEntity) {
         if (entity.getRevisionEntity().getId() <= 1) {
             return null;

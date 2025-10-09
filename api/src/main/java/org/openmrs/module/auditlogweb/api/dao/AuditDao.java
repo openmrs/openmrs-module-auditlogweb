@@ -216,14 +216,7 @@ public class AuditDao {
      */
     public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
         List<Class<?>> classes = getNonAbstractAuditedClasses();
-        List<AuditEntity<?>> combined = fetchAcrossEntities(classes, userId, startDate, endDate, sortOrder, page, size);
-
-        combined.sort((a, b) -> {
-            int compare = b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate());
-            return "asc".equalsIgnoreCase(sortOrder) ? -compare : compare;
-        });
-
-        return UtilClass.paginate(combined, page, size);
+        return getAuditEntities(page, size, userId, startDate, endDate, sortOrder, classes);
     }
 
     /**
@@ -389,5 +382,67 @@ public class AuditDao {
                 }
             }
         }).sum();
+    }
+    /**
+     * Retrieves a paginated list of audit entries across entities,
+     * with optional filtering by user, date range, and entity type.
+     * Filtering by entity type is handled efficiently at the DAO level.
+     *
+     * @param page        zero-based page index
+     * @param size        number of records per page
+     * @param userId      optional user ID filter; can be null
+     * @param startDate   optional start date filter; can be null
+     * @param endDate     optional end date filter; can be null
+     * @param entityType  optional entity type name (e.g., "Patient"); can be null
+     * @param sortOrder   sort order by revision date ("asc" or "desc"); can be null
+     * @return list of matching {@link AuditEntity} entries
+     */
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
+                                                                            Date startDate, Date endDate, String entityType, String sortOrder) {
+
+        List<Class<?>> classes = getNonAbstractAuditedClasses();
+
+        // Filter classes by entityType if provided
+        if (entityType != null && !entityType.isEmpty()) {
+            classes = classes.stream()
+                    .filter(c -> c.getSimpleName().equalsIgnoreCase(entityType))
+                    .collect(Collectors.toList());
+        }
+
+        return getAuditEntities(page, size, userId, startDate, endDate, sortOrder, classes);
+    }
+
+    private List<AuditEntity<?>> getAuditEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder, List<Class<?>> classes) {
+        List<AuditEntity<?>> combined = fetchAcrossEntities(classes, userId, startDate, endDate, sortOrder, page, size);
+
+        combined.sort((a, b) -> {
+            int compare = b.getRevisionEntity().getRevisionDate().compareTo(a.getRevisionEntity().getRevisionDate());
+            return "asc".equalsIgnoreCase(sortOrder) ? -compare : compare;
+        });
+
+        return UtilClass.paginate(combined, page, size);
+    }
+
+    /**
+     * Counts audit entries across entities, with optional filtering by user, date range, and entity type.
+     * Filtering by entity type is performed at the DAO level for better performance.
+     *
+     * @param userId     optional user ID filter; can be null
+     * @param startDate  optional start date filter; can be null
+     * @param endDate    optional end date filter; can be null
+     * @param entityType optional entity type name (e.g., "Order"); can be null
+     * @return total count of matching audit entries
+     */
+    public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType) {
+        List<Class<?>> classes = getNonAbstractAuditedClasses();
+
+        // Filter classes by entityType if provided
+        if (entityType != null && !entityType.isEmpty()) {
+            classes = classes.stream()
+                    .filter(c -> c.getSimpleName().equalsIgnoreCase(entityType))
+                    .collect(Collectors.toList());
+        }
+
+        return countAcrossEntities(classes, userId, startDate, endDate);
     }
 }

@@ -10,25 +10,24 @@ package org.openmrs.module.auditlogweb.rest;
 
 import lombok.RequiredArgsConstructor;
 import org.openmrs.User;
-import org.openmrs.annotation.Authorized;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
-import org.openmrs.module.auditlogweb.api.dto.RestAuditLogDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * REST controller for exposing audit log entries via the OpenMRS REST API.
@@ -52,19 +51,18 @@ public class AuditLogRestController {
     private final AuditService auditService;
 
     /**
-     * REST controller for exposing audit log entries via the OpenMRS REST API.
-     * <p>
-     * Provides endpoints to fetch audit logs with optional filtering by:
-     * - user ID or username
-     * - date range (startDate/endDate in "dd/MM/yyyy" format)
-     * - entity type
-     * </p>
-     * <p>
-     * Supports pagination via 'page' (0-based) and 'size' parameters.
-     * </p>
-     * <p>
-     * Security: Access to the logs is controlled by the {@link AuditLogConstants#VIEW_AUDIT_LOGS} privilege.
-     * </p>
+     * Retrieves paginated audit log entries with optional filters:
+     * user ID, username, date range, and entity type.
+     *
+     * @param page       zero-based page index
+     * @param size       number of results per page
+     * @param userId     optional user ID
+     * @param username   optional username (resolved to user ID)
+     * @param startDate  optional start date ("dd/MM/yyyy")
+     * @param endDate    optional end date ("dd/MM/yyyy")
+     * @param entityType optional entity type filter
+     * @return a structured response containing audit log entries
+     * @throws ResponseStatusException if input is invalid
      */
     @GetMapping
     public AuditLogResponseDto getAuditLogs(
@@ -76,32 +74,33 @@ public class AuditLogRestController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String entityType
     ) {
-        if (page < 0) page = 0;
-        if (size <= 0) size = 20;
+        try {
+            if (page < 0) page = 0;
+            if (size <= 0) size = 20;
 
-        Integer effectiveUserId = resolveUserId(userId, username);
-        Date start = parseDate(startDate);
-        Date end = parseDate(endDate);
+            Integer effectiveUserId = resolveUserId(userId, username);
+            Date start = parseDate(startDate);
+            Date end = parseDate(endDate);
 
-        boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
+            boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
 
-        List<AuditLogDetailDTO> auditDetails = auditService.mapAuditEntitiesToDetails(
-                auditService.getAllRevisionsAcrossEntities(page, size, effectiveUserId, start, end, "desc")
-                        .stream()
-                        .filter(a -> entityType == null || a.getEntity().getClass().getSimpleName().equals(entityType))
-                        .collect(Collectors.toList())
-        );
+            List<AuditLogDetailDTO> auditDetails = auditService.mapAuditEntitiesToDetails(
+                    auditService.getAllRevisionsAcrossEntitiesWithEntityType(page, size, effectiveUserId, start, end, entityType, "desc")
+            );
 
-        if (!fullDetails) {
-            auditDetails.forEach(d -> d.setChanges(Collections.emptyList()));
+            if (!fullDetails) {
+                auditDetails.forEach(d -> d.setChanges(Collections.emptyList()));
+            }
+
+            long total = auditService.countRevisionsAcrossEntitiesWithEntityType(effectiveUserId, start, end, entityType);
+            int totalPages = (int) Math.ceil(total / (double) size);
+
+            return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
+
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
-
-        long total = auditService.getAuditLogsCount(effectiveUserId, start, end, entityType);
-        int totalPages = (int) Math.ceil(total / (double) size);
-
-        return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
     }
-
     /**
      * Parses a date string in "dd/MM/yyyy" format.
      *
@@ -112,9 +111,12 @@ public class AuditLogRestController {
     private Date parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {
-            return new SimpleDateFormat("dd/MM/yyyy").parse(dateStr);
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            sdf.setLenient(false);
+            return sdf.parse(dateStr);
         } catch (ParseException e) {
-            throw  new RuntimeException(e);
+            throw new IllegalArgumentException(
+                    "Invalid date format: '" + dateStr + "'. Expected format: DD/MM/YYYY");
         }
     }
 

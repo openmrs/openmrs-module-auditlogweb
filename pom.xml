@@ -32,6 +32,7 @@
 		<mockitoInlineVersion>4.8.0</mockitoInlineVersion>
 		<byteBuddyVersion>1.17.6</byteBuddyVersion>
 		<webservicesRestVersion>2.49.0</webservicesRestVersion>
+		<jsonPathVersion>2.9.0</jsonPathVersion>
 	</properties>
 
 	<repositories>
