@@ -74,32 +74,27 @@ public class AuditLogRestController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String entityType
     ) {
-        try {
-            if (page < 0) page = 0;
-            if (size <= 0) size = 20;
+        if (page < 0) page = 0;
+        if (size <= 0) size = 20;
 
-            Integer effectiveUserId = resolveUserId(userId, username);
-            Date start = parseDate(startDate);
-            Date end = parseDate(endDate);
+        Integer effectiveUserId = resolveUserId(userId, username);
+        Date start = parseDate(startDate);
+        Date end = parseDate(endDate);
 
-            boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
+        boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
 
-            List<AuditLogDetailDTO> auditDetails = auditService.mapAuditEntitiesToDetails(
-                    auditService.getAllRevisionsAcrossEntitiesWithEntityType(page, size, effectiveUserId, start, end, entityType, "desc")
-            );
+        List<AuditLogDetailDTO> auditDetails = auditService.mapAuditEntitiesToDetails(
+                auditService.getAllRevisionsAcrossEntitiesWithEntityType(page, size, effectiveUserId, start, end, entityType, "desc")
+        );
 
-            if (!fullDetails) {
-                auditDetails.forEach(d -> d.setChanges(Collections.emptyList()));
-            }
-
-            long total = auditService.countRevisionsAcrossEntitiesWithEntityType(effectiveUserId, start, end, entityType);
-            int totalPages = (int) Math.ceil(total / (double) size);
-
-            return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
-
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        if (!fullDetails) {
+            auditDetails.forEach(d -> d.setChanges(Collections.emptyList()));
         }
+
+        long total = auditService.countRevisionsAcrossEntitiesWithEntityType(effectiveUserId, start, end, entityType);
+        int totalPages = (int) Math.ceil(total / (double) size);
+
+        return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
     }
     /**
      * Parses a date string in "dd/MM/yyyy" format.
@@ -115,8 +110,8 @@ public class AuditLogRestController {
             sdf.setLenient(false);
             return sdf.parse(dateStr);
         } catch (ParseException e) {
-            throw new IllegalArgumentException(
-                    "Invalid date format: '" + dateStr + "'. Expected format: DD/MM/YYYY");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
         }
     }
 

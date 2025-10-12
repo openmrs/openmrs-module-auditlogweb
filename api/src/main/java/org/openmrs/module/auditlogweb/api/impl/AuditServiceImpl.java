@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -291,7 +292,26 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     @Override
     public List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
                                                                             Date startDate, Date endDate, String entityType, String sortOrder) {
-        return auditDao.getAllRevisionsAcrossEntitiesWithEntityType(page, size, userId, startDate, endDate, entityType, sortOrder);
+        if (entityType != null && !entityType.trim().isEmpty()) {
+            boolean isValid = UtilClass.findClassesWithAnnotation().stream()
+                    .map(className -> {
+                        try {
+                            return Class.forName(className);
+                        } catch (ClassNotFoundException e) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .anyMatch(clazz -> clazz.getSimpleName().equalsIgnoreCase(entityType));
+
+            if (!isValid) {
+                throw new IllegalArgumentException("Invalid entityType: " + entityType);
+            }
+        }
+
+        return auditDao.getAllRevisionsAcrossEntitiesWithEntityType(
+                page, size, userId, startDate, endDate, entityType, sortOrder
+        );
     }
 
     /**
@@ -301,7 +321,6 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType) {
         return auditDao.countRevisionsAcrossEntitiesWithEntityType(userId, startDate, endDate, entityType);
     }
-
     private Object fetchPreviousRevision(AuditEntity<?> entity, Object currentEntity) {
         if (entity.getRevisionEntity().getId() <= 1) {
             return null;

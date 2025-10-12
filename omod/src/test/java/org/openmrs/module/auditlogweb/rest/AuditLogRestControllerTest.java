@@ -18,6 +18,7 @@ import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.rest.exceptions.RestExceptionHandler;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -47,12 +48,13 @@ public class AuditLogRestControllerTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(auditLogRestController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(auditLogRestController)
+                .setControllerAdvice(new RestExceptionHandler())
+                .build();
     }
 
     @Test
     public void shouldUseEfficientEntityTypeFiltering() throws Exception {
-        // Given
         when(auditService.getAllRevisionsAcrossEntitiesWithEntityType(0, 20, null, null, null, "Patient", "desc"))
                 .thenReturn(Collections.emptyList());
         when(auditService.mapAuditEntitiesToDetails(any()))
@@ -70,9 +72,10 @@ public class AuditLogRestControllerTest {
     @Test
     public void shouldReturnBadRequestForInvalidDate() throws Exception {
         mockMvc.perform(get("/rest/v1/auditlogs")
-                        .param("startDate", "not-a-date"))
+                        .param("startDate", "2025/01/01"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$").doesNotExist());
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", is("Invalid date format: '2025/01/01'. Expected format: DD/MM/YYYY")));
     }
 
     @Test
@@ -116,7 +119,6 @@ public class AuditLogRestControllerTest {
         try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
             UserService userService = mock(UserService.class);
             User mockUser = new User(1);
-
             contextMock.when(() -> Context.getUserService()).thenReturn(userService);
             when(userService.getUserByUsername("testuser")).thenReturn(mockUser);
 
@@ -151,5 +153,33 @@ public class AuditLogRestControllerTest {
                 .andExpect(status().isOk());
 
         verify(auditService).getAllRevisionsAcrossEntitiesWithEntityType(0, 20, null, null, null, null, "desc");
+    }
+
+    @Test
+    public void shouldHandleEndDateOnlyWithoutError() throws Exception {
+        when(auditService.getAllRevisionsAcrossEntitiesWithEntityType(anyInt(), anyInt(), any(), any(), any(), any(), anyString()))
+                .thenReturn(Collections.emptyList());
+        when(auditService.mapAuditEntitiesToDetails(any()))
+                .thenReturn(Collections.emptyList());
+        when(auditService.countRevisionsAcrossEntitiesWithEntityType(any(), any(), any(), any()))
+                .thenReturn(0L);
+
+        mockMvc.perform(get("/rest/v1/auditlogs")
+                        .param("endDate", "01/01/2024"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void shouldDefaultTo20WhenSizeIsZeroOrNegative() throws Exception {
+        when(auditService.getAllRevisionsAcrossEntitiesWithEntityType(0, 20, null, null, null, null, "desc"))
+                .thenReturn(Collections.emptyList());
+        when(auditService.mapAuditEntitiesToDetails(any()))
+                .thenReturn(Collections.emptyList());
+        when(auditService.countRevisionsAcrossEntitiesWithEntityType(any(), any(), any(), any()))
+                .thenReturn(0L);
+
+        mockMvc.perform(get("/rest/v1/auditlogs")
+                        .param("size", "-10"))
+                .andExpect(status().isOk());
     }
 }
