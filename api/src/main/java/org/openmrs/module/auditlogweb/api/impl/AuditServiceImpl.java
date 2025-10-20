@@ -18,14 +18,20 @@ import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.utils.AuditTypeMapper;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.Objects;
 import java.util.stream.Collectors;
+
 
 /**
  * Default implementation of the {@link AuditService} interface.
@@ -69,15 +75,21 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getRevisionById(Class<T> entityClass, Object entityId, int revisionId) {
-        if (entityId instanceof Integer) {
-            return auditDao.getRevisionById(entityClass, (Integer) entityId, revisionId);
-        } else if (entityId instanceof String) {
-            // Handle string IDs for Role and GlobalProperty
-            if (Role.class.isAssignableFrom(entityClass)) {
-                return (T) auditDao.getRoleRevisionById((String) entityId, revisionId);
-            } else if (GlobalProperty.class.isAssignableFrom(entityClass)) {
-                return (T) auditDao.getGlobalPropertyRevisionById((String) entityId, revisionId);
+        try {
+            if (entityId instanceof Integer) {
+                return auditDao.getRevisionById(entityClass, entityId, revisionId);
+            } else if (entityId instanceof String) {
+                if (Role.class.isAssignableFrom(entityClass)) {
+                    return (T) auditDao.getRoleRevisionById((String) entityId, revisionId);
+                } else if (GlobalProperty.class.isAssignableFrom(entityClass)) {
+                    return (T) auditDao.getGlobalPropertyRevisionById((String) entityId, revisionId);
+                } else {
+                    return null;
+                }
             }
+        } catch (org.hibernate.ObjectNotFoundException e) {
+            log.warn("Revision not found for entity [{}] with ID [{}]", entityClass.getSimpleName(), entityId);
+            return null;
         }
         throw new IllegalArgumentException("Unsupported ID type for entity: " + entityClass.getName());
     }
@@ -214,6 +226,152 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     @Override
     public long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate) {
         return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate);
+    }
+
+    /**
+     * Returns the total count of audit log entries across all audited entities.
+     *
+     * <p>This is used primarily for pagination metadata in REST responses.
+     *
+     * @return the total number of audit log entries
+     */
+    @Override
+    public long getAuditLogsCount() {
+        return auditDao.countRevisionsAcrossEntities(null, null, null);
+    }
+
+    /**
+     * Counts the total number of audit log entries matching the given filters.
+     * <p>
+     * If a start date is provided without an end date, the current date is used as the end date.
+     * If the end date is before the start date, zero is returned.
+     *
+     * @param userId     optional filter for the user ID who made the changes; can be null
+     * @param startDate  optional filter for the start of the date range; can be null
+     * @param endDate    optional filter for the end of the date range; can be null
+     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+     * @return the total count of audit log entries matching the filters
+     */
+    @Override
+    public long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType) {
+        if (startDate != null && endDate == null) {
+            endDate = new Date();
+        }
+        if (startDate != null && endDate != null && endDate.before(startDate)) {
+            return 0L;
+        }
+        return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate, entityType);
+    }
+    /**
+     * Maps a list of {@link AuditEntity} objects to their corresponding {@link AuditLogDetailDTO} representations.
+     * Each DTO contains information about the revision, user, and changed fields.
+     *
+     * @param auditEntities the list of audit entities to map
+     * @return a list of audit log detail DTOs representing the changes
+     */
+    @Override
+    public List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities) {
+        List<AuditLogDetailDTO> dtoList = new ArrayList<>();
+
+        for (AuditEntity<?> entity : auditEntities) {
+            Object currentEntity = entity.getEntity();
+            Object oldEntity = fetchPreviousRevision(entity, currentEntity);
+
+            List<AuditFieldDiff> changedFields = extractChangedFields(currentEntity, oldEntity);
+
+            AuditLogDetailDTO dto = buildAuditLogDetailDTO(entity, currentEntity, changedFields);
+            dtoList.add(dto);
+        }
+
+        return dtoList;
+    }
+
+    /**
+     * Fetches paginated audit logs across entities with filtering.
+     */
+    @Override
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
+                                                                            Date startDate, Date endDate, String entityType, String sortOrder) {
+        if (entityType != null && !entityType.trim().isEmpty()) {
+            boolean isValid = UtilClass.findClassesWithAnnotation().stream()
+                    .map(className -> {
+                        try {
+                            return Class.forName(className);
+                        } catch (ClassNotFoundException e) {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .anyMatch(clazz -> clazz.getSimpleName().equalsIgnoreCase(entityType));
+
+            if (!isValid) {
+                throw new IllegalArgumentException("Invalid entityType: " + entityType);
+            }
+        }
+
+        return auditDao.getAllRevisionsAcrossEntitiesWithEntityType(
+                page, size, userId, startDate, endDate, entityType, sortOrder
+        );
+    }
+
+    /**
+     * Counts audit logs across entities with filtering.
+     */
+    @Override
+    public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType) {
+        return auditDao.countRevisionsAcrossEntitiesWithEntityType(userId, startDate, endDate, entityType);
+    }
+    private Object fetchPreviousRevision(AuditEntity<?> entity, Object currentEntity) {
+        if (entity.getRevisionEntity().getId() <= 1) {
+            return null;
+        }
+
+        Object entityId = UtilClass.getEntityIdAsString(currentEntity);
+        try {
+            return getRevisionById(
+                    currentEntity.getClass(),
+                    entityId,
+                    entity.getRevisionEntity().getId() - 1
+            );
+        } catch (IllegalArgumentException e) {
+            log.warn("Previous revision not supported for entity [{}] with ID [{}]",
+                    currentEntity.getClass().getSimpleName(), entityId);
+            return null;
+        }
+    }
+    private List<AuditFieldDiff> extractChangedFields(Object currentEntity, Object oldEntity) {
+        List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(
+                currentEntity.getClass(), oldEntity, currentEntity
+        );
+
+        return diffs.stream()
+                .filter(AuditFieldDiff::isChanged)
+                .map(previousDiff -> {
+                    AuditFieldDiff updatedDiff = new AuditFieldDiff();
+                    updatedDiff.setFieldName(previousDiff.getFieldName());
+                    updatedDiff.setOldValue(previousDiff.getOldValue());
+                    updatedDiff.setCurrentValue(previousDiff.getCurrentValue());
+                    updatedDiff.setChanged(true);
+                    return updatedDiff;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    private AuditLogDetailDTO buildAuditLogDetailDTO(
+            AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields) {
+
+        String auditType = AuditTypeMapper.toHumanReadable(entity.getRevisionType());
+        String username = resolveUsername(entity.getChangedBy());
+
+        AuditLogDetailDTO dto = new AuditLogDetailDTO();
+        dto.setRevisionID(entity.getRevisionEntity().getId());
+        dto.setEntityType(currentEntity.getClass().getSimpleName());
+        dto.setEventType(auditType);
+        dto.setChangedBy(username);
+        dto.setChangedOn(entity.getRevisionEntity().getChangedOn());
+        dto.setChanges(changedFields);
+
+        return dto;
     }
 
 }
