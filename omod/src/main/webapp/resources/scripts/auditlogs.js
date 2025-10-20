@@ -38,6 +38,14 @@ function selectEntity(cls) {
 
 entityInput.addEventListener('focus', () => renderEntityDropdown(entityInput.value));
 entityInput.addEventListener('click', () => renderEntityDropdown(entityInput.value));
+entityInput.addEventListener('blur', () => {
+    setTimeout(() => {
+        if (!entityDropdown.contains(document.activeElement)) {
+            entityDropdown.style.display = "none";
+            entityDropdown.classList.remove('active');
+        }
+    }, 100);
+});
 
 // Updated input listener: clears hidden input if no exact match
 entityInput.addEventListener('input', () => {
