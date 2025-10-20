@@ -346,13 +346,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
         return diffs.stream()
                 .filter(AuditFieldDiff::isChanged)
-                .map(d -> {
-                    AuditFieldDiff f = new AuditFieldDiff();
-                    f.setFieldName(d.getFieldName());
-                    f.setOldValue(d.getOldValue());
-                    f.setCurrentValue(d.getCurrentValue());
-                    f.setChanged(true);
-                    return f;
+                .map(previousDiff -> {
+                    AuditFieldDiff updatedDiff = new AuditFieldDiff();
+                    updatedDiff.setFieldName(previousDiff.getFieldName());
+                    updatedDiff.setOldValue(previousDiff.getOldValue());
+                    updatedDiff.setCurrentValue(previousDiff.getCurrentValue());
+                    updatedDiff.setChanged(true);
+                    return updatedDiff;
                 })
                 .collect(Collectors.toList());
     }

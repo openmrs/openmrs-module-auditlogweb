@@ -348,6 +348,13 @@ public class AuditDao {
     }
 
     private List<AuditEntity<?>> fetchAcrossEntities(List<Class<?>> classes, Integer userId, Date startDate, Date endDate, String sortOrder, int page, int size) {
+
+        // NOTE: We fetch (page * size) revisions from each audited entity type here.
+        // This results in potentially thousands of records being loaded into memory, if many entity types exist. Sorting and pagination are applied
+        // in-memory after combining all results, which can be inefficient.
+        // TODO: Optimize by performing sorting and pagination at the database level across all entity types,
+        // possibly by writing a native SQL union query or adding an audit summary table.
+
         List<AuditEntity<?>> combined = new ArrayList<>();
         for (Class<?> clazz : classes) {
             try {
