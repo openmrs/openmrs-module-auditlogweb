@@ -271,4 +271,52 @@ class AuditDaoTest {
             assertThat(result, is(0L));
         }
     }
+
+    @Test
+    void shouldReturnFilteredAuditEntitiesByEntityType() {
+        try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
+            utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Arrays.asList(TestAuditedEntity.class.getName()));
+
+            TestAuditedEntity entity = new TestAuditedEntity();
+            OpenmrsRevisionEntity revEntity = mock(OpenmrsRevisionEntity.class);
+            when(revEntity.getChangedBy()).thenReturn(99);
+            when(revEntity.getRevisionDate()).thenReturn(new Date());
+            Object[] mockResult = new Object[] { entity, revEntity, RevisionType.ADD };
+
+            enversUtilsMockedStatic.when(() -> EnversUtils.buildFilteredAuditQuery(
+                            auditReader, TestAuditedEntity.class, null, null, null, 0, Integer.MAX_VALUE, "desc"))
+                    .thenReturn(auditQuery);
+            when(auditQuery.getResultList()).thenReturn(Collections.singletonList(mockResult));
+
+            AuditEntity<?> auditEntity = new AuditEntity<>(entity, revEntity, RevisionType.ADD, 99);
+            utilClassMockedStatic.when(() -> UtilClass.paginate(any(), eq(0), eq(5)))
+                    .thenReturn(Collections.singletonList(auditEntity));
+
+            List<AuditEntity<?>> result = auditDao.getAllRevisionsAcrossEntitiesWithEntityType(
+                    0, 5, null, null, null, "TestAuditedEntity", "desc");
+
+            assertNotNull(result);
+            assertThat(result, hasSize(1));
+            assertThat(result.get(0).getChangedBy(), is(99));
+        }
+    }
+
+    @Test
+    void shouldReturnCountOfAuditEntitiesByEntityType() {
+        try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
+            utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Arrays.asList(TestAuditedEntity.class.getName()));
+
+            when(auditQuery.getSingleResult()).thenReturn(2L);
+            enversUtilsMockedStatic.when(() -> EnversUtils.buildCountQueryWithFilters(
+                            auditReader, TestAuditedEntity.class, null, null, null))
+                    .thenReturn(auditQuery);
+
+            long result = auditDao.countRevisionsAcrossEntitiesWithEntityType(
+                    null, null, null, "TestAuditedEntity");
+
+            assertThat(result, is(2L));
+        }
+    }
 }

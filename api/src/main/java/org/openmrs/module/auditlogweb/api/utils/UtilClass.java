@@ -189,7 +189,7 @@ public class UtilClass {
      */
     public static <T> List<T> paginate(List<T> allResults, int page, int size) {
         if (allResults == null || allResults.isEmpty()) {
-            return Collections.emptyList();  //  returning an emtpy list safely
+            return Collections.emptyList();
         }
 
         int fromIndex = Math.min(page * size, allResults.size());
@@ -197,4 +197,23 @@ public class UtilClass {
         return allResults.subList(fromIndex, toIndex);
     }
 
+
+    /**
+     * Attempts to get the ID of the entity as a String.
+     * Falls back to UUID or "unknown" if ID cannot be retrieved.
+     *
+     * @param entity the entity object
+     * @return entity ID as String
+     */
+    public static String getEntityIdAsString(Object entity) {
+        try {
+            return String.valueOf(entity.getClass().getMethod("getId").invoke(entity));
+        } catch (Exception e) {
+            try {
+                return String.valueOf(entity.getClass().getMethod("getUuid").invoke(entity));
+            } catch (Exception ex) {
+                return "unknown";
+            }
+        }
+    }
 }

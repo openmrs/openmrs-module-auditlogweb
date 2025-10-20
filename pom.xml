@@ -31,6 +31,8 @@
 		<javaxServletVersion>4.0.1</javaxServletVersion>
 		<mockitoInlineVersion>4.8.0</mockitoInlineVersion>
 		<byteBuddyVersion>1.17.6</byteBuddyVersion>
+		<webservicesRestVersion>2.49.0</webservicesRestVersion>
+		<jsonPathVersion>2.9.0</jsonPathVersion>
 	</properties>
 
 	<repositories>
@@ -84,6 +86,12 @@
 				<version>${openmrsPlatformVersion}</version>
 				<type>jar</type>
 				<scope>provided</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.servlet</groupId>
+						<artifactId>servlet-api</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 
 			<dependency>
@@ -110,6 +118,19 @@
 				<version>${openmrsPlatformVersion}</version>
 				<type>test-jar</type>
 				<scope>test</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>org.openmrs.module</groupId>
+				<artifactId>webservices.rest-omod</artifactId>
+				<version>${webservicesRestVersion}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.openmrs.module</groupId>
+				<artifactId>webservices.rest-omod-common</artifactId>
+				<version>${webservicesRestVersion}</version>
+				<scope>provided</scope>
 			</dependency>
 
 			<dependency>
