@@ -238,7 +238,7 @@ other:
 ---
 version: 2
 plan:
-  key: AUDIT-AUDITL
+  key: AUD-AUDL
 plan-permissions:
   - roles:
       - anonymous
