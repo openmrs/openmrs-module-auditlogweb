@@ -1,8 +1,8 @@
 ---
 version: 2
 plan:
-  project-key: AUDIT
-  key: AUDITL
+  project-key: AUD
+  key: AUDL
   name: Audit Log Web Latest
   description: Plan for the Audit Log Web module Latest
 stages:
