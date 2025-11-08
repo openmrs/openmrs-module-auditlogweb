@@ -1,4 +1,4 @@
----
+  ---
 version: 2
 plan:
   project-key: AUD
@@ -198,8 +198,8 @@ variables:
 repositories:
   - Git:
       type: git
-      url: https://github.com/openmrs/openmrs-module-legacyui.git
-      branch: master
+      url: https://github.com/openmrs/openmrs-module-auditlogweb
+      branch: main
       command-timeout-minutes: '180'
       lfs: 'false'
       verbose-logs: 'true'
