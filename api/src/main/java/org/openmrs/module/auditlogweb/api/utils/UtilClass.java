@@ -16,6 +16,9 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.persistence.Entity;
+import javax.persistence.MappedSuperclass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.time.LocalDate;
@@ -59,6 +62,7 @@ public class UtilClass {
 
         Set<Class<?>> auditedClasses = reflections.getTypesAnnotatedWith(Audited.class);
         classesWithAuditAnnotation = auditedClasses.stream()
+                .filter(UtilClass::isConcreteAuditedEntity)
                 .map(Class::getName)
                 .sorted()
                 .collect(Collectors.toList());
@@ -215,5 +219,11 @@ public class UtilClass {
                 return "unknown";
             }
         }
+    }
+
+    private static boolean isConcreteAuditedEntity(Class<?> clazz) {
+        int modifiers = clazz.getModifiers();
+
+        return !Modifier.isAbstract(modifiers) && !clazz.isAnnotationPresent(MappedSuperclass.class);
     }
 }
