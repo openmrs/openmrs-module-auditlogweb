@@ -76,7 +76,10 @@ public class AuditlogwebController {
      * <p>
      * If Envers is not enabled in the system, a helpful message is shown instead.
      *
-     * @param model the Spring MVC model used to pass attributes to the view
+     * @param sortOrder the sort order for results (e.g., "asc" or "desc")
+     * @param page      the page number (0-based index) for pagination
+     * @param size      the number of records per page
+     * @param model     the Spring MVC model used to pass attributes to the view
      * @return the logical view name of the audit logs JSP page
      */
     @RequestMapping(method = RequestMethod.GET)
@@ -146,6 +149,7 @@ public class AuditlogwebController {
      * @param endDateStr optional end date string (e.g., "2024-01-31")
      * @param page the page number for pagination (0-based)
      * @param size the number of records per page
+     * @param sortOrder the sort order for results (e.g., "asc" or "desc")
      * @param model the model to which attributes are added for rendering the view
      * @return the name of the view to render, either audit logs or Envers-disabled notification
      */

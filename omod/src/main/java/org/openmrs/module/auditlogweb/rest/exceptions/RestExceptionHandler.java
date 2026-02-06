@@ -35,7 +35,6 @@ import java.util.Map;
  *     <li>{@link MethodArgumentTypeMismatchException} - returns a Bad Request (400) with a message about the invalid parameter</li>
  *     <li>Generic {@link Exception} - returns an Internal Server Error (500) with a generic error message</li>
  * </ul>
- * </p>
  */
 @ControllerAdvice
 public class RestExceptionHandler {
