@@ -43,6 +43,7 @@ public class AuditLogViewService {
      * @param username   optional username to filter by user who made the change
      * @param startDate  optional start date for filtering changes
      * @param endDate    optional end date for filtering changes
+     * @param sortOrder  the sort order for results (e.g., "asc" or "desc")
      * @return a paginated list of {@link AuditEntity} entries, possibly filtered
      */
     public List<AuditEntity<?>> fetchAuditLogs(Class<?> clazz, int page, int size, String username, Date startDate, Date endDate, String sortOrder) {
@@ -101,6 +102,7 @@ public class AuditLogViewService {
      * @param endDateStr      optional end date string (e.g., "2024-01-31")
      * @param page            zero-based page index for pagination
      * @param size            number of records per page
+     * @param sortOrder       the sort order for results (e.g., "asc" or "desc")
      * @return a {@link PaginatedAuditResult} containing the list of audit entries and the total count
      * @throws ClassNotFoundException if {@code domainClassName} is provided but the class cannot be found
      */
