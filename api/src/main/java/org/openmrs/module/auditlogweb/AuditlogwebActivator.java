@@ -10,7 +10,9 @@ package org.openmrs.module.auditlogweb;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
+import org.openmrs.module.auditlogweb.api.init.AuditTableInitializer;
 
 /**
  * This class contains the logic that is run every time this module is either started or shutdown
@@ -24,6 +26,12 @@ public class AuditlogwebActivator extends BaseModuleActivator {
      */
     public void started() {
         log.info("Started Auditlogweb");
+        try {
+            AuditTableInitializer initializer = Context.getRegisteredComponents(AuditTableInitializer.class).get(0);
+            initializer.initializeAuditTables();
+        } catch (Exception e) {
+            log.error("Failed to initialize audit tables: " + e.getMessage(), e);
+        }
     }
 
     /**
