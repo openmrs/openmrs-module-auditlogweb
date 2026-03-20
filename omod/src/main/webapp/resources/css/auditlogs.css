@@ -151,3 +151,9 @@
     font-weight: bold;
     border: 1px solid #ffffff;
 }
+
+.pagination-ellipsis {
+    padding: 8px 12px;
+    color: #666;
+    font-weight: bold;
+}

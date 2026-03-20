@@ -8,7 +8,10 @@
  */
 package org.openmrs.module.auditlogweb.api.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
+import org.hibernate.proxy.HibernateProxy;
+import org.openmrs.BaseOpenmrsObject;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
@@ -17,14 +20,19 @@ import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.Entity;
 import javax.persistence.MappedSuperclass;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.Temporal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.ArrayList;
@@ -32,6 +40,8 @@ import java.util.Objects;
 import java.util.Date;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Utility class providing methods for working with Envers-audited classes,
@@ -81,6 +91,29 @@ public class UtilClass {
     }
 
     /**
+     * Collects all fields from the entire class hierarchy (from Object to the given class).
+     * In case of field name collisions, fields from child classes override fields from parent classes.
+     * The fields are returned in order from parent to child.
+     *
+     * @param clazz the class to collect fields from
+     * @return an array of fields from the entire hierarchy (child fields override parent fields)
+     */
+    private static Field[] getAllFields(Class<?> clazz) {
+        Map<String, Field> fieldMap = new LinkedHashMap<>();
+        
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            Field[] declaredFields = current.getDeclaredFields();
+            for (Field field : declaredFields) {
+                fieldMap.put(field.getName(), field);
+            }
+            current = current.getSuperclass();
+        }
+        
+        return fieldMap.values().toArray(new Field[0]);
+    }
+
+    /**
      * Compares two instances of the same class and returns a list of field-level differences.
      * Fields that are static or synthetic are ignored. Values that cannot be accessed
      * are marked as "Unable to read".
@@ -94,34 +127,38 @@ public class UtilClass {
         List<AuditFieldDiff> diffs = new ArrayList<>();
         if (currentEntity == null) return diffs;
 
-        Field[] fields = clazz.getDeclaredFields();
+        Field[] fields = getAllFields(clazz);
         for (Field field : fields) {
             if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) continue;
 
             field.setAccessible(true);
 
-            String oldVal = null;
-            String currVal = null;
+            String oldVal;
+            String currVal;
             boolean failedOld = false;
             boolean failedCurr = false;
 
             try {
-                currVal = String.valueOf(field.get(currentEntity));
+                Object currFieldValue = field.get(currentEntity);
+                currVal = serializeFieldValue(currFieldValue);
             } catch (Exception e) {
                 log.warn("Failed to read current value of field '{}': {}", field.getName(), e.getMessage());
                 failedCurr = true;
+                currVal = "";
             }
 
             try {
-                oldVal = oldEntity != null ? String.valueOf(field.get(oldEntity)) : null;
+                Object oldFieldValue = oldEntity != null ? field.get(oldEntity) : null;
+                oldVal = serializeFieldValue(oldFieldValue);
             } catch (Exception e) {
                 log.warn("Failed to read old value of field '{}': {}", field.getName(), e.getMessage());
                 failedOld = true;
+                oldVal = "";
             }
 
-            if (failedOld || failedCurr) {
-                log.debug("Setting field '{}' values to 'Unable to read' due to access failure", field.getName());
-                oldVal = currVal = "Unable to read";
+            if (failedOld && failedCurr) {
+                log.debug("Setting field '{}' values to empty string due to access failure", field.getName());
+                oldVal = currVal = "";
             }
 
             boolean isDifferent = !Objects.equals(oldVal, currVal);
@@ -221,9 +258,144 @@ public class UtilClass {
         }
     }
 
+    public static String serializeFieldValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+
+        String actualClassName = getActualClassName(value);
+        if (isPrimitiveOrWrapper(value.getClass())) {
+            return String.valueOf(value);
+        }
+
+        if (value instanceof BaseOpenmrsObject) {
+            return serializeBaseOpenmrsObject((BaseOpenmrsObject) value, actualClassName);
+        }
+
+        return serializeGenericObject(value, actualClassName);
+    }
+
+    public static String getActualClassName(Object obj) {
+        if (obj instanceof HibernateProxy) {
+            HibernateProxy proxy = (HibernateProxy) obj;
+            return proxy.getHibernateLazyInitializer().getPersistentClass().getSimpleName();
+        }
+
+        return obj.getClass().getSimpleName();
+    }
+
     private static boolean isConcreteAuditedEntity(Class<?> clazz) {
         int modifiers = clazz.getModifiers();
-
         return !Modifier.isAbstract(modifiers) && !clazz.isAnnotationPresent(MappedSuperclass.class);
+    }
+
+    private static boolean isPrimitiveOrWrapper(Class<?> clazz) {
+        return clazz.isPrimitive()
+                || clazz == Boolean.class
+                || clazz == Character.class
+                || clazz == Byte.class
+                || clazz == Short.class
+                || clazz == Integer.class
+                || clazz == Long.class
+                || clazz == Float.class
+                || clazz == Double.class
+                || clazz == String.class
+                || clazz == Date.class
+                || Number.class.isAssignableFrom(clazz)
+                || Temporal.class.isAssignableFrom(clazz);
+    }
+
+    private static String serializeBaseOpenmrsObject(BaseOpenmrsObject obj, String actualClassName) {
+        Integer id = getIdFromObject(obj);
+        if (id != null) {
+            return actualClassName + "#" + id;
+        }
+
+        String uuid = getUuidFromObject(obj);
+        if (StringUtils.isNotBlank(uuid)) {
+            return actualClassName + "#" + uuid;
+        }
+
+        return "";
+    }
+
+    private static Integer getIdFromObject(Object obj) {
+        try {
+            Method method = obj.getClass().getMethod("getId");
+            Object result = method.invoke(obj);
+            if (result instanceof Integer) {
+                return (Integer) result;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to get ID from object: {}", e.getMessage());
+        }
+
+        return null;
+    }
+
+    private static String getUuidFromObject(Object obj) {
+        try {
+            Method method = obj.getClass().getMethod("getUuid");
+            Object result = method.invoke(obj);
+            if (result instanceof String) {
+                return (String) result;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to get UUID from object: {}", e.getMessage());
+        }
+
+        return null;
+    }
+
+    private static String serializeGenericObject(Object value, String actualClassName) {
+        Integer id = getIdFromObject(value);
+        if (id != null) {
+            return actualClassName + "#" + id;
+        }
+
+        String uuid = getUuidFromObject(value);
+        if (StringUtils.isNotBlank(uuid)) {
+            return actualClassName + "#" + uuid;
+        }
+
+        try {
+            String str = String.valueOf(value);
+            if (StringUtils.isNotBlank(str)) {
+                if (StringUtils.equalsIgnoreCase(str, "[]")) {
+                    str = "";
+                }
+                return str;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to serialize object with toString(): {}", e.getMessage());
+        }
+
+        return "";
+    }
+
+    public static Map<String, Class<?>> getFieldTypes(Class<?> clazz) {
+        Map<String, Class<?>> fieldTypes = new LinkedHashMap<>();
+        Field[] fields = getAllFields(clazz);
+        
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
+                continue;
+            }
+            
+            Class<?> fieldType = field.getType();
+            if (Collection.class.isAssignableFrom(fieldType)) {
+                ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+                if (parameterizedType.getActualTypeArguments().length > 0) {
+                    Type actualType = parameterizedType.getActualTypeArguments()[0];
+                    if (actualType instanceof Class) {
+                        fieldTypes.put(field.getName(), (Class<?>) actualType);
+                    }
+                }
+            } else {
+                fieldTypes.put(field.getName(), fieldType);
+            }
+        }
+        
+        return fieldTypes;
     }
 }

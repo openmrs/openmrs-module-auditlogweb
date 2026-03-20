@@ -100,3 +100,80 @@ table.audit-table {
     margin-right: 6px;
     color: #2c3e50;
 }
+
+.related-entities-section {
+    margin-top: 24px;
+    margin-bottom: 32px;
+    border: 1px solid #e1e4ea;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fafbfc;
+}
+
+.toggle-header {
+    background: #4a90d9;
+    color: white;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.05em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.toggle-header:hover {
+    background: #3a7fc8;
+}
+
+.toggle-icon {
+    font-size: 0.9em;
+    transition: transform 0.2s;
+}
+
+.related-entities-content {
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.related-entities-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.related-entities-table th,
+.related-entities-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e1e4ea;
+}
+
+.related-entities-table th {
+    background: #f4f6fa;
+    color: #34495e;
+    font-weight: 600;
+    font-size: 0.95em;
+    position: sticky;
+    top: 0;
+}
+
+.related-entities-table tr:hover {
+    background: #f8f9fb;
+}
+
+.related-entities-table td a {
+    color: #4a90d9;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.related-entities-table td a:hover {
+    background: #e8f4fc;
+    text-decoration: underline;
+}

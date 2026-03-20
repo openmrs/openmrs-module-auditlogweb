@@ -452,4 +452,48 @@ public class AuditDao {
 
         return countAcrossEntities(classes, userId, startDate, endDate);
     }
+
+    /**
+     * Finds all entities modified in a specific revision across all audited entity types.
+     * This method queries each audited entity table to find entries with the given revision ID.
+     *
+     * @param revisionId the revision number to query
+     * @return list of AuditEntity objects modified in this revision
+     */
+    public List<AuditEntity<?>> getEntitiesModifiedInRevision(int revisionId) {
+        List<AuditEntity<?>> result = new ArrayList<>();
+        List<Class<?>> classes = getNonAbstractAuditedClasses();
+
+        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+
+        for (Class<?> clazz : classes) {
+            try {
+                AuditQuery query = auditReader.createQuery()
+                        .forRevisionsOfEntity(clazz, false, true)
+                        .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
+                
+                query.setMaxResults(1000);
+                
+                List<?> results = query.getResultList();
+                
+                for (Object row : results) {
+                    if (row instanceof Object[]) {
+                        Object[] array = (Object[]) row;
+                        Object entity = array[0];
+                        OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) array[1];
+                        RevisionType revisionType = (RevisionType) array[2];
+                        
+                        if (entity != null) {
+                            Integer userId = revisionEntity != null ? revisionEntity.getChangedBy() : null;
+                            result.add(new AuditEntity<>(entity, revisionEntity, revisionType, userId));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("Could not find revision {} for entity {}: {}", revisionId, clazz.getSimpleName(), e.getMessage());
+            }
+        }
+
+        return result;
+    }
 }

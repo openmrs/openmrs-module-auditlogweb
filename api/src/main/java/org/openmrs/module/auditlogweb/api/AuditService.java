@@ -212,4 +212,16 @@ public interface AuditService {
      */
     long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType);
 
+    /**
+     * Finds all entities modified in the same revision as the given entity.
+     * This method retrieves all entities changed in the same revision and filters them
+     * to only include those whose types match the field types of the main entity.
+     *
+     * @param entityClass the main entity class
+     * @param entityId the entity ID
+     * @param revisionId the revision number
+     * @return list of related AuditEntity objects modified in the same revision
+     */
+    List<AuditEntity<?>> getRelatedEntitiesInRevision(Class<?> entityClass, Object entityId, int revisionId);
+
 }

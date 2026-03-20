@@ -29,6 +29,73 @@
         </div>
     </c:if>
 
+    <c:if test="${not empty relatedEntities}">
+        <div class="related-entities-section">
+            <div class="toggle-header" onclick="toggleRelatedEntities()">
+                <span class="toggle-icon">&#9658;</span>
+                Related Entities Changed in This Revision (${relatedEntities.size()})
+            </div>
+            <div class="related-entities-content" id="relatedEntitiesContent">
+                <table class="related-entities-table">
+                    <thead>
+                        <tr>
+                            <th>Entity Type</th>
+                            <th>Entity ID</th>
+                            <th>Change Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="related" items="${relatedEntities}">
+                            <%
+                                Object entity = (Object) pageContext.getAttribute("related");
+                                Object entityObj = entity != null ? ((org.openmrs.module.auditlogweb.AuditEntity<?>) entity).getEntity() : null;
+                                String className = entityObj != null ? entityObj.getClass().getName() : "";
+                                String simpleName = entityObj != null ? entityObj.getClass().getSimpleName() : "";
+                                Object entityId = null;
+                                try {
+                                    java.lang.reflect.Method method = entityObj.getClass().getMethod("getId");
+                                    entityId = method.invoke(entityObj);
+                                } catch (Exception e) {
+                                    // ignore
+                                }
+                                pageContext.setAttribute("entityIdValue", entityId);
+                            %>
+                            <tr>
+                                <td><%= simpleName %></td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${entityIdValue != null}">
+                                            <c:out value="${entityIdValue}" />
+                                        </c:when>
+                                        <c:otherwise>
+                                            N/A
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${related.revisionType.name() == 'ADD'}">Creation</c:when>
+                                        <c:when test="${related.revisionType.name() == 'MOD'}">Modification</c:when>
+                                        <c:when test="${related.revisionType.name() == 'DEL'}">Deletion</c:when>
+                                        <c:otherwise><c:out value="${related.revisionType.name()}" /></c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <c:if test="${entityIdValue != null}">
+                                        <a href="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${related.revisionEntity.id}&entityId=${entityIdValue}&class=<%= className %>">
+                                            View Audit
+                                        </a>
+                                    </c:if>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </c:if>
+
     <table class="audit-table">
         <thead>
         <tr>
@@ -52,5 +119,19 @@
         </tbody>
     </table>
 </div>
+
+<script>
+    function toggleRelatedEntities() {
+        var content = document.getElementById('relatedEntitiesContent');
+        var icon = document.querySelector('.toggle-icon');
+        if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            icon.innerHTML = '&#9660;';
+        } else {
+            content.style.display = 'none';
+            icon.innerHTML = '&#9658;';
+        }
+    }
+</script>
 
 <%@ include file="/WEB-INF/template/footer.jsp" %>
