@@ -84,7 +84,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                 } else if (GlobalProperty.class.isAssignableFrom(entityClass)) {
                     return (T) auditDao.getGlobalPropertyRevisionById((String) entityId, revisionId);
                 } else {
-                    return null;
+	                try {
+		                Integer idInt = Integer.parseInt((String) entityId);
+		                return auditDao.getRevisionById(entityClass, idInt, revisionId);
+	                } catch (NumberFormatException e) {
+		                log.debug("Failed to parse String ID '{}' to Integer for entity class '{}'.", (String) entityId, entityClass.getSimpleName());
+		                return null;
+	                }
                 }
             }
         } catch (org.hibernate.ObjectNotFoundException e) {
