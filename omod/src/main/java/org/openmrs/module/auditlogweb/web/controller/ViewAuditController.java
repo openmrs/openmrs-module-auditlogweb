@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.hibernate.QueryException;
+import org.openmrs.api.context.Context;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Role;
 import org.openmrs.module.auditlogweb.AuditEntity;
@@ -44,9 +45,15 @@ public class ViewAuditController {
 
     private static final String VIEW = MODULE_PATH + "/viewAudit";
     private static final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
+    private static final String ACCESS_DENIED_VIEW = MODULE_PATH + "/accessDenied";
 
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
+        // Check privilege before anything else
+        if (!Context.hasPrivilege("View Audit Logs")) {
+            return new ModelAndView(ACCESS_DENIED_VIEW, model);
+        }
+
         // Check if auditing is enabled
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
