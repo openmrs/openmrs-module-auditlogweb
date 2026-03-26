@@ -130,7 +130,6 @@ public class AuditLogRestControllerTest {
     public void shouldResolveUsernameToUserId() throws Exception {
         UserService userService = mock(UserService.class);
         User mockUser = new User(1);
-        // Reuse class-level contextMock — no need for a nested try block
         contextMock.when(() -> Context.getUserService()).thenReturn(userService);
         when(userService.getUserByUsername("testuser")).thenReturn(mockUser);
 
