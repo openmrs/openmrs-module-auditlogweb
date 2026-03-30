@@ -8,7 +8,13 @@
  */
 package org.openmrs.module.auditlogweb.api.dao;
 
-import lombok.RequiredArgsConstructor;
+import java.lang.reflect.Modifier;
+import java.sql.SQLSyntaxErrorException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.hibernate.SessionFactory;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
@@ -16,6 +22,8 @@ import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.exception.NotAuditedException;
 import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.exception.SQLGrammarException;
+import org.openmrs.GlobalProperty;
+import org.openmrs.Role;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
@@ -24,15 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
-import org.openmrs.GlobalProperty;
-import org.openmrs.Role;
-
-import java.lang.reflect.Modifier;
-import java.sql.SQLSyntaxErrorException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Date;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Data access object (DAO) for retrieving audit log information using Hibernate Envers.
@@ -348,29 +348,26 @@ public class AuditDao {
     }
 
     private List<AuditEntity<?>> fetchAcrossEntities(List<Class<?>> classes, Integer userId, Date startDate, Date endDate, String sortOrder, int page, int size) {
+    // Fetch enough records from each entity to cover the requested page.
+    // We use (page + 1) * size as the fetch window so earlier pages are not skipped.
+    int fetchSize = (page + 1) * size;
 
-        // NOTE: We fetch (page * size) revisions from each audited entity type here.
-        // This results in potentially thousands of records being loaded into memory, if many entity types exist. Sorting and pagination are applied
-        // in-memory after combining all results, which can be inefficient.
-        // TODO: Optimize by performing sorting and pagination at the database level across all entity types,
-        // possibly by writing a native SQL union query or adding an audit summary table.
-
-        List<AuditEntity<?>> combined = new ArrayList<>();
-        for (Class<?> clazz : classes) {
-            try {
-                List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(
-                        clazz, page, size, userId, startDate, endDate, sortOrder);
-                combined.addAll(revisions);
-            } catch (Exception ex) {
-                if (isMissingAuditTableException(ex)) {
-                    log.warn("Skipping class {} due to missing audit table or SQL error: {}", clazz.getName(), ex.getMessage());
-                } else {
-                    log.error("Unexpected error while fetching audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
-                }
+    List<AuditEntity<?>> combined = new ArrayList<>();
+    for (Class<?> clazz : classes) {
+        try {
+            List<? extends AuditEntity<?>> revisions = getRevisionsWithFilters(
+                    clazz, 0, fetchSize, userId, startDate, endDate, sortOrder);
+            combined.addAll(revisions);
+        } catch (Exception ex) {
+            if (isMissingAuditTableException(ex)) {
+                log.warn("Skipping class {} due to missing audit table or SQL error: {}", clazz.getName(), ex.getMessage());
+            } else {
+                log.error("Unexpected error while fetching audit logs for class {}: {}", clazz.getName(), ex.getMessage(), ex);
             }
         }
-        return combined;
     }
+    return combined;
+}
 
     private long countAcrossEntities(List<Class<?>> classes, Integer userId, Date startDate, Date endDate) {
         return classes.stream().mapToLong(clazz -> {
