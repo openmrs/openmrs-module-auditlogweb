@@ -8,6 +8,22 @@
  */
 package org.openmrs.module.auditlogweb.api.utils;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.persistence.MappedSuperclass;
+
 import org.hibernate.envers.Audited;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.reflections.Reflections;
@@ -16,22 +32,6 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.persistence.Entity;
-import javax.persistence.MappedSuperclass;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Date;
-import java.util.stream.Collectors;
-import java.util.Collections;
 
 /**
  * Utility class providing methods for working with Envers-audited classes,
@@ -91,45 +91,68 @@ public class UtilClass {
      * @return a list of {@link AuditFieldDiff} showing name, old value, new value, and change flag
      */
     public static List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
-        List<AuditFieldDiff> diffs = new ArrayList<>();
-        if (currentEntity == null) return diffs;
+    List<AuditFieldDiff> diffs = new ArrayList<>();
+    if (currentEntity == null) return diffs;
 
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) continue;
+    Field[] fields = clazz.getDeclaredFields();
+    for (Field field : fields) {
+        if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) continue;
 
-            field.setAccessible(true);
+        field.setAccessible(true);
 
-            String oldVal = null;
-            String currVal = null;
-            boolean failedOld = false;
-            boolean failedCurr = false;
+        String oldVal = null;
+        String currVal = null;
 
-            try {
-                currVal = String.valueOf(field.get(currentEntity));
-            } catch (Exception e) {
-                log.warn("Failed to read current value of field '{}': {}", field.getName(), e.getMessage());
-                failedCurr = true;
-            }
-
-            try {
-                oldVal = oldEntity != null ? String.valueOf(field.get(oldEntity)) : null;
-            } catch (Exception e) {
-                log.warn("Failed to read old value of field '{}': {}", field.getName(), e.getMessage());
-                failedOld = true;
-            }
-
-            if (failedOld || failedCurr) {
-                log.debug("Setting field '{}' values to 'Unable to read' due to access failure", field.getName());
-                oldVal = currVal = "Unable to read";
-            }
-
-            boolean isDifferent = !Objects.equals(oldVal, currVal);
-            diffs.add(new AuditFieldDiff(field.getName(), oldVal, currVal, isDifferent));
+        try {
+            Object currRaw = field.get(currentEntity);
+            currVal = toSafeString(currRaw);
+        } catch (Exception e) {
+            log.warn("Failed to read current value of field '{}': {}", field.getName(), e.getMessage());
+            currVal = "[Unable to read]";
         }
-        return diffs;
-    }
 
+        try {
+            if (oldEntity != null) {
+                Object oldRaw = field.get(oldEntity);
+                oldVal = toSafeString(oldRaw);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to read old value of field '{}': {}", field.getName(), e.getMessage());
+            oldVal = "[Unable to read]";
+        }
+
+        boolean isDifferent = !Objects.equals(oldVal, currVal);
+        diffs.add(new AuditFieldDiff(field.getName(), oldVal, currVal, isDifferent));
+    }
+    return diffs;
+}
+
+/**
+ * Safely converts a field value to a human-readable string.
+ * Handles null values, Hibernate proxies, and complex objects gracefully.
+ *
+ * @param value the raw field value
+ * @return a safe string representation, or "[No value]" if null
+ */
+private static String toSafeString(Object value) {
+    if (value == null) {
+        return "[No value]";
+    }
+    try {
+        // Try getId() first for OpenMRS domain objects (Patient, User, etc.)
+        try {
+            Object id = value.getClass().getMethod("getId").invoke(value);
+            String simpleName = value.getClass().getSimpleName();
+            return simpleName + "(id=" + id + ")";
+        } catch (NoSuchMethodException ignored) {
+            // Not an OpenMRS domain object, fall through
+        }
+        return value.toString();
+    } catch (Exception e) {
+        log.warn("Could not convert field value to string: {}", e.getMessage());
+        return "[Unable to read]";
+    }
+}
     /**
      * Computes the total number of pages for a paginated dataset.
      *

@@ -8,18 +8,18 @@
  */
 package org.openmrs.module.auditlogweb.api.utils;
 
-import org.hibernate.envers.Audited;
-import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.hibernate.envers.Audited;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 
 public class UtilClassUnitTest {
@@ -70,4 +70,81 @@ public class UtilClassUnitTest {
     public static class TestAuditedClass {}
 
     public static class NotAuditedClass {}
+    
+    @Test
+    public void computeFieldDiffs_shouldReturnNoValueForNullFields() {
+        SampleEntity old = new SampleEntity(null, "old@email.com");
+        SampleEntity current = new SampleEntity(null, "new@email.com");
+
+        List<org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff> diffs =
+                UtilClass.computeFieldDiffs(SampleEntity.class, old, current);
+
+        // null field should display as "[No value]" not the string "null"
+        diffs.stream()
+                .filter(d -> d.getFieldName().equals("name"))
+                .forEach(d -> {
+                    assertEquals("[No value]", d.getOldValue());
+                    assertEquals("[No value]", d.getCurrentValue());
+                });
+    }
+
+    @Test
+    public void computeFieldDiffs_shouldDetectChangedFields() {
+        SampleEntity old = new SampleEntity("Alice", "alice@email.com");
+        SampleEntity current = new SampleEntity("Bob", "alice@email.com");
+
+        List<org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff> diffs =
+                UtilClass.computeFieldDiffs(SampleEntity.class, old, current);
+
+        org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff nameDiff = diffs.stream()
+                .filter(d -> d.getFieldName().equals("name"))
+                .findFirst().orElse(null);
+
+        assertNotNull(nameDiff);
+        assertTrue(nameDiff.isChanged());
+        assertEquals("Alice", nameDiff.getOldValue());
+        assertEquals("Bob", nameDiff.getCurrentValue());
+    }
+
+    @Test
+    public void computeFieldDiffs_shouldNotMarkUnchangedFieldsAsChanged() {
+        SampleEntity old = new SampleEntity("Alice", "alice@email.com");
+        SampleEntity current = new SampleEntity("Alice", "alice@email.com");
+
+        List<org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff> diffs =
+                UtilClass.computeFieldDiffs(SampleEntity.class, old, current);
+
+        diffs.forEach(d -> assertFalse(d.isChanged()));
+    }
+
+    @Test
+    public void computeFieldDiffs_shouldHandleNullOldEntity() {
+        SampleEntity current = new SampleEntity("Alice", "alice@email.com");
+
+        List<org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff> diffs =
+                UtilClass.computeFieldDiffs(SampleEntity.class, null, current);
+
+        // All fields should be marked changed (old is null, current has values)
+        assertFalse(diffs.isEmpty());
+        diffs.forEach(d -> assertNull(d.getOldValue()) );
+    }
+
+    @Test
+    public void computeFieldDiffs_shouldReturnEmptyListForNullCurrentEntity() {
+        List<org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff> diffs =
+                UtilClass.computeFieldDiffs(SampleEntity.class, null, null);
+
+        assertTrue(diffs.isEmpty());
+    }
+
+    // Simple test entity — no Hibernate, no OpenMRS dependencies
+    public static class SampleEntity {
+        private String name;
+        private String email;
+
+        public SampleEntity(String name, String email) {
+            this.name = name;
+            this.email = email;
+        }
+    }
 }
