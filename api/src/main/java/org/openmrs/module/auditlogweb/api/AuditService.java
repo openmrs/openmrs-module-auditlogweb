@@ -35,6 +35,7 @@ public interface AuditService {
      * @param page        the page number (zero-based)
      * @param size        the number of results per page
      * @param <T>         the type of the audited entity
+     * @param sortOrder   the sort direction ("asc" or "desc")
      * @return a list of {@link AuditEntity} representing revisions of the entity
      */
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
@@ -48,6 +49,7 @@ public interface AuditService {
      * @param page            the page number (zero-based)
      * @param size            the number of results per page
      * @param <T>             the type of the audited entity
+     * @param sortOrder   the sort direction ("asc" or "desc")
      * @return a list of {@link AuditEntity} representing revisions of the entity,
      *         or an empty list if the class is not found
      */
