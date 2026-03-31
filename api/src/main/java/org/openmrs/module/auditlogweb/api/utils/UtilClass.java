@@ -105,7 +105,7 @@ public class UtilClass {
         while (current != null && current != Object.class) {
             Field[] declaredFields = current.getDeclaredFields();
             for (Field field : declaredFields) {
-                fieldMap.put(field.getName(), field);
+                fieldMap.putIfAbsent(field.getName(), field);
             }
             current = current.getSuperclass();
         }

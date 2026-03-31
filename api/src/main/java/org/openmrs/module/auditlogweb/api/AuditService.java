@@ -114,6 +114,7 @@ public interface AuditService {
      * @param <T>        the type of the audited entity
      * @return the number of revisions matching the filter criteria
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     <T> long countRevisionsWithFilters(Class<T> clazz, Integer userId, Date startDate, Date endDate);
 
     /**
@@ -125,6 +126,7 @@ public interface AuditService {
      * @param userId the ID of the user to resolve
      * @return the resolved username, system ID, or "Unknown" if none are available
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     String resolveUsername(Integer userId);
 
     /**
@@ -133,6 +135,7 @@ public interface AuditService {
      * @param username the username to resolve
      * @return the corresponding user ID, or {@code null} if not found
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     Integer resolveUserId(String username);
     /**
      * Retrieves a paginated list of audit revisions across all audited entity types,
@@ -158,6 +161,7 @@ public interface AuditService {
      * @param endDate    optional end date to filter revisions by (can be {@code null})
      * @return the count of matching revisions across all entities
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
 
     /**
@@ -165,6 +169,7 @@ public interface AuditService {
      *
      * @return the total number of audit log records
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     long getAuditLogsCount();
 
     /**
@@ -176,6 +181,7 @@ public interface AuditService {
      * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
      * @return the total count of audit log entries matching the filters
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
 
     /**
@@ -184,6 +190,7 @@ public interface AuditService {
      * @param auditEntities the list of audit entities to be mapped
      * @return a list of audit log detail DTOs containing structured information from the audit entities
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities);
 
     /**
@@ -198,6 +205,7 @@ public interface AuditService {
      * @param sortOrder   optional sort order ("asc" or "desc"); can be null
      * @return list of matching {@link AuditEntity} entries
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
                                                                      Date startDate, Date endDate, String entityType, String sortOrder);
 
@@ -210,6 +218,7 @@ public interface AuditService {
      * @param entityType optional entity type filter; can be null
      * @return count of matching audit log entries
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType);
 
     /**
@@ -222,6 +231,7 @@ public interface AuditService {
      * @param revisionId the revision number
      * @return list of related AuditEntity objects modified in the same revision
      */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     List<AuditEntity<?>> getRelatedEntitiesInRevision(Class<?> entityClass, Object entityId, int revisionId);
 
 }

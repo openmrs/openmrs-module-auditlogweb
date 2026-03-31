@@ -52,20 +52,14 @@
                                 Object entityObj = entity != null ? ((org.openmrs.module.auditlogweb.AuditEntity<?>) entity).getEntity() : null;
                                 String className = entityObj != null ? entityObj.getClass().getName() : "";
                                 String simpleName = entityObj != null ? entityObj.getClass().getSimpleName() : "";
-                                Object entityId = null;
-                                try {
-                                    java.lang.reflect.Method method = entityObj.getClass().getMethod("getId");
-                                    entityId = method.invoke(entityObj);
-                                } catch (Exception e) {
-                                    // ignore
-                                }
-                                pageContext.setAttribute("entityIdValue", entityId);
+                                String entityIdValue = entityObj != null ? org.openmrs.module.auditlogweb.api.utils.UtilClass.getEntityIdAsString(entityObj) : "unknown";
+                                pageContext.setAttribute("entityIdValue", entityIdValue);
                             %>
                             <tr>
                                 <td><%= simpleName %></td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${entityIdValue != null}">
+                                        <c:when test="${entityIdValue != 'unknown' && entityIdValue != ''}">
                                             <c:out value="${entityIdValue}" />
                                         </c:when>
                                         <c:otherwise>
@@ -82,7 +76,7 @@
                                     </c:choose>
                                 </td>
                                 <td>
-                                    <c:if test="${entityIdValue != null}">
+                                    <c:if test="${entityIdValue != 'unknown' && entityIdValue != ''}">
                                         <a href="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${related.revisionEntity.id}&entityId=${entityIdValue}&class=<%= className %>">
                                             View Audit
                                         </a>

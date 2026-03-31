@@ -472,8 +472,6 @@ public class AuditDao {
                         .forRevisionsOfEntity(clazz, false, true)
                         .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
                 
-                query.setMaxResults(1000);
-                
                 List<?> results = query.getResultList();
                 
                 for (Object row : results) {
@@ -490,7 +488,7 @@ public class AuditDao {
                     }
                 }
             } catch (Exception e) {
-                log.debug("Could not find revision {} for entity {}: {}", revisionId, clazz.getSimpleName(), e.getMessage());
+                log.warn("Could not find revision {} for entity {}: {}", revisionId, clazz.getSimpleName(), e.getMessage());
             }
         }
 

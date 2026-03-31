@@ -9,18 +9,18 @@
 package org.openmrs.module.auditlogweb.api.utils;
 
 import org.hibernate.envers.Audited;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 public class UtilClassUnitTest {
@@ -166,7 +166,7 @@ public class UtilClassUnitTest {
         public void setCommonField(String commonField) { this.commonField = commonField; }
     }
 
-    public static class PersonImpl {
+    public static class PersonImpl extends BaseOpenmrsData {
         private Integer personId;
         private String gender;
         private Date birthdate;
@@ -177,5 +177,15 @@ public class UtilClassUnitTest {
         public void setGender(String gender) { this.gender = gender; }
         public Date getBirthdate() { return birthdate; }
         public void setBirthdate(Date birthdate) { this.birthdate = birthdate; }
+    }
+
+    public static class BaseOpenmrsData extends BaseOpenmrsObject {
+    }
+
+    public static class BaseOpenmrsObject {
+        private String uuid;
+
+        public String getUuid() { return uuid; }
+        public void setUuid(String uuid) { this.uuid = uuid; }
     }
 }
