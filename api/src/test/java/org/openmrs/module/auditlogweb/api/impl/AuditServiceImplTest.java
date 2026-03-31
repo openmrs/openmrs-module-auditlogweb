@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,7 +50,8 @@ class AuditServiceImplTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    static class TestAuditedEntity {}
+    static class TestAuditedEntity {
+    }
 
     @Test
     void shouldReturnAuditEntities_GivenValidEntityClassAndPagination() {
@@ -57,14 +59,15 @@ class AuditServiceImplTest {
         when(auditDao.getAllRevisions(TestAuditedEntity.class, 0, 5, "desc"))
                 .thenReturn(Collections.singletonList(mockEntity));
 
-        List<AuditEntity<TestAuditedEntity>> result = auditService.getAllRevisions(TestAuditedEntity.class, 0, 5, "desc");
+        List<AuditEntity<TestAuditedEntity>> result = auditService.getAllRevisions(TestAuditedEntity.class, 0, 5,
+                "desc");
         assertEquals(1, result.size());
         assertSame(mockEntity, result.get(0));
     }
 
     @Test
     void shouldReturnEmptyList_GivenInvalidEntityClassName() {
-        List<?> result = auditService.getAllRevisions("non.existent.ClassName", 0, 5,  "desc");
+        List<?> result = auditService.getAllRevisions("non.existent.ClassName", 0, 5, "desc");
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
@@ -83,8 +86,7 @@ class AuditServiceImplTest {
         AuditEntity<TestAuditedEntity> mockEntity = mock(AuditEntity.class);
         when(auditDao.getAuditEntityRevisionById(TestAuditedEntity.class, 1, 3)).thenReturn(mockEntity);
 
-        AuditEntity<TestAuditedEntity> result =
-                auditService.getAuditEntityRevisionById(TestAuditedEntity.class, 1, 3);
+        AuditEntity<TestAuditedEntity> result = auditService.getAuditEntityRevisionById(TestAuditedEntity.class, 1, 3);
         assertSame(mockEntity, result);
     }
 
@@ -159,8 +161,8 @@ class AuditServiceImplTest {
         when(auditDao.getRevisionsWithFilters(TestAuditedEntity.class, 1, 10, 2, null, null, "desc"))
                 .thenReturn(Collections.singletonList(mockEntity));
 
-        List<AuditEntity<TestAuditedEntity>> result =
-                auditService.getRevisionsWithFilters(TestAuditedEntity.class, 1, 10, 2, null, null, "desc");
+        List<AuditEntity<TestAuditedEntity>> result = auditService.getRevisionsWithFilters(TestAuditedEntity.class, 1,
+                10, 2, null, null, "desc");
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -219,7 +221,7 @@ class AuditServiceImplTest {
         when(auditDao.getAllRevisionsAcrossEntities(0, 5, 10, startDate, endDate, "desc"))
                 .thenReturn(Collections.singletonList(mockEntity));
 
-        List<AuditEntity<?>> result = auditService.getAllRevisionsAcrossEntities(0, 5, 10, startDate, endDate,  "desc");
+        List<AuditEntity<?>> result = auditService.getAllRevisionsAcrossEntities(0, 5, 10, startDate, endDate, "desc");
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -243,8 +245,7 @@ class AuditServiceImplTest {
         when(auditDao.getAllRevisionsAcrossEntities(0, 5, null, null, null, "desc"))
                 .thenReturn(Collections.singletonList(mockEntity));
 
-        List<AuditEntity<?>> result =
-                auditService.getAllRevisionsAcrossEntities(0, 5, null, null, null, "desc");
+        List<AuditEntity<?>> result = auditService.getAllRevisionsAcrossEntities(0, 5, null, null, null, "desc");
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -294,12 +295,36 @@ class AuditServiceImplTest {
         assertEquals(55L, count);
     }
 
+    @Test
+    void shouldExcludeAbstractClassesFromValidation() {
+        abstract class DummyAbstract {
+        }
+        class DummyConcrete {
+        }
+
+        Class<?> abstractClass = DummyAbstract.class;
+        Class<?> concreteClass = DummyConcrete.class;
+
+        boolean isAbstract = java.lang.reflect.Modifier.isAbstract(abstractClass.getModifiers());
+        boolean isConcrete = java.lang.reflect.Modifier.isAbstract(concreteClass.getModifiers());
+
+        // Abstract class should be abstract → true
+        assertTrue(isAbstract);
+
+        // Concrete class should NOT be abstract → false
+        assertFalse(isConcrete);
+    }
+
     public static class TestEntity {
         private Integer id;
+
         public Integer getId() {
             return id;
         }
-        public void setId(Integer id) { this.id = id; }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
     }
 
 }

@@ -32,11 +32,11 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-
 /**
  * Default implementation of the {@link AuditService} interface.
  *
- * <p>This service delegates actual data retrieval to the {@link AuditDao} layer,
+ * <p>
+ * This service delegates actual data retrieval to the {@link AuditDao} layer,
  * and provides fallback logic for resolving user details and filtering audits
  * by user or date range.
  */
@@ -109,7 +109,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                 return (AuditEntity<T>) auditDao.getGlobalPropertyAuditEntityRevisionById((String) id, revisionId);
             }
         }
-        throw new IllegalArgumentException("Unsupported ID type for revision retrieval: " + id.getClass().getSimpleName());
+        throw new IllegalArgumentException(
+                "Unsupported ID type for revision retrieval: " + id.getClass().getSimpleName());
     }
 
     /**
@@ -167,7 +168,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      * {@inheritDoc}
      */
     @Override
-    public <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> clazz, int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
+    public <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> clazz, int page, int size, Integer userId,
+            Date startDate, Date endDate, String sortOrder) {
         return auditDao.getRevisionsWithFilters(clazz, page, size, userId, startDate, endDate, sortOrder);
     }
 
@@ -199,28 +201,33 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
         return null;
     }
+
     /**
-     * Retrieves a paginated list of audit entries across all Envers-audited entity types.
+     * Retrieves a paginated list of audit entries across all Envers-audited entity
+     * types.
      *
-     * @param page       the page number (0-based)
-     * @param size       the number of records per page
-     * @param userId     optional user ID to filter by the user who made the change
-     * @param startDate  optional start date to filter changes from
-     * @param endDate    optional end date to filter changes up to
-     * @return a paginated list of {@link AuditEntity} objects across all audited entities
+     * @param page      the page number (0-based)
+     * @param size      the number of records per page
+     * @param userId    optional user ID to filter by the user who made the change
+     * @param startDate optional start date to filter changes from
+     * @param endDate   optional end date to filter changes up to
+     * @return a paginated list of {@link AuditEntity} objects across all audited
+     *         entities
      */
     @Override
-    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
+    public List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate,
+            Date endDate, String sortOrder) {
         return auditDao.getAllRevisionsAcrossEntities(page, size, userId, startDate, endDate, sortOrder);
     }
 
     /**
-     * Counts the total number of audit entries across all Envers-audited entity types,
+     * Counts the total number of audit entries across all Envers-audited entity
+     * types,
      * filtered optionally by user and date range.
      *
-     * @param userId     optional user ID to filter by the user who made the change
-     * @param startDate  optional start date to filter changes from
-     * @param endDate    optional end date to filter changes up to
+     * @param userId    optional user ID to filter by the user who made the change
+     * @param startDate optional start date to filter changes from
+     * @param endDate   optional end date to filter changes up to
      * @return the total number of matching audit entries
      */
     @Override
@@ -231,7 +238,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     /**
      * Returns the total count of audit log entries across all audited entities.
      *
-     * <p>This is used primarily for pagination metadata in REST responses.
+     * <p>
+     * This is used primarily for pagination metadata in REST responses.
      *
      * @return the total number of audit log entries
      */
@@ -243,13 +251,17 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     /**
      * Counts the total number of audit log entries matching the given filters.
      * <p>
-     * If a start date is provided without an end date, the current date is used as the end date.
+     * If a start date is provided without an end date, the current date is used as
+     * the end date.
      * If the end date is before the start date, zero is returned.
      *
-     * @param userId     optional filter for the user ID who made the changes; can be null
-     * @param startDate  optional filter for the start of the date range; can be null
+     * @param userId     optional filter for the user ID who made the changes; can
+     *                   be null
+     * @param startDate  optional filter for the start of the date range; can be
+     *                   null
      * @param endDate    optional filter for the end of the date range; can be null
-     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+     * @param entityType optional filter for the type of entity (e.g., "Patient",
+     *                   "Order"); can be null
      * @return the total count of audit log entries matching the filters
      */
     @Override
@@ -262,8 +274,10 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         }
         return auditDao.countRevisionsAcrossEntities(userId, startDate, endDate, entityType);
     }
+
     /**
-     * Maps a list of {@link AuditEntity} objects to their corresponding {@link AuditLogDetailDTO} representations.
+     * Maps a list of {@link AuditEntity} objects to their corresponding
+     * {@link AuditLogDetailDTO} representations.
      * Each DTO contains information about the revision, user, and changed fields.
      *
      * @param auditEntities the list of audit entities to map
@@ -291,7 +305,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      */
     @Override
     public List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
-                                                                            Date startDate, Date endDate, String entityType, String sortOrder) {
+            Date startDate, Date endDate, String entityType, String sortOrder) {
         if (entityType != null && !entityType.trim().isEmpty()) {
             boolean isValid = UtilClass.findClassesWithAnnotation().stream()
                     .map(className -> {
@@ -302,6 +316,9 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                         }
                     })
                     .filter(Objects::nonNull)
+                    // FIXED HERE : Exclude abstract/base classes to prevent NotAuditedException and
+                    // invalid dropdown entries
+                    .filter(clazz -> !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers()))
                     .anyMatch(clazz -> clazz.getSimpleName().equalsIgnoreCase(entityType));
 
             if (!isValid) {
@@ -310,17 +327,18 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         }
 
         return auditDao.getAllRevisionsAcrossEntitiesWithEntityType(
-                page, size, userId, startDate, endDate, entityType, sortOrder
-        );
+                page, size, userId, startDate, endDate, entityType, sortOrder);
     }
 
     /**
      * Counts audit logs across entities with filtering.
      */
     @Override
-    public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType) {
+    public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate,
+            String entityType) {
         return auditDao.countRevisionsAcrossEntitiesWithEntityType(userId, startDate, endDate, entityType);
     }
+
     private Object fetchPreviousRevision(AuditEntity<?> entity, Object currentEntity) {
         if (entity.getRevisionEntity().getId() <= 1) {
             return null;
@@ -331,18 +349,17 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
             return getRevisionById(
                     currentEntity.getClass(),
                     entityId,
-                    entity.getRevisionEntity().getId() - 1
-            );
+                    entity.getRevisionEntity().getId() - 1);
         } catch (IllegalArgumentException e) {
             log.warn("Previous revision not supported for entity [{}] with ID [{}]",
                     currentEntity.getClass().getSimpleName(), entityId);
             return null;
         }
     }
+
     private List<AuditFieldDiff> extractChangedFields(Object currentEntity, Object oldEntity) {
         List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(
-                currentEntity.getClass(), oldEntity, currentEntity
-        );
+                currentEntity.getClass(), oldEntity, currentEntity);
 
         return diffs.stream()
                 .filter(AuditFieldDiff::isChanged)
@@ -356,7 +373,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                 })
                 .collect(Collectors.toList());
     }
-    
+
     private AuditLogDetailDTO buildAuditLogDetailDTO(
             AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields) {
 
