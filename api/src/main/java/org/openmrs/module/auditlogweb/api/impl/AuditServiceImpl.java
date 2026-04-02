@@ -29,8 +29,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -326,9 +328,11 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     @Override
     public List<AuditEntity<?>> getRelatedEntitiesInRevision(Class<?> entityClass, Object entityId, int revisionId) {
         Map<String, Class<?>> fieldTypes = UtilClass.getFieldTypes(entityClass);
-        
-        List<AuditEntity<?>> allEntitiesInRevision = auditDao.getEntitiesModifiedInRevision(revisionId);
-        
+        Set<Class<?>> relevantClasses = new HashSet<>(fieldTypes.values());
+        relevantClasses.remove(null);
+
+        List<AuditEntity<?>> allEntitiesInRevision = auditDao.getEntitiesModifiedInRevision(revisionId, relevantClasses);
+
         return allEntitiesInRevision.stream()
                 .filter(auditEntity -> {
                     if (auditEntity.getEntity() == null) {

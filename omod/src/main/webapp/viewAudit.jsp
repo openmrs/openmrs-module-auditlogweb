@@ -47,20 +47,12 @@
                     </thead>
                     <tbody>
                         <c:forEach var="related" items="${relatedEntities}">
-                            <%
-                                Object entity = (Object) pageContext.getAttribute("related");
-                                Object entityObj = entity != null ? ((org.openmrs.module.auditlogweb.AuditEntity<?>) entity).getEntity() : null;
-                                String className = entityObj != null ? entityObj.getClass().getName() : "";
-                                String simpleName = entityObj != null ? entityObj.getClass().getSimpleName() : "";
-                                String entityIdValue = entityObj != null ? org.openmrs.module.auditlogweb.api.utils.UtilClass.getEntityIdAsString(entityObj) : "unknown";
-                                pageContext.setAttribute("entityIdValue", entityIdValue);
-                            %>
                             <tr>
-                                <td><%= simpleName %></td>
+                                <td><c:out value="${related.simpleName}" /></td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${entityIdValue != 'unknown' && entityIdValue != ''}">
-                                            <c:out value="${entityIdValue}" />
+                                        <c:when test="${related.entityIdValue != 'unknown' && related.entityIdValue != ''}">
+                                            <c:out value="${related.entityIdValue}" />
                                         </c:when>
                                         <c:otherwise>
                                             N/A
@@ -76,10 +68,13 @@
                                     </c:choose>
                                 </td>
                                 <td>
-                                    <c:if test="${entityIdValue != 'unknown' && entityIdValue != ''}">
-                                        <a href="${pageContext.request.contextPath}/module/auditlogweb/viewAudit.form?auditId=${related.revisionEntity.id}&entityId=${entityIdValue}&class=<%= className %>">
-                                            View Audit
-                                        </a>
+                                    <c:if test="${related.entityIdValue != 'unknown' && related.entityIdValue != ''}">
+                                        <c:url var="viewAuditUrl" value="/module/auditlogweb/viewAudit.form">
+                                            <c:param name="auditId" value="${related.revisionId}" />
+                                            <c:param name="entityId" value="${related.entityIdValue}" />
+                                            <c:param name="class" value="${related.className}" />
+                                        </c:url>
+                                        <a href="${viewAuditUrl}">View Audit</a>
                                     </c:if>
                                 </td>
                             </tr>

@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
+import org.openmrs.module.auditlogweb.web.dto.RelatedEntityDto;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.ArrayList;
@@ -103,15 +105,21 @@ public class ViewAuditController {
             List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
 
             // Fetch related entities modified in the same revision and exclude current entity
-            List<AuditEntity<?>> relatedEntities = new ArrayList<>();
+            List<RelatedEntityDto> relatedEntities = new ArrayList<>();
             try {
                 List<AuditEntity<?>> allRelated = auditService.getRelatedEntitiesInRevision(clazz, entityId, auditId);
+                String currentId = UtilClass.getEntityIdAsString(currentEntity);
                 for (AuditEntity<?> related : allRelated) {
                     if (related.getEntity() != null) {
-                        Object relatedId = UtilClass.getEntityIdAsString(related.getEntity());
-                        String currentId = UtilClass.getEntityIdAsString(currentEntity);
+                        String relatedId = UtilClass.getEntityIdAsString(related.getEntity());
                         if (!related.getEntity().getClass().equals(clazz) || !relatedId.equals(currentId)) {
-                            relatedEntities.add(related);
+                            relatedEntities.add(new RelatedEntityDto(
+                                    related.getEntity().getClass().getName(),
+                                    related.getEntity().getClass().getSimpleName(),
+                                    relatedId,
+                                    related.getRevisionEntity().getId(),
+                                    related.getRevisionType()
+                            ));
                         }
                     }
                 }

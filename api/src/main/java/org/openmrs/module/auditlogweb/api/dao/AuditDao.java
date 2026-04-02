@@ -31,6 +31,7 @@ import java.lang.reflect.Modifier;
 import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -454,33 +455,38 @@ public class AuditDao {
     }
 
     /**
-     * Finds all entities modified in a specific revision across all audited entity types.
-     * This method queries each audited entity table to find entries with the given revision ID.
+     * Finds all entities modified in a specific revision, querying only audited entity types
+     * that are assignable from the given relevant classes (i.e., the field types of the main entity).
      *
-     * @param revisionId the revision number to query
+     * @param revisionId      the revision number to query
+     * @param relevantClasses the set of field types from the main entity used to filter which
+     *                        audited tables to query
      * @return list of AuditEntity objects modified in this revision
      */
-    public List<AuditEntity<?>> getEntitiesModifiedInRevision(int revisionId) {
+    public List<AuditEntity<?>> getEntitiesModifiedInRevision(int revisionId, Set<Class<?>> relevantClasses) {
         List<AuditEntity<?>> result = new ArrayList<>();
-        List<Class<?>> classes = getNonAbstractAuditedClasses();
+
+        List<Class<?>> classesToQuery = getNonAbstractAuditedClasses().stream()
+                .filter(c -> relevantClasses.stream().anyMatch(r -> r.isAssignableFrom(c)))
+                .collect(Collectors.toList());
 
         AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
 
-        for (Class<?> clazz : classes) {
+        for (Class<?> clazz : classesToQuery) {
             try {
                 AuditQuery query = auditReader.createQuery()
                         .forRevisionsOfEntity(clazz, false, true)
                         .add(org.hibernate.envers.query.AuditEntity.revisionNumber().eq(revisionId));
-                
+
                 List<?> results = query.getResultList();
-                
+
                 for (Object row : results) {
                     if (row instanceof Object[]) {
                         Object[] array = (Object[]) row;
                         Object entity = array[0];
                         OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) array[1];
                         RevisionType revisionType = (RevisionType) array[2];
-                        
+
                         if (entity != null) {
                             Integer userId = revisionEntity != null ? revisionEntity.getChangedBy() : null;
                             result.add(new AuditEntity<>(entity, revisionEntity, revisionType, userId));
