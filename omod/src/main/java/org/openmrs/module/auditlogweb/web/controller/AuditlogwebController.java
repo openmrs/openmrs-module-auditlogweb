@@ -109,6 +109,7 @@ public class AuditlogwebController {
             model.addAttribute("currentPage", page);
             model.addAttribute("pageSize", size);
             model.addAttribute("sortOrder", sortOrder);
+            model.addAttribute("page", "auditlogs");
 
         } catch (Exception e) {
             log.error("Failed to load default audit logs", e);
@@ -186,6 +187,7 @@ public class AuditlogwebController {
             model.addAttribute("currentPage", page);
             model.addAttribute("pageSize", size);
             model.addAttribute("sortOrder", sortOrder);
+            model.addAttribute("page", "auditlogs");
 
             if (domainName != null && !domainName.isEmpty()) {
                 model.addAttribute("currentClass", domainName);

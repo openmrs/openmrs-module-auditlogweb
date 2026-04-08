@@ -1,0 +1,200 @@
+/**
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ * Copyright (C) OpenMRS Inc.
+ */
+
+.security-page {
+    font-family: 'IBM Plex Sans', sans-serif;
+    padding: 1.5rem;
+    background: #ffffff;
+    color: #161616;
+}
+
+.security-title { font-size: 2rem; font-weight: 300; margin: 0; }
+.security-subtitle { color: #6f6f6f; margin-top: 0.25rem; margin-bottom: 1.5rem; }
+
+.security-filter-panel {
+    background: #f4f4f4;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: end;
+    margin-bottom: 1rem;
+}
+
+.security-filter-panel label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #525252;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.security-filter-panel input,
+.security-filter-panel select,
+.security-filter-panel button {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #c6c6c6;
+    border-radius: 2px;
+    padding: 0 0.6rem;
+    box-sizing: border-box;
+}
+
+.security-filter-panel button {
+    background: #1bac9a;
+    color: #fff;
+    border-color: #1bac9a;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.security-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    background: #fff;
+}
+
+.security-table th {
+    text-align: left;
+    background: #f4f4f4;
+    color: #161616;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.security-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: top;
+}
+
+.security-table .security-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+
+.security-table .security-row:hover {
+    background: #f5fbf9;
+    /* box-shadow: inset 3px 0 0 #1bac9a; */
+}
+
+.security-table .security-row:active {
+    background: #e8f6f2;
+    transform: translateY(1px);
+}
+
+.details-col {
+    width: 390px;
+    max-width: 390px;
+}
+
+.details-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.details-preview {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.details-icon {
+    border: 0;
+    background: transparent;
+    color: #525252;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+}
+
+.details-icon:hover {
+    color: #1bac9a;
+}
+
+.details-tooltip {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 20;
+    max-width: 520px;
+    min-width: 220px;
+    background: #161616;
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: break-word;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+    display: none;
+}
+
+.details-icon:hover + .details-tooltip {
+    display: block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-logout { background: #d0e1ff; color: #0043ce; }
+.badge-security { background: #fff1f1; color: #750e13; }
+.badge-password { background: #e0f2f1; color: #004d40; }
+.badge-login-success{ background: #1bac9a21; color: #1bac9a;}
+
+.security-meta {
+    color: #6f6f6f;
+    font-size: 12px;
+    margin-top: 0.25rem;
+}
+
+.security-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    font-size: 13px;
+    color: #6f6f6f;
+}
+
+.pager-btn {
+    background: #fff;
+    border: 1px solid #c6c6c6;
+    border-radius: 2px;
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+}
+
+.pager-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.error-box {
+    margin-top: 1rem;
+    background: #fff1f1;
+    color: #750e13;
+    border: 1px solid #ffd7d9;
+    padding: 0.75rem;
+}

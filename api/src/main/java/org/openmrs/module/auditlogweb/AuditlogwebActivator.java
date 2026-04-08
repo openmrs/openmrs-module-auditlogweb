@@ -10,7 +10,10 @@ package org.openmrs.module.auditlogweb;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.api.UserService;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
+import org.openmrs.module.auditlogweb.advice.PasswordAuditAdvice;
 
 /**
  * This class contains the logic that is run every time this module is either started or shutdown
@@ -19,18 +22,37 @@ public class AuditlogwebActivator extends BaseModuleActivator {
 
     private Log log = LogFactory.getLog(this.getClass());
 
+    private PasswordAuditAdvice passwordAuditAdvice;
+
     /**
      * @see #started()
      */
+    @Override
     public void started() {
         log.info("Started Auditlogweb");
+        try {
+            passwordAuditAdvice = new PasswordAuditAdvice();
+            Context.addAdvice(UserService.class, passwordAuditAdvice);
+            log.info("Auditlogweb: PasswordAuditAdvice registered on UserService");
+        } catch (Exception e) {
+            log.error("Auditlogweb: Failed to register PasswordAuditAdvice", e);
+        }
     }
 
     /**
      * @see #shutdown()
      */
-    public void shutdown() {
-        log.info("Shutdown Auditlogweb");
+    @Override
+    public void stopped() {
+        log.info("Stopped Auditlogweb");
+        try {
+            if (passwordAuditAdvice != null) {
+                Context.removeAdvice(UserService.class, passwordAuditAdvice);
+                passwordAuditAdvice = null;
+                log.info("Auditlogweb: PasswordAuditAdvice removed from UserService");
+            }
+        } catch (Exception e) {
+            log.error("Auditlogweb: Failed to remove PasswordAuditAdvice", e);
+        }
     }
-
 }

@@ -23,7 +23,7 @@
 	</modules>
 
 	<properties>
-		<openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
+		<openmrsPlatformVersion>2.7.9-SNAPSHOT</openmrsPlatformVersion>
 		<legacyUiVersion>1.23.0</legacyUiVersion>
 		<javaCompilerVersion>1.8</javaCompilerVersion>
 		<lombokVersion>1.18.38</lombokVersion>
