@@ -46,6 +46,20 @@
 		<file>messages_es.properties</file>
 	</messages>
 	<!-- /Internationalization -->
-	
+	<!-- Servlet filter: captures IP, User-Agent, session into ThreadLocal on every request -->
+	<filter>
+		<filter-name>auditContextFilter</filter-name>
+		<filter-class>org.openmrs.module.auditlogweb.web.AuditContextFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>auditContextFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Session listener: detects session timeouts vs explicit logouts -->
+	<listener>
+		<listener-class>org.openmrs.module.auditlogweb.listener.SessionTimeoutListener</listener-class>
+	</listener>
+
 </module>
 

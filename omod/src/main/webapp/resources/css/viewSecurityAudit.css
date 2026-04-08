@@ -1,0 +1,306 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
+
+/* Import IBM Plex Sans font */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+/* General Styles */
+body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background-color: #ffffff;
+    color: #161616;
+    margin: 0;
+    padding: 0;
+}
+
+.security-audit-detail-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+    background-color: #ffffff;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb-section {
+    margin-bottom: 24px;
+}
+
+.breadcrumb-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #1bac9a;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    transition: opacity 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    opacity: 0.8;
+}
+
+.material-icons {
+    font-size: 18px;
+}
+
+/* Title Section */
+.title-section {
+    margin-bottom: 32px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 12px;
+}
+
+.detail-title {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #161616;
+    letter-spacing: 0.02em;
+}
+
+.detail-subtitle {
+    margin: 0;
+    font-size: 12px;
+    color: #525252;
+    letter-spacing: 0.03em;
+}
+
+/* Error Box */
+.error-box {
+    background-color: #fff1f1;
+    border-left: 4px solid #da1e28;
+    color: #750e13;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    border-radius: 2px;
+    font-size: 12px;
+}
+
+/* Information Sections */
+.info-section {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #525252;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 16px 0;
+    text-decoration: underline;
+    text-decoration-color: #1bac9a;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
+}
+
+/* Detail Table */
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.detail-table th {
+    text-align: left;
+    background-color: #f4f4f4;
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #525252;
+}
+
+.detail-table td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    font-size: 13px;
+    background-color: #ffffff;
+}
+
+.detail-table tbody tr:hover {
+    background-color: #f4f4f4;
+}
+
+.label-cell {
+    font-weight: 600;
+    width: 160px;
+    background-color: #f4f4f4;
+    color: #525252;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+}
+
+.null-value {
+    color: #8d8d8d;
+    font-style: italic;
+}
+
+.user-agent-cell {
+    word-break: break-word;
+    white-space: normal;
+    max-width: 500px;
+}
+
+.truncate-user-agent {
+    display: block;
+    word-break: break-word;
+}
+
+.session-id-cell {
+    font-family: monospace;
+    font-size: 11px;
+}
+
+/* Badge Styles */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-logout { background: #d0e1ff; color: #0043ce; }
+.badge-security { background: #fff1f1; color: #750e13; }
+.badge-password { background: #e0f2f1; color: #004d40; }
+.badge-login-success{ background: #1bac9a21; color: #1bac9a;}
+
+.details-content {
+    background-color: #f4f4f4;
+    border: 1px solid #e0e0e0;
+    padding: 16px;
+    border-radius: 2px;
+    overflow-x: auto;
+}
+
+.json-details {
+    margin: 0;
+    font-family: monospace;
+    font-size: 12px;
+    color: #161616;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.no-details {
+    margin: 0;
+    color: #8d8d8d;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.related-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.related-table thead {
+    background-color: #f4f4f4;
+}
+
+.related-table th {
+    text-align: left;
+    background-color: #f4f4f4;
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #525252;
+    letter-spacing: 0.05em;
+}
+
+.related-table td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.related-table tbody tr {
+    background-color: #ffffff;
+    transition: background-color 0.2s ease;
+}
+
+.related-table tbody tr:hover {
+    background-color: #f4f4f4;
+}
+
+.related-table tbody tr.current-event {
+    background-color: #e0f2f1;
+    font-weight: 500;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 32px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border: 1px solid #161616;
+    border-radius: 2px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s ease;
+    text-align: center;
+    min-width: 120px;
+}
+
+.btn-secondary {
+    background-color: #ffffff;
+    color: #161616;
+    border-color: #e0e0e0;
+}
+
+.btn-secondary:hover {
+    background-color: #f4f4f4;
+    border-color: #161616;
+}
+
+@media (max-width: 768px) {
+    .security-audit-detail-container {
+        padding: 12px;
+    }
+
+    .detail-table,
+    .related-table {
+        font-size: 12px;
+    }
+
+    .detail-table td,
+    .related-table td {
+        padding: 6px 8px;
+    }
+
+    .label-cell {
+        width: 120px;
+    }
+
+    .user-agent-cell {
+        max-width: 300px;
+    }
+
+    .detail-title {
+        font-size: 18px;
+    }
+}
