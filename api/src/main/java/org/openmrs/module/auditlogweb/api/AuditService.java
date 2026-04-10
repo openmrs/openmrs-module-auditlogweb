@@ -138,7 +138,6 @@ public interface AuditService {
      * @param username the username to resolve
      * @return the corresponding user ID, or {@code null} if not found
      */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     Integer resolveUserId(String username);
     /**
      * Retrieves a paginated list of audit revisions across all audited entity types,
@@ -287,17 +286,32 @@ public interface AuditService {
          */
         List<AuditSecurityEvent> getSecurityEvents(String eventType, String username,
             Date startDate, Date endDate, int page, int size);
+    /**
+     * Retrieves paginated security audit events from {@code audit_security_event} table.
+     *
+     * @param eventType optional event type filter
+     * @param username optional username filter (partial, case-insensitive)
+     * @param startDate optional inclusive start time filter
+     * @param endDate optional inclusive end time filter
+     * @param page zero-based page index
+     * @param size page size
+     * @return paginated list of matching security events
+     */
+    @Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
+    List<AuditSecurityEvent> getSecurityEvents(String eventType, String username,
+        Date startDate, Date endDate, int page, int size);
 
-        /**
-         * Counts security audit events with optional filters.
-         *
-         * @param eventType optional event type filter
-         * @param username optional username filter (partial, case-insensitive)
-         * @param startDate optional inclusive start time filter
-         * @param endDate optional inclusive end time filter
-         * @return number of matching security events
-         */
-        long countSecurityEvents(String eventType, String username, Date startDate, Date endDate);
+    /**
+     * Counts security audit events with optional filters.
+     *
+     * @param eventType optional event type filter
+     * @param username optional username filter (partial, case-insensitive)
+     * @param startDate optional inclusive start time filter
+     * @param endDate optional inclusive end time filter
+     * @return number of matching security events
+     */
+    @Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
+    long countSecurityEvents(String eventType, String username, Date startDate, Date endDate);
 
     /**
      * Persists a security audit event to the  audit_security_event table.
@@ -320,6 +334,7 @@ public interface AuditService {
      * @param eventId the primary key ID of the security event
      * @return the {@link AuditSecurityEvent}, or null if not found
      */
+    @Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
     AuditSecurityEvent getSecurityEventById(Long eventId);
 
     /**
@@ -329,6 +344,7 @@ public interface AuditService {
      * @param limit     the maximum number of events to return
      * @return a list of {@link AuditSecurityEvent} ordered by eventTime descending
      */
+    @Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
     List<AuditSecurityEvent> getRelatedSecurityEvents(String sessionId, int limit);
 
 }

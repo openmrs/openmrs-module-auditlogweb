@@ -9,8 +9,10 @@
 package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -39,6 +41,7 @@ public class SecurityAuditDetailController {
     private final AuditService auditService;
 
     private static final String VIEW = MODULE_PATH + "/viewSecurityAudit";
+    private final String ACCESS_DENIED_VIEW = MODULE_PATH + "/accessDenied";
     private static final int RELATED_EVENTS_LIMIT = 10;
 
     /**
@@ -51,6 +54,11 @@ public class SecurityAuditDetailController {
     @RequestMapping(method = RequestMethod.GET)
     public ModelAndView showDetails(HttpServletRequest request, ModelMap model) {
         try {
+
+            if(!Context.hasPrivilege(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)){
+                return new ModelAndView(ACCESS_DENIED_VIEW);
+            }
+
             String eventIdParam = request.getParameter("eventId");
 
             if (eventIdParam == null || eventIdParam.isEmpty()) {
