@@ -10,7 +10,10 @@ package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
+import org.openmrs.module.auditlogweb.AuditlogwebConstants;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.api.context.Context;
+import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -39,6 +42,7 @@ public class SecurityAuditlogwebController {
     private static final Logger log = LoggerFactory.getLogger(SecurityAuditlogwebController.class);
 
     private static final String VIEW = MODULE_PATH + "/securityauditlogs";
+    private final String ACCESS_DENIED_VIEW = MODULE_PATH + "/accessDenied";
 
     private final AuditService auditService;
 
@@ -56,6 +60,10 @@ public class SecurityAuditlogwebController {
         Date end = parseEndDate(endDate);
 
         try {
+            if(!Context.hasPrivilege(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)){
+                return ACCESS_DENIED_VIEW;
+            }
+
             List<AuditSecurityEvent> events = auditService.getSecurityEvents(eventType, username, start, end, page, size);
             long totalCount = auditService.countSecurityEvents(eventType, username, start, end);
             int totalPages = (int) Math.ceil((double) totalCount / Math.max(size, 1));
