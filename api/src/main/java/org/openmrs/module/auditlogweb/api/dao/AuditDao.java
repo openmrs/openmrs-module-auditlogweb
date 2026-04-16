@@ -494,7 +494,11 @@ public class AuditDao {
                     }
                 }
             } catch (Exception e) {
-                log.warn("Could not find revision {} for entity {}: {}", revisionId, clazz.getSimpleName(), e.getMessage());
+                if (isMissingAuditTableException(e)) {
+                    log.warn("Could not find revision {} for entity {}: {}", revisionId, clazz.getSimpleName(), e.getMessage());
+                } else {
+                    log.error("Unexpected error querying revision {} for entity {}", revisionId, clazz.getSimpleName(), e);
+                }
             }
         }
 

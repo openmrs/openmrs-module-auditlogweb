@@ -331,23 +331,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         Set<Class<?>> relevantClasses = new HashSet<>(fieldTypes.values());
         relevantClasses.remove(null);
 
-        List<AuditEntity<?>> allEntitiesInRevision = auditDao.getEntitiesModifiedInRevision(revisionId, relevantClasses);
-
-        return allEntitiesInRevision.stream()
-                .filter(auditEntity -> {
-                    if (auditEntity.getEntity() == null) {
-                        return false;
-                    }
-
-                    Class<?> actualType = auditEntity.getEntity().getClass();
-                    for (Class<?> fieldType : fieldTypes.values()) {
-                        if (fieldType != null && fieldType.isAssignableFrom(actualType)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                })
-                .collect(Collectors.toList());
+        return auditDao.getEntitiesModifiedInRevision(revisionId, relevantClasses);
     }
 
     private Object fetchPreviousRevision(AuditEntity<?> entity, Object currentEntity) {
