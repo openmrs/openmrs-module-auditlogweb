@@ -161,7 +161,7 @@ public class AuditlogwebController {
             @RequestParam(value = "endDate", required = false) String endDateStr,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "15") int size,
-            @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,   // <-- New param
+            @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,  
             Model model) {
 
         if (!EnversUtils.isEnversEnabled()) {

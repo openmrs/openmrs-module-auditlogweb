@@ -274,6 +274,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      */
     @Override
     public List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities) {
+        if (auditEntities == null) return new ArrayList<>();
         List<AuditLogDetailDTO> dtoList = new ArrayList<>();
 
         for (AuditEntity<?> entity : auditEntities) {

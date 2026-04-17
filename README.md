@@ -38,7 +38,7 @@ Installation
 2. Use the OpenMRS Administration > Manage Modules screen to upload and install the .omod file.
 
 Alternative Installation Method: 
-If OpenMRS SDk is installed, you can use the following command to install the module:
+If OpenMRS SDK is installed, you can use the following command to install the module:
 ```
 mvn openmrs-sdk:deploy -DserverId={serverName} -DmoduleVersion=1.0.0-SNAPSHOT
 ```
@@ -48,7 +48,7 @@ mvn openmrs-sdk:watch -DserverId={serverName} -DmoduleVersion=1.0.0-SNAPSHOT
 ```
 This will automatically deploy changes to the module without needing to manually upload the .omod file each time.
 
-If uploads are not allowed from the web (changable via a runtime property), you can drop the omod
+If uploads are not allowed from the web (changeable via a runtime property), you can drop the omod
 into the ~/.OpenMRS/modules folder.  (Where ~/.OpenMRS is assumed to be the Application 
 Data Directory that the running openmrs is currently using.)  After putting the file in there 
 simply restart OpenMRS/tomcat and the module will be loaded and started.
