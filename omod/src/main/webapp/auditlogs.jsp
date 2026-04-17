@@ -25,21 +25,30 @@
                 />
             </div>
             <div class="filter-field">
-                <label for="startDate" class="filter-label">From:</label>
-                <input type="date" id="startDate" name="startDate" value="${param.startDate}">
-            </div>
-            <div class="filter-field">
-                <label for="endDate" class="filter-label">To:</label>
-                <input type="date" id="endDate" name="endDate" value="${param.endDate}">
-            </div>
-            <div class="filter-field">
-                <label for="sortOrder" class="filter-label">Sort By:</label>
-                <select id="sortOrder" name="sortOrder">
-                    <option value="desc" <c:if test="${sortOrder == null || sortOrder == 'desc'}">selected</c:if>>Descending</option>
-                    <option value="asc" <c:if test="${sortOrder == 'asc'}">selected</c:if>>Ascending</option>
-                </select>
-            </div>
-        </div>
+    <label for="startDate" class="filter-label">From:</label>
+    <input type="date" id="startDate" name="startDate" value="${param.startDate}">
+</div>
+<div class="filter-field">
+    <label for="endDate" class="filter-label">To:</label>
+    <input type="date" id="endDate" name="endDate" value="${param.endDate}">
+</div>
+<div class="filter-field">
+    <label for="action" class="filter-label">Action:</label>
+    <select id="action" name="action">
+        <option value="" <c:if test="${empty param.action}">selected</c:if>>All</option>
+        <option value="ADD" <c:if test="${param.action == 'ADD'}">selected</c:if>>Created</option>
+        <option value="MOD" <c:if test="${param.action == 'MOD'}">selected</c:if>>Modified</option>
+        <option value="DEL" <c:if test="${param.action == 'DEL'}">selected</c:if>>Deleted</option>
+    </select>
+</div>
+<div class="filter-field">
+    <label for="sortOrder" class="filter-label">Sort By:</label>
+    <select id="sortOrder" name="sortOrder">
+        <option value="desc" <c:if test="${sortOrder == null || sortOrder == 'desc'}">selected</c:if>>Descending</option>
+        <option value="asc" <c:if test="${sortOrder == 'asc'}">selected</c:if>>Ascending</option>
+    </select>
+</div>
+</div>
 
         <div class="search-group">
             <label for="entitySearch" class="search-label">Search and Select an Entity:</label>
