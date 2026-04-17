@@ -19,6 +19,7 @@ import org.openmrs.module.auditlogweb.web.mapper.AuditLogDtoMapper;
 import org.openmrs.module.auditlogweb.web.service.AuditLogViewService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.openmrs.api.context.Context;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -60,6 +61,7 @@ public class AuditlogwebController {
 
     private final String VIEW = MODULE_PATH + "/auditlogs";
     private final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
+    private final String ACCESS_DENIED_VIEW = MODULE_PATH + "/accessDenied";
 
     private final AuditService auditService;
     private final EnversUiHelper enversUiHelper;
@@ -88,6 +90,10 @@ public class AuditlogwebController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "15") int size,
             Model model) {
+
+        if (!Context.hasPrivilege("View Audit Logs")) {
+            return ACCESS_DENIED_VIEW;
+        }
 
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
@@ -163,6 +169,10 @@ public class AuditlogwebController {
             @RequestParam(value = "size", defaultValue = "15") int size,
             @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,   // <-- New param
             Model model) {
+
+        if (!Context.hasPrivilege("View Audit Logs")) {
+            return ACCESS_DENIED_VIEW;
+        }
 
         if (!EnversUtils.isEnversEnabled()) {
             model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
