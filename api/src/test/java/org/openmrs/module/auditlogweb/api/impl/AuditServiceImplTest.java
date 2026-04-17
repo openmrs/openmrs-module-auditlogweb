@@ -8,6 +8,7 @@
  */
 package org.openmrs.module.auditlogweb.api.impl;
 
+import org.hibernate.envers.RevisionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -292,6 +293,41 @@ class AuditServiceImplTest {
                 1, null, null, "Patient");
 
         assertEquals(55L, count);
+    }
+
+    @Test
+    void shouldMapAuditEntitiesToDetails_WithChangedFields() {
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            User mockUser = mock(User.class);
+
+            context.when(Context::getUserService).thenReturn(userService);
+
+            when(userService.getUser(1)).thenReturn(mockUser);
+            when(mockUser.getDisplayString()).thenReturn("admin");
+
+            TestEntity oldEntity = new TestEntity();
+            oldEntity.setId(1);
+
+            TestEntity currentEntity = new TestEntity();
+            currentEntity.setId(1);
+
+            OpenmrsRevisionEntity revisionEntity = new OpenmrsRevisionEntity();
+            revisionEntity.setId(5);
+            revisionEntity.setChangedBy(1);
+            revisionEntity.setTimestamp(System.currentTimeMillis());
+
+            AuditEntity<TestEntity> auditEntity = new AuditEntity<>(currentEntity, revisionEntity, RevisionType.MOD, 1);
+
+            when(auditDao.getRevisionById(TestEntity.class, 1, 4)).thenReturn(oldEntity);
+
+            List<AuditLogDetailDTO> result = auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity));
+
+            assertEquals(1, result.size());
+            assertEquals("TestEntity", result.get(0).getEntityType());
+            assertEquals(5, result.get(0).getRevisionID());
+            assertEquals("admin", result.get(0).getChangedBy());
+        }
     }
 
     public static class TestEntity {
