@@ -293,6 +293,29 @@ class AuditServiceImplTest {
 
         assertEquals(55L, count);
     }
+    @Test
+    void shouldReturnZero_whenEndDateBeforeStartDate() throws Exception {
+    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+    Date startDate = sdf.parse("10/07/2025");
+    Date endDate = sdf.parse("01/01/2025");
+
+    long result = auditService.getAuditLogsCount(1, startDate, endDate, "Patient");
+
+    assertEquals(0L, result);
+}
+
+    @Test
+    void shouldSetEndDateToCurrent_whenEndDateIsNull() throws Exception {
+    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+    Date startDate = sdf.parse("01/01/2025");
+
+    when(auditDao.countRevisionsAcrossEntities(1, startDate, null, "Patient"))
+            .thenReturn(20L);
+
+    long result = auditService.getAuditLogsCount(1, startDate, null, "Patient");
+
+    assertEquals(20L, result);
+    }
 
     public static class TestEntity {
         private Integer id;
