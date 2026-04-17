@@ -9,6 +9,7 @@
 package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.ObjectNotFoundException;
 import org.hibernate.QueryException;
 import org.openmrs.GlobalProperty;
 import org.openmrs.Role;
@@ -27,8 +28,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
+import org.openmrs.module.auditlogweb.web.dto.RelatedEntityDto;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.ArrayList;
 
 import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 
@@ -70,8 +74,7 @@ public class ViewAuditController {
 
             // Handle different ID types
             Object entityId;
-            if (org.openmrs.Role.class.isAssignableFrom(clazz) ||
-                    org.openmrs.GlobalProperty.class.isAssignableFrom(clazz)) {
+            if (Role.class.isAssignableFrom(clazz) || GlobalProperty.class.isAssignableFrom(clazz)) {
                 entityId = entityIdParam;
             } else {
                 entityId = Integer.parseInt(entityIdParam);
@@ -81,7 +84,7 @@ public class ViewAuditController {
             AuditEntity<?> auditEntity;
             try {
                 auditEntity = auditService.getAuditEntityRevisionById(clazz, entityId, auditId);
-            } catch (org.hibernate.ObjectNotFoundException ex) {
+            } catch (ObjectNotFoundException ex) {
                 model.addAttribute("errorMessage", "Audit entity not found for this revision.");
                 return new ModelAndView(VIEW, model);
             }
@@ -93,11 +96,36 @@ public class ViewAuditController {
             if (auditId - 1 > 0) {
                 try {
                     oldEntity = auditService.getRevisionById(clazz, entityId, auditId - 1);
-                } catch (org.hibernate.ObjectNotFoundException ignored) {}
+                } catch (ObjectNotFoundException e) {
+                    logger.debug("Previous revision not found for entity {}: {}", entityId, e.getMessage());
+                }
             }
 
             // Compute field differences
             List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
+
+            // Fetch related entities modified in the same revision and exclude current entity
+            List<RelatedEntityDto> relatedEntities = new ArrayList<>();
+            try {
+                List<AuditEntity<?>> allRelated = auditService.getRelatedEntitiesInRevision(clazz, entityId, auditId);
+                String currentId = UtilClass.getEntityIdAsString(currentEntity);
+                for (AuditEntity<?> related : allRelated) {
+                    if (related.getEntity() != null) {
+                        String relatedId = UtilClass.getEntityIdAsString(related.getEntity());
+                        if (!related.getEntity().getClass().equals(clazz) || !relatedId.equals(currentId)) {
+                            relatedEntities.add(new RelatedEntityDto(
+                                    related.getEntity().getClass().getName(),
+                                    related.getEntity().getClass().getSimpleName(),
+                                    relatedId,
+                                    related.getRevisionEntity().getId(),
+                                    related.getRevisionType()
+                            ));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Could not fetch related entities for revision {}: {}", auditId, e.getMessage());
+            }
 
             // Determine edit or revision type
             String auditType = AuditTypeMapper.toHumanReadable(auditEntity.getRevisionType());
@@ -110,6 +138,7 @@ public class ViewAuditController {
             model.addAttribute("changedBy", username);
             model.addAttribute("changedOn", auditEntity.getRevisionEntity().getChangedOn());
             model.addAttribute("diffs", diffs);
+            model.addAttribute("relatedEntities", relatedEntities);
 
             return new ModelAndView(VIEW, model);
 

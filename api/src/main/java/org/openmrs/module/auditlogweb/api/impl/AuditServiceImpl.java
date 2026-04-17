@@ -29,7 +29,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -321,6 +324,16 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType) {
         return auditDao.countRevisionsAcrossEntitiesWithEntityType(userId, startDate, endDate, entityType);
     }
+
+    @Override
+    public List<AuditEntity<?>> getRelatedEntitiesInRevision(Class<?> entityClass, Object entityId, int revisionId) {
+        Map<String, Class<?>> fieldTypes = UtilClass.getFieldTypes(entityClass);
+        Set<Class<?>> relevantClasses = new HashSet<>(fieldTypes.values());
+        relevantClasses.remove(null);
+
+        return auditDao.getEntitiesModifiedInRevision(revisionId, relevantClasses);
+    }
+
     private Object fetchPreviousRevision(AuditEntity<?> entity, Object currentEntity) {
         if (entity.getRevisionEntity().getId() <= 1) {
             return null;

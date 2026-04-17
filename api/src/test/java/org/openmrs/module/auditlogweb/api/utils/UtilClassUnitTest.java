@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb.api.utils;
 
 import org.hibernate.envers.Audited;
 import org.junit.jupiter.api.Test;
+import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.Date;
@@ -65,9 +66,126 @@ public class UtilClassUnitTest {
         assertNull(UtilClass.toEndDate(null));
     }
 
+    @Test
+    public void computeFieldDiffs_shouldIncludeFieldsFromParentClass() {
+        ParentClass parent = new ParentClass();
+        parent.setParentField("parentValue");
+
+        ChildClass child = new ChildClass();
+        child.setParentField("parentValue");
+        child.setChildField("childValue");
+
+        List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(ChildClass.class, parent, child);
+
+        boolean foundParentField = false;
+        boolean foundChildField = false;
+        
+        for (AuditFieldDiff diff : diffs) {
+            if ("parentField".equals(diff.getFieldName())) {
+                foundParentField = true;
+            }
+            if ("childField".equals(diff.getFieldName())) {
+                foundChildField = true;
+            }
+        }
+        
+        assertTrue(foundParentField);
+        assertTrue(foundChildField);
+    }
+
+    @Test
+    public void computeFieldDiffs_shouldDetectChangesInInheritedFields() {
+        PersonImpl oldPerson = new PersonImpl();
+        oldPerson.setGender("M");
+        oldPerson.setBirthdate(new Date());
+        oldPerson.setPersonId(1);
+
+        PersonImpl newPerson = new PersonImpl();
+        newPerson.setGender("F");
+        newPerson.setBirthdate(new Date());
+        newPerson.setPersonId(1);
+
+        List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(PersonImpl.class, oldPerson, newPerson);
+
+        AuditFieldDiff genderDiff = null;
+        for (AuditFieldDiff diff : diffs) {
+            if ("gender".equals(diff.getFieldName())) {
+                genderDiff = diff;
+                break;
+            }
+        }
+        
+        assertNotNull(genderDiff);
+        assertEquals("M", genderDiff.getOldValue());
+        assertEquals("F", genderDiff.getCurrentValue());
+        assertTrue(genderDiff.isChanged());
+    }
+
+    @Test
+    public void computeFieldDiffs_shouldHandleNullOldEntity() {
+        ChildClass child = new ChildClass();
+        child.setChildField("value");
+
+        List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(ChildClass.class, null, child);
+        
+        boolean foundChildField = false;
+        for (AuditFieldDiff diff : diffs) {
+            if ("childField".equals(diff.getFieldName())) {
+                foundChildField = true;
+                break;
+            }
+        }
+        assertTrue(foundChildField);
+    }
+
     // Dummy Audited class for testing only
     @Audited
     public static class TestAuditedClass {}
 
     public static class NotAuditedClass {}
+
+    public static class ParentClass {
+        private String parentField;
+        private String commonField;
+
+        public String getParentField() { return parentField; }
+        public void setParentField(String parentField) { this.parentField = parentField; }
+        public String getCommonField() { return commonField; }
+        public void setCommonField(String commonField) { this.commonField = commonField; }
+    }
+
+    public static class ChildClass extends ParentClass {
+        private String childField;
+        private String commonField;
+
+        public String getChildField() { return childField; }
+        public void setChildField(String childField) { this.childField = childField; }
+        @Override
+        public String getCommonField() { return commonField; }
+        @Override
+        public void setCommonField(String commonField) { this.commonField = commonField; }
+    }
+
+    public static class PersonImpl extends BaseOpenmrsData {
+        private Integer personId;
+        private String gender;
+        private Date birthdate;
+
+        public Integer getPersonId() { return personId; }
+        public void setPersonId(Integer personId) { this.personId = personId; }
+        public String getGender() { return gender; }
+        public void setGender(String gender) { this.gender = gender; }
+        public Date getBirthdate() { return birthdate; }
+        public void setBirthdate(Date birthdate) { this.birthdate = birthdate; }
+    }
+
+    public static class BaseOpenmrsData extends BaseOpenmrsObject {
+    }
+
+    public static class BaseOpenmrsObject {
+        private String uuid;
+
+        public String getUuid() { return uuid; }
+        public void setUuid(String uuid) { this.uuid = uuid; }
+    }
 }

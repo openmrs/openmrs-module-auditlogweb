@@ -103,14 +103,61 @@
 
         <div class="pagination-controls">
             <div class="pagination-container">
-                <c:forEach begin="0" end="${totalPages - 1}" var="i">
-                    <button
-                            type="button"
-                            onclick="goToPage(${i})"
-                            class="pagination-btn <c:if test='${i == currentPage}'>active-page</c:if>">
-                            ${i + 1}
-                    </button>
-                </c:forEach>
+                <c:choose>
+                    <c:when test="${totalPages > 10}">
+                        <c:if test="${currentPage > 0}">
+                            <button type="button" onclick="goToPage(0)" class="pagination-btn">First</button>
+                            <button type="button" onclick="goToPage(${currentPage - 1})" class="pagination-btn">Previous</button>
+                        </c:if>
+
+                        <c:set var="startPage" value="${currentPage - 4}"/>
+                        <c:if test="${startPage < 0}">
+                            <c:set var="startPage" value="0"/>
+                        </c:if>
+                        
+                        <c:set var="endPage" value="${currentPage + 5}"/>
+                        <c:if test="${endPage > totalPages}">
+                            <c:set var="endPage" value="${totalPages}"/>
+                        </c:if>
+
+                        <c:if test="${startPage > 0}">
+                            <button type="button" onclick="goToPage(0)" class="pagination-btn">1</button>
+                            <c:if test="${startPage > 1}">
+                                <span class="pagination-ellipsis">...</span>
+                            </c:if>
+                        </c:if>
+
+                        <c:forEach begin="${startPage}" end="${endPage - 1}" var="i">
+                            <button type="button"
+                                    onclick="goToPage(${i})"
+                                    class="pagination-btn <c:if test='${i == currentPage}'>active-page</c:if>">
+                                    ${i + 1}
+                            </button>
+                        </c:forEach>
+
+                        <c:if test="${endPage < totalPages}">
+                            <c:if test="${endPage < totalPages - 1}">
+                                <span class="pagination-ellipsis">...</span>
+                            </c:if>
+                            <button type="button" onclick="goToPage(${totalPages - 1})" class="pagination-btn">${totalPages}</button>
+                        </c:if>
+
+                        <c:if test="${currentPage < totalPages - 1}">
+                            <button type="button" onclick="goToPage(${currentPage + 1})" class="pagination-btn">Next</button>
+                            <button type="button" onclick="goToPage(${totalPages - 1})" class="pagination-btn">Last</button>
+                        </c:if>
+                    </c:when>
+
+                    <c:otherwise>
+                        <c:forEach begin="0" end="${totalPages - 1}" var="i">
+                            <button type="button"
+                                    onclick="goToPage(${i})"
+                                    class="pagination-btn <c:if test='${i == currentPage}'>active-page</c:if>">
+                                    ${i + 1}
+                            </button>
+                        </c:forEach>
+                    </c:otherwise>
+                </c:choose>
 
                 <!-- Page Size Selector -->
                 <label for="size" class="page-size-label">Page Size:</label>
