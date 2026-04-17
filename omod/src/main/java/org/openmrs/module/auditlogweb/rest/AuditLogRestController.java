@@ -16,6 +16,8 @@ import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.webservices.rest.web.RestConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +30,8 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for exposing audit log entries via the OpenMRS REST API.
@@ -48,11 +52,19 @@ import java.util.List;
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/auditlogs")
 public class AuditLogRestController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuditLogRestController.class);
+
+    private static final Map<String, String> VALID_EVENT_TYPES = Map.of(
+            "ADDED", "Record was added",
+            "MODIFIED", "Record was modified",
+            "DELETED", "Record was deleted"
+    );
+
     private final AuditService auditService;
 
     /**
      * Retrieves paginated audit log entries with optional filters:
-     * user ID, username, date range, and entity type.
+     * user ID, username, date range, entity type, and event type.
      *
      * @param page       zero-based page index
      * @param size       number of results per page
@@ -61,6 +73,7 @@ public class AuditLogRestController {
      * @param startDate  optional start date ("dd/MM/yyyy")
      * @param endDate    optional end date ("dd/MM/yyyy")
      * @param entityType optional entity type filter
+     * @param eventType  optional event type filter (ADDED, MODIFIED, or DELETED)
      * @return a structured response containing audit log entries
      * @throws ResponseStatusException if input is invalid
      */
@@ -72,20 +85,33 @@ public class AuditLogRestController {
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String entityType
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String eventType
     ) {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
+
+        String resolvedEventType = validateAndResolveEventType(eventType);
 
         Integer effectiveUserId = resolveUserId(userId, username);
         Date start = parseDate(startDate);
         Date end = parseDate(endDate);
 
-        boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
+        boolean fullDetails = userId != null || username != null || startDate != null
+                || endDate != null || entityType != null || eventType != null;
 
         List<AuditLogDetailDTO> auditDetails = auditService.mapAuditEntitiesToDetails(
                 auditService.getAllRevisionsAcrossEntitiesWithEntityType(page, size, effectiveUserId, start, end, entityType, "desc")
         );
+
+        // TODO: Push eventType filtering down to AuditService/DAO for better performance.
+        //  Currently filtered in-memory because the service layer does not yet accept eventType.
+        if (resolvedEventType != null) {
+            log.debug("Filtering audit logs by eventType: {}", eventType);
+            auditDetails = auditDetails.stream()
+                    .filter(d -> resolvedEventType.equals(d.getEventType()))
+                    .collect(Collectors.toList());
+        }
 
         if (!fullDetails) {
             auditDetails.forEach(d -> d.setChanges(Collections.emptyList()));
@@ -113,6 +139,26 @@ public class AuditLogRestController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Invalid date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
         }
+    }
+
+    /**
+     * Validates the eventType parameter and resolves it to the internal DTO representation.
+     *
+     * @param eventType the raw query parameter value (e.g., "ADDED", "modified")
+     * @return the resolved internal event type string, or null if the input is null/empty
+     * @throws ResponseStatusException if the value is not a recognised event type
+     */
+    private String validateAndResolveEventType(String eventType) {
+        if (eventType == null || eventType.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = eventType.trim().toUpperCase();
+        String resolved = VALID_EVENT_TYPES.get(normalized);
+        if (resolved == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid eventType: '" + eventType + "'. Allowed values: " + VALID_EVENT_TYPES.keySet());
+        }
+        return resolved;
     }
 
     private Integer resolveUserId(Integer userId, String username) {
