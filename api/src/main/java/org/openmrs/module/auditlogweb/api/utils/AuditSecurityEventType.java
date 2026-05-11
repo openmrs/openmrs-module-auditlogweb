@@ -6,7 +6,7 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.auditlogweb;
+package org.openmrs.module.auditlogweb.api.utils;
 
 /**
  * Strongly typed security audit event categories.
@@ -25,7 +25,6 @@ public enum AuditSecurityEventType {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
-
         return AuditSecurityEventType.valueOf(value.trim().toUpperCase());
     }
 }

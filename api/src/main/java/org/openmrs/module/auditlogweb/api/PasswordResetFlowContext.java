@@ -13,33 +13,38 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Small in-memory tracker for the password-reset flow, keyed by session ID.
- * Using this to carry the username/userId from the reset request step to the
- * actual password change step, and to mark the next login after a reset as non-manual.
+ * It tracks the complete flow of password reset request
  * 
  * Multiple requests can update/read the same session entry concurrently during reset flow.
- * Synchronized access on state objects prevents race conditions and stale reads.
+ * That's why synchronized access on state objects prevents race conditions and stale reads.
  */
 public final class PasswordResetFlowContext {
 
     private static final Map<String, PasswordResetFlowState> STATES = new ConcurrentHashMap<>();
 
-    private PasswordResetFlowContext() {
-    }
-
-    public static void markResetRequest(String sessionId, String username, Integer userId) {
+    
+    /**
+     * Starts the password reset flow and marks that a password reset has been requested for the given session.
+     *
+     * @param sessionId the session identifier for the password reset flow
+     */
+    public static void markResetRequest(String sessionId) {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             return;
         }
 
         PasswordResetFlowState state = STATES.computeIfAbsent(sessionId, key -> new PasswordResetFlowState());
         synchronized (state) {
-            state.username = username;
-            state.userId = userId;
             state.resetCompleted = false;
             state.isPasswordChangedBySystem = false;
         }
     }
 
+    /**
+     * Marks the password reset flow for the given session as completed and then removes it.
+     *
+     * @param sessionId the session identifier for the password reset flow
+     */
     public static void markResetCompleted(String sessionId) {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             return;
@@ -49,11 +54,17 @@ public final class PasswordResetFlowContext {
         synchronized (state) {
             state.resetCompleted = true;
         }
-        //Removing this because after the flow we don't need this and keep space free
-        //Maybe we can delegate this for another separate function if needed the flow after password reset.
+        // Remove stored state after completion to keep the low memory usage 
         STATES.remove(sessionId);
     }
 
+    /**
+     * Checks whether there is a pending(not yet completed) password reset request for the given session.
+     * Returns false for null/empty session IDs or when no state is found.
+     *
+     * @param sessionId the session identifier to check
+     * @return true when a reset request exists and has not been completed
+     */
     public static boolean hasPendingResetRequest(String sessionId) {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             return false;
@@ -69,6 +80,13 @@ public final class PasswordResetFlowContext {
         }
     }
 
+    /**
+     * Tells whether the password for the given session has changed by the system as part of the reset flow .
+     * Returns false for null/empty session IDs or when no state exists.
+     *
+     * @param sessionId the session identifier to query
+     * @return true if the password was changed by the system, false otherwise
+     */
     public static boolean isPasswordChangedBySystem(String sessionId) {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             return false;
@@ -82,6 +100,12 @@ public final class PasswordResetFlowContext {
         }
     }
 
+    /**
+     * Marks whether the password has changed by the system for the given password reset session.
+     *
+     * @param sessionId the password reset session ID
+     * @param passwordChangedBySystem true if changed by system
+     */
     public static void setPasswordChangedBySystem(String sessionId, boolean passwordChangedBySystem) {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             return;
@@ -96,20 +120,10 @@ public final class PasswordResetFlowContext {
         }
     }
 
-    public static String resolveUsername(String sessionId) {
-        PasswordResetFlowState state = STATES.get(sessionId);
-        return state != null ? state.username : null;
-    }
-
-    public static Integer resolveUserId(String sessionId) {
-        PasswordResetFlowState state = STATES.get(sessionId);
-        return state != null ? state.userId : null;
-    }
 
     private static final class PasswordResetFlowState {
-        private String username;
-        private Integer userId;
+
         private boolean resetCompleted;
-        private boolean isPasswordChangedBySystem ;
+        private boolean isPasswordChangedBySystem;
     }
 }

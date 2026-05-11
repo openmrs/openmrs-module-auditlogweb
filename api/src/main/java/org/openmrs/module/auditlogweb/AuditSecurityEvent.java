@@ -8,6 +8,8 @@
  */
 package org.openmrs.module.auditlogweb;
 
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

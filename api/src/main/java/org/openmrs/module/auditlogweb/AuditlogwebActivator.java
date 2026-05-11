@@ -8,6 +8,8 @@
  */
 package org.openmrs.module.auditlogweb;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.UserService;
@@ -15,33 +17,28 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.auditlogweb.advice.PasswordAuditAdvice;
 
-/**
- * This class contains the logic that is run every time this module is either started or shutdown
- */
 public class AuditlogwebActivator extends BaseModuleActivator {
 
     private Log log = LogFactory.getLog(this.getClass());
-
     private PasswordAuditAdvice passwordAuditAdvice;
 
-    /**
-     * @see #started()
-     */
     @Override
     public void started() {
         log.info("Started Auditlogweb");
         try {
-            passwordAuditAdvice = new PasswordAuditAdvice();
+            List<PasswordAuditAdvice> beans = Context.getRegisteredComponents(PasswordAuditAdvice.class);
+            if (beans.isEmpty()) {
+                log.error("PasswordAuditAdvice bean not found in Spring context, password changes will not be audited");
+                return;
+            }
+            passwordAuditAdvice = beans.get(0);
             Context.addAdvice(UserService.class, passwordAuditAdvice);
-            log.info("Auditlogweb: PasswordAuditAdvice registered on UserService");
+            log.debug("PasswordAuditAdvice registered on UserService");
         } catch (Exception e) {
-            log.error("Auditlogweb: Failed to register PasswordAuditAdvice", e);
+            log.error("Failed to register PasswordAuditAdvice", e);
         }
     }
 
-    /**
-     * @see #shutdown()
-     */
     @Override
     public void stopped() {
         log.info("Stopped Auditlogweb");
@@ -49,7 +46,7 @@ public class AuditlogwebActivator extends BaseModuleActivator {
             if (passwordAuditAdvice != null) {
                 Context.removeAdvice(UserService.class, passwordAuditAdvice);
                 passwordAuditAdvice = null;
-                log.info("Auditlogweb: PasswordAuditAdvice removed from UserService");
+                log.info("PasswordAuditAdvice removed from UserService");
             }
         } catch (Exception e) {
             log.error("Auditlogweb: Failed to remove PasswordAuditAdvice", e);

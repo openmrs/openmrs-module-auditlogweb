@@ -20,8 +20,8 @@ import org.hibernate.exception.SQLGrammarException;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
-import org.openmrs.module.auditlogweb.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
@@ -592,11 +592,20 @@ public class AuditDao {
      */
     public void saveSecurityEvent(AuditSecurityEvent event) {
         sessionFactory.getCurrentSession().save(event);
-        log.info("Data saved for the security event {}", event);
+        log.info("Data saved for the security event {}", event.getEventType());
     }
 
     /**
-     * Retrieves paginated security events with optional filters.
+     * Retrieves paginated security events using optional filter criteria.
+     *
+     * @param eventType     the security event type (for example, LOGIN_SUCCESS)
+     * @param username      the username linked with the events
+     * @param startDate     the start date for filtering events
+     * @param endDate       the end date for filtering events
+     * @param page          the zero based page index
+     * @param size          the number of records per page
+     *
+     * @return a list of matching {@link AuditSecurityEvent} records
      */
     public List<AuditSecurityEvent> getSecurityEvents(String eventType, String username,
             Date startDate, Date endDate, int page, int size) {
@@ -629,6 +638,13 @@ public class AuditDao {
 
     /**
      * Counts security events with optional filters.
+     *
+     * @param eventType     the security event type (for example, LOGIN_SUCCESS)
+     * @param username      the username linked with the events
+     * @param startDate     the start date for filtering events
+     * @param endDate       the end date for filtering events
+     *
+     * @return the count of security events from the given filters
      */
     public long countSecurityEvents(String eventType, String username, Date startDate, Date endDate) {
         StringBuilder hql = new StringBuilder("select count(e.id) from AuditSecurityEvent e where 1=1");
