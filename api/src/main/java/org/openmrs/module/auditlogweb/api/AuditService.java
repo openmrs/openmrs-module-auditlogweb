@@ -11,7 +11,7 @@ package org.openmrs.module.auditlogweb.api;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
-import org.openmrs.module.auditlogweb.AuditSecurityEventType;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
@@ -283,20 +283,6 @@ public interface AuditService {
          */
         List<AuditSecurityEvent> getSecurityEvents(String eventType, String username,
             Date startDate, Date endDate, int page, int size);
-    /**
-     * Retrieves paginated security audit events from {@code audit_security_event} table.
-     *
-     * @param eventType optional event type filter
-     * @param username optional username filter (partial, case-insensitive)
-     * @param startDate optional inclusive start time filter
-     * @param endDate optional inclusive end time filter
-     * @param page zero-based page index
-     * @param size page size
-     * @return paginated list of matching security events
-     */
-    @Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
-    List<AuditSecurityEvent> getSecurityEvents(String eventType, String username,
-        Date startDate, Date endDate, int page, int size);
 
     /**
      * Counts security audit events with optional filters.

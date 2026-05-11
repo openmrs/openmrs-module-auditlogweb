@@ -11,36 +11,37 @@ package org.openmrs.module.auditlogweb.advice;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.auditlogweb.AuditSecurityEventType;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
 import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.AfterReturningAdvice;
+import org.springframework.stereotype.Component;
 
 /**
- * Listen for activity related to password audit 
+ * It listens for activity or specifically the password related functions like #isSecretAnswer & #changePassword from the OpenMRS core,
+ * and stamps the event like : PASSWORD_CHANGED, PASSWORD_RESET_REQUEST, PASSWORD_RESET
+ *
  */
+@Component
+@RequiredArgsConstructor
 public class PasswordAuditAdvice implements AfterReturningAdvice {
 
     private static final Logger log = LoggerFactory.getLogger(PasswordAuditAdvice.class);
+    private final AuditService auditService;
 
     @Override
     public void afterReturning(Object returnValue, Method method, Object[] args, Object target) {
         String methodName = method.getName();
-        boolean isPasswordResetRequestSuccess = true;
+        boolean isPasswordResetRequestSuccess = false;
 
-        if (!isPasswordMethod(methodName)) {
-            return;
-        }
-
-        if ("isSecretAnswer".equals(methodName) && !Boolean.TRUE.equals(returnValue)) {
-            isPasswordResetRequestSuccess = false;
-        }
+        if (!isPasswordMethod(methodName)) return;
 
         try {
             SecurityAuditContext ctx = SecurityAuditContext.get();
@@ -48,32 +49,49 @@ public class PasswordAuditAdvice implements AfterReturningAdvice {
             String ipAddress = ctx != null ? ctx.getIpAddress() : null;
             String userAgent = ctx != null ? ctx.getUserAgent() : null;
 
-            // Here it ignores the changePassword request which triggered by system after just it verifies
-            // the secret question answer via isSecretAnswer,
+            /* It ignores the #changePassword request triggered automatically by the system after
+               #isSecretAnswer successfully verifies the secret answer and it sets a temporary password.
+               And then we check if we  already put the reset request on PasswordResetFlowContext during the #isSecretAnswer call which
+               confirms that user has requested for password reset request and just few milliseconds later system has reset with temporary pass.
+             */
             if("changePassword".equals(methodName) && PasswordResetFlowContext.hasPendingResetRequest(sessionId)
             && !PasswordResetFlowContext.isPasswordChangedBySystem(sessionId)) {
                 PasswordResetFlowContext.setPasswordChangedBySystem(sessionId,true);
                 return;
             }
 
+            // Reached here means the request is only for verifying the secret answer before allowing the password reset.
             if ("isSecretAnswer".equals(methodName)) {
-                PasswordResetFlowContext.markResetRequest(sessionId, getUsername(args), getUserId(args));
+                PasswordResetFlowContext.markResetRequest(sessionId);
+                if(Boolean.TRUE.equals(returnValue)){
+                    isPasswordResetRequestSuccess = true;
+                }
             }
+
+            /* Reached here means the request is one of the following:
+                 1. Secret answer verification succeeded, resulting in PASSWORD_RESET_REQUEST.
+                 2. Password reset succeeded after secret answer verification, resulting in PASSWORD_RESET.
+                 3. Password has changed manually, resulting in PASSWORD_CHANGED.
+             */
 
             AuditSecurityEventType eventType = resolveEventType(methodName, sessionId);
             String username = getUsername(args);
             Integer userId = getUserId(args);
             String details = buildDetails(methodName,isPasswordResetRequestSuccess);
 
-            AuditService auditService = resolveAuditService();
             if (auditService == null) {
                 log.warn("Audit service is not registered, skipping password audit event for method [{}]", methodName);
                 return;
             }
 
-            auditService.logSecurityEvent(eventType, username, userId,
-                    ipAddress, userAgent, sessionId, details);
+            auditService.logSecurityEvent(eventType, username, userId,ipAddress, userAgent, sessionId, details);
 
+            /* Checking whether this #changePassword call was triggered as part of a password reset
+              flow after successful secret answer verification. If so, then mark the reset request as completed and remove it.
+              This check is performed at the end because we first need to know whether
+              #changePassword belongs to a password reset or a normal password change,
+              so the correct event can be stored in the database.
+             */
             if ("changePassword".equals(methodName) && PasswordResetFlowContext.hasPendingResetRequest(sessionId)
                     && PasswordResetFlowContext.isPasswordChangedBySystem(sessionId)) {
                 PasswordResetFlowContext.markResetCompleted(sessionId);
@@ -84,29 +102,37 @@ public class PasswordAuditAdvice implements AfterReturningAdvice {
         }
     }
 
+    /**
+     * It checks whether the method name is one we care about for password
+     * auditing. Currently, treats `#isSecretAnswer` and `#changePassword` as
+     * relevant.
+     *
+     * @param methodName the method name to check
+     * @return true when the method is related to password activity
+     */
     private boolean isPasswordMethod(String methodName) {
-        // Listening to "isSecretAnswer" so that we can track the password change request, because this is point
-        // or call, which comes to verify the secrets before making request to change to password.
         return "isSecretAnswer".equals(methodName)
                 || "changePassword".equals(methodName);
     }
 
-
-    private boolean isPasswordResetRequestMethod(String methodName) {
-        return "isSecretAnswer".equals(methodName);
-    }
-
+    /**
+     * Resolve the audit event type to log based on the invoked method and
+     * the current password reset flow state for the session.
+     *
+     * @param methodName the invoked method name
+     * @param sessionId the session identifier used to check reset state
+     * @return the matching AuditSecurityEventType
+     */
     private AuditSecurityEventType resolveEventType(String methodName, String sessionId) {
+
         if ("changePassword".equals(methodName)) {
             if (PasswordResetFlowContext.hasPendingResetRequest(sessionId)) {
                 return AuditSecurityEventType.PASSWORD_RESET;
             }
             return AuditSecurityEventType.PASSWORD_CHANGED;
         }
-        if (isPasswordResetRequestMethod(methodName)) {
-            return AuditSecurityEventType.PASSWORD_RESET_REQUEST;
-        }
-        return AuditSecurityEventType.PASSWORD_RESET;
+
+        return AuditSecurityEventType.PASSWORD_RESET_REQUEST;
     }
 
     private String getUsername(Object[] args) {
@@ -146,6 +172,13 @@ public class PasswordAuditAdvice implements AfterReturningAdvice {
         return userId;
     }
 
+    /**
+     * Build a small JSON-like details string which describes the operation.
+     *
+     * @param methodName the invoked method name
+     * @param isPasswordResetRequestSuccess whether the reset request succeeded
+     * @return a details string suitable for storage in the audit record
+     */
     private String buildDetails(String methodName,boolean isPasswordResetRequestSuccess) {
         if ("setUserActivationKey".equals(methodName)) {
             return "{\"method\":\"setUserActivationKey\",\"requestType\":\"activation_key\"}";
@@ -156,8 +189,5 @@ public class PasswordAuditAdvice implements AfterReturningAdvice {
         return "{\"method\":\"" + methodName + "\"}";
     }
 
-    private AuditService resolveAuditService() {
-        List<AuditService> auditServices = Context.getRegisteredComponents(AuditService.class);
-        return auditServices.isEmpty() ? null : auditServices.get(0);
-    }
+
 }

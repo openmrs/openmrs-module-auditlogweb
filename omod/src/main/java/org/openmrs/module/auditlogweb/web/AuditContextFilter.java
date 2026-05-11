@@ -17,6 +17,7 @@ import java.io.IOException;
 
 import org.openmrs.api.context.Context;
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.module.auditlogweb.AuditlogwebConstants;
 import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +33,6 @@ public class AuditContextFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(AuditContextFilter.class);
 
-    public static final String SESSION_ATTR_LOGGED_IN_USER = "LOGGED_IN_USER";
-
     private static final ThreadLocal<HttpSession> SESSION_HOLDER = new ThreadLocal<>();
 
     public static HttpSession getCurrentSession() {
@@ -41,18 +40,16 @@ public class AuditContextFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain filterChain)
             throws ServletException, IOException {
 
         try {
             HttpSession session = request.getSession(false); 
-            SESSION_HOLDER.set(session);                     
+            SESSION_HOLDER.set(session);
 
             SecurityAuditContext ctx = buildContext(request, session);
             SecurityAuditContext.set(ctx);
-            log.info("Going to stamp the logger user from filter");
+            // log.debug("Going to stamp the logger user from filter");
             stampLoggedInUser(session);
 
         } catch (Exception e) {
@@ -88,30 +85,25 @@ public class AuditContextFilter extends OncePerRequestFilter {
 
     private void stampLoggedInUser(HttpSession session) {
         if (session == null) {
-            log.info("Session is null , getting back");
             return;
         }
+        log.debug("session id when stamping logged in user in filter {}", session.getId());
+
         try {
             
-            if (session.getAttribute(SESSION_ATTR_LOGGED_IN_USER) != null) {
-                log.info("Logged username already there on session ");
+            if (session.getAttribute(AuditlogwebConstants.SESSION_ATTR_LOGGED_IN_USER) != null) {
+                log.debug("Logged username already there on session ");
                 return; 
             }
             if (Context.isAuthenticated()) {
-                log.info("Inside the stamp loggerin user, user us authenticated");
                 String username = Context.getAuthenticatedUser().getUsername();
-                // if (StringUtils.isBlank(username)) {
-                //     username = Context.getAuthenticatedUser().getSystemId();
-                // }
-                log.info("Username after the authentication : "+username);
                 if (!StringUtils.isBlank(username)) {
-                    session.setAttribute(SESSION_ATTR_LOGGED_IN_USER, username);
-                    log.info("logged in username set into the session now");
+                    session.setAttribute(AuditlogwebConstants.SESSION_ATTR_LOGGED_IN_USER, username);
+                    log.info("Logged in username set into the session now");
                 }
             }
-            log.info("Reached here , means the session is not null nor may be authenticated or have logged in user value ");
         } catch (Exception e) {
-            log.debug("AuditContextFilter: could not stamp LOGGED_IN_USER on session", e);
+            log.warn("Could not stamp LOGGED_IN_USER on session", e);
         }
     }
 }

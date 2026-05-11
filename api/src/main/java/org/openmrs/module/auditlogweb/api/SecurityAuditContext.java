@@ -24,7 +24,6 @@ public class SecurityAuditContext {
     public static void set(SecurityAuditContext ctx) {
         HOLDER.set(ctx);
     }
-
    
     public static SecurityAuditContext get() {
         return HOLDER.get();
