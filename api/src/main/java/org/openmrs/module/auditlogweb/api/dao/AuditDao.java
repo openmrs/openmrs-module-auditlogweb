@@ -670,6 +670,16 @@ public class AuditDao {
         return count != null ? count : 0L;
     }
 
+
+    /**
+     * Helper method to bind the parameters to the query
+     *
+     * @param query         original query for adding the params
+     * @param eventType     filter by audit event type
+     * @param username      filter by username
+     * @param startDate     filter by the start date of audits
+     * @param endDate       filter by end date of audits
+     */
     private void bindSecurityEventFilters(Query<?> query, AuditSecurityEventType eventType, String username, Date startDate, Date endDate) {
         if (eventType != null) {
             query.setParameter("eventType", eventType);
