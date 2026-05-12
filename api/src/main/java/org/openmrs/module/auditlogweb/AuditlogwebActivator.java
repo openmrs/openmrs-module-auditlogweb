@@ -17,6 +17,9 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.auditlogweb.advice.PasswordAuditAdvice;
 
+/**
+ * This class contains the logic that is run every time this module is either started or shutdown
+ */
 public class AuditlogwebActivator extends BaseModuleActivator {
 
     private Log log = LogFactory.getLog(this.getClass());

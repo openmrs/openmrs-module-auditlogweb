@@ -176,7 +176,6 @@
             </div>
         </c:if>
 
-        <!-- Footer Actions -->
         <div class="footer-actions">
             <a href="${pageContext.request.contextPath}/module/auditlogweb/securityauditlogs.form" class="btn btn-secondary">
                 Back to Audit Logs
