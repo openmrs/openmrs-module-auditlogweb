@@ -102,10 +102,8 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
                     details);
 
             if (event.isSuccess()) {
-                // Stamp the current (pre-fixation) session so SessionTimeoutListener can skip it.
-                // Spring Security will invalidate this session moments later as part of session
-                // fixation protection; without this marker the UserContext already on the session
-                // would make SessionTimeoutListener believe it is a genuine timeout.
+                // Marks current pre-fixation session so SessionTimeoutListener ignores it.
+                // And Spring  invalidates it later during session fixation protection.
                 markSessionAsLoginFixation();
             }
         } catch (Exception e) {
@@ -207,7 +205,7 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
 
     /**
      * Stamps the current (pre-login) session with a marker indicating it will be replaced
-     * by a new session as part of Spring Security's session fixation protection.
+     * by a new session as part of Spring session fixation protection.
      * {@link SessionTimeoutListener} checks for this marker in {@code sessionDestroyed()}
      * to avoid logging a false SESSION_TIMEOUT when this session is invalidated.
      */

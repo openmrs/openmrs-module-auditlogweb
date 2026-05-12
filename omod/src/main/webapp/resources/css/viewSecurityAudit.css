@@ -10,7 +10,6 @@
 /* Import IBM Plex Sans font */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600&display=swap');
 
-/* General Styles */
 body {
     font-family: 'IBM Plex Sans', sans-serif;
     background-color: #ffffff;
@@ -26,7 +25,6 @@ body {
     background-color: #ffffff;
 }
 
-/* Breadcrumb Navigation */
 .breadcrumb-section {
     margin-bottom: 24px;
 }
@@ -50,7 +48,6 @@ body {
     font-size: 18px;
 }
 
-/* Title Section */
 .title-section {
     margin-bottom: 32px;
     border-bottom: 1px solid #e0e0e0;
@@ -72,7 +69,6 @@ body {
     letter-spacing: 0.03em;
 }
 
-/* Error Box */
 .error-box {
     background-color: #fff1f1;
     border-left: 4px solid #da1e28;
@@ -83,7 +79,6 @@ body {
     font-size: 12px;
 }
 
-/* Information Sections */
 .info-section {
     margin-bottom: 32px;
 }
@@ -101,7 +96,6 @@ body {
     text-underline-offset: 6px;
 }
 
-/* Detail Table */
 .detail-table {
     width: 100%;
     border-collapse: collapse;
@@ -160,7 +154,6 @@ body {
     font-size: 11px;
 }
 
-/* Badge Styles */
 .badge {
     display: inline-block;
     padding: 4px 8px;
