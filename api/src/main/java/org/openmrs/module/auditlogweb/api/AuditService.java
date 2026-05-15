@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb.api;
 
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityDetailsDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
@@ -233,5 +234,39 @@ public interface AuditService {
      */
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     List<AuditEntity<?>> getRelatedEntitiesInRevision(Class<?> entityClass, Object entityId, int revisionId);
+
+    /**
+     * It retrieves a paginated list of audit revisions for a specific Patient,
+     * identified by their OpenMRS patient integer ID.
+     *
+     * @param patientId   the integer primary key of the Patient
+     * @param entityClass
+     * @param page        the page number (zero-based)
+     * @param size        the number of records per page
+     * @param sortOrder   "asc" or "desc" by revision timestamp
+     * @return a list of {@link AuditEntity} records for this patient
+     */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+    List<AuditEntity<?>> getEntityAuditRevisionsById(Integer patientId, Class<?> entityClass, int page, int size, String sortOrder);
+
+    /**
+     * It retrieves the detailed audit view of an entity class, where we can also see
+     * the related events got audited on same revision.
+     *
+     * @param auditEntities    list of fetched hibernate audited entities
+     * @param entityClass       primary/main entity to get detailed audit on
+     * @return a list of {@link AuditEntityDetailsDTO}   view for detailed auditing of entity
+     */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+    List<AuditEntityDetailsDTO> getEntityDetailedAudit(List<AuditEntity<?>> auditEntities, Class<?> entityClass);
+
+    /**
+     * Counts the total number of audit revisions recorded for a specific Patient.
+     *
+     * @param patientId the integer primary key of the Patient
+     * @return the total revision count
+     */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+    long countPatientAuditRevisions(Integer patientId);
 
 }

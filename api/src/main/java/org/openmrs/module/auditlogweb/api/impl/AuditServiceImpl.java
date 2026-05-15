@@ -18,9 +18,10 @@ import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityDetailsDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
-import org.openmrs.module.auditlogweb.api.utils.AuditTypeMapper;
+import org.openmrs.module.auditlogweb.api.dto.RelatedEntityDto;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -340,6 +341,18 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         }
 
         Object entityId = UtilClass.getEntityIdAsString(currentEntity);
+
+        if (! (Role.class.isAssignableFrom(currentEntity.getClass()) || GlobalProperty.class.isAssignableFrom(currentEntity.getClass()))) {
+            try{
+                //Here if this condition becomes true then most probably, this is id or uuid
+                entityId = Integer.parseInt(entityId.toString());
+            } catch (NumberFormatException e){
+                //If this exception occurred then it may be the uuid, which we're trying to convert to int, so leave it as string
+                log.debug("Entity ID is not an integer, leaving it as type string");
+            }
+        }
+
+
         try {
             return getRevisionById(
                     currentEntity.getClass(),
@@ -373,18 +386,82 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     private AuditLogDetailDTO buildAuditLogDetailDTO(
             AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields) {
 
-        String auditType = AuditTypeMapper.toHumanReadable(entity.getRevisionType());
         String username = resolveUsername(entity.getChangedBy());
 
         AuditLogDetailDTO dto = new AuditLogDetailDTO();
         dto.setRevisionID(entity.getRevisionEntity().getId());
         dto.setEntityType(currentEntity.getClass().getSimpleName());
-        dto.setEventType(auditType);
+        dto.setEventType(String.valueOf(entity.getRevisionType()));
         dto.setChangedBy(username);
         dto.setChangedOn(entity.getRevisionEntity().getChangedOn());
         dto.setChanges(changedFields);
 
         return dto;
+    }
+
+    private AuditEntityDetailsDTO buildEntityAuditDetailsDTO(
+            AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields, List<RelatedEntityDto> relatedEntities
+    ){
+        String username = resolveUsername(entity.getChangedBy());
+
+        AuditEntityDetailsDTO dto = new AuditEntityDetailsDTO();
+        dto.setRevisionID(entity.getRevisionEntity().getId());
+        dto.setEntityType(currentEntity.getClass().getSimpleName());
+        dto.setEventType(String.valueOf(entity.getRevisionType()));
+        dto.setChangedBy(username);
+        dto.setChangedOn(entity.getRevisionEntity().getChangedOn());
+        dto.setChanges(changedFields);
+        dto.setRelatedEntities(relatedEntities);
+
+        return dto;
+    }
+
+
+    public List<AuditEntity<?>> getEntityAuditRevisionsById(Integer patientId, Class<?> entityClass, int page, int size, String sortOrder) {
+        return auditDao.getRevisionsForEntityById(patientId, entityClass, page, size, sortOrder);
+    }
+
+
+    public List<AuditEntityDetailsDTO> getEntityDetailedAudit(List<AuditEntity<?>> auditEntities, Class<?> entityClass) {
+        List<AuditEntityDetailsDTO> entityAudList = new ArrayList<>();
+
+        for (AuditEntity<?> entity : auditEntities) {
+            Object currentEntity = entity.getEntity();
+            Object oldEntity = fetchPreviousRevision(entity, currentEntity);
+
+            List<AuditFieldDiff> changedFields = extractChangedFields(currentEntity, oldEntity);
+
+            String entityId = UtilClass.getEntityIdAsString(currentEntity);
+
+            List<AuditEntity<?>> allRelated = getRelatedEntitiesInRevision(entityClass, entityId, entity.getRevisionEntity().getId());
+            List<RelatedEntityDto> relatedEntities = new ArrayList<>();
+
+            for (AuditEntity<?> related : allRelated) {
+                if (related.getEntity() != null) {
+                    String relatedId = UtilClass.getEntityIdAsString(related.getEntity());
+                    if (!related.getEntity().getClass().equals(entityClass) || !relatedId.equals(entityId)) {
+                        relatedEntities.add(new RelatedEntityDto(
+                                related.getEntity().getClass().getName(),
+                                related.getEntity().getClass().getSimpleName(),
+                                relatedId,
+                                related.getRevisionEntity().getId(),
+                                related.getRevisionType()
+                        ));
+                    }
+                }
+            }
+
+            AuditEntityDetailsDTO dto = buildEntityAuditDetailsDTO(entity, currentEntity, changedFields, relatedEntities);
+
+            entityAudList.add(dto);
+        }
+
+        return entityAudList;
+    }
+
+
+    public long countPatientAuditRevisions(Integer patientId) {
+        return auditDao.countRevisionsForPatientById(patientId);
     }
 
 }
