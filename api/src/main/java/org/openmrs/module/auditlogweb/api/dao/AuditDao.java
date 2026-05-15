@@ -16,7 +16,6 @@ import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.exception.NotAuditedException;
 import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.exception.SQLGrammarException;
-import org.openmrs.Patient;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
@@ -517,30 +516,39 @@ public class AuditDao {
      * @return a paginated list of {@link AuditEntity} records for the patient
      */
     public List<AuditEntity<?>> getRevisionsForEntityById(Integer patientId, Class<?> entityClass, int page, int size, String sortOrder) {
-        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+        try {
+            AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
 
-        AuditQuery query = auditReader.createQuery()
-                .forRevisionsOfEntity(entityClass, false, true)
-                .add(org.hibernate.envers.query.AuditEntity.id().eq(patientId));
+            AuditQuery query = auditReader.createQuery()
+                    .forRevisionsOfEntity(entityClass, false, true)
+                    .add(org.hibernate.envers.query.AuditEntity.id().eq(patientId));
 
-        if ("asc".equalsIgnoreCase(sortOrder)) {
-            query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").asc());
-        } else {
-            query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").desc());
+            if ("asc".equalsIgnoreCase(sortOrder)) {
+                query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").asc());
+            } else {
+                query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").desc());
+            }
+
+            query.setFirstResult(page * size).setMaxResults(size);
+
+            List<Object[]> results = query.getResultList();
+            return results.stream()
+                    .map(result -> {
+                        Object entity = result[0];
+                        OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
+                        RevisionType revisionType = (RevisionType) result[2];
+                        Integer userId = revisionEntity.getChangedBy();
+                        return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            if (isMissingAuditTableException(ex)) {
+                log.warn("Skipping revisions for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+            } else {
+                log.error("Unexpected error while fetching revisions for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
+            }
+            return new ArrayList<>();
         }
-
-        query.setFirstResult(page * size).setMaxResults(size);
-
-        List<Object[]> results = query.getResultList();
-        return results.stream()
-                .map(result -> {
-                    Patient entity = (Patient) result[0];
-                    OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
-                    RevisionType revisionType = (RevisionType) result[2];
-                    Integer userId = revisionEntity.getChangedBy();
-                    return (AuditEntity<?>) new AuditEntity<>(entity, revisionEntity, revisionType, userId);
-                })
-                .collect(Collectors.toList());
     }
 
     /**
@@ -549,15 +557,24 @@ public class AuditDao {
      * @param patientId the integer primary key of the Patient
      * @return the total number of recorded revisions for this patient
      */
-    public long countRevisionsForPatientById(Integer patientId) {
-        AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+    public long countRevisionsForEntityById(Integer patientId, Class<?> entityClass) {
+        try {
+            AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
 
-        Number count = (Number) auditReader.createQuery()
-                .forRevisionsOfEntity(org.openmrs.Patient.class, false, true)
-                .add(org.hibernate.envers.query.AuditEntity.id().eq(patientId))
-                .addProjection(org.hibernate.envers.query.AuditEntity.revisionNumber().count())
-                .getSingleResult();
+            Number count = (Number) auditReader.createQuery()
+                    .forRevisionsOfEntity(entityClass, false, true)
+                    .add(org.hibernate.envers.query.AuditEntity.id().eq(patientId))
+                    .addProjection(org.hibernate.envers.query.AuditEntity.revisionNumber().count())
+                    .getSingleResult();
 
-        return count != null ? count.longValue() : 0L;
+            return count != null ? count.longValue() : 0L;
+        } catch (Exception ex) {
+            if (isMissingAuditTableException(ex)) {
+                log.warn("Skipping count for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+            } else {
+                log.error("Unexpected error while fetching revision counts for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
+            }
+            return 0L;
+        }
     }
 }

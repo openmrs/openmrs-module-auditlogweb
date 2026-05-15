@@ -28,6 +28,7 @@ import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -319,4 +320,71 @@ class AuditDaoTest {
             assertThat(result, is(2L));
         }
     }
+
+    @Test
+    void shouldReturnAuditEntities_WhenFetchingRevisionsByEntityId() {
+        TestAuditedEntity entity1 = new TestAuditedEntity();
+        TestAuditedEntity entity2 = new TestAuditedEntity();
+        OpenmrsRevisionEntity revEntity1 = mock(OpenmrsRevisionEntity.class);
+        OpenmrsRevisionEntity revEntity2 = mock(OpenmrsRevisionEntity.class);
+        when(revEntity1.getChangedBy()).thenReturn(10);
+        when(revEntity2.getChangedBy()).thenReturn(20);
+
+        Object[] mockResult1 = new Object[] { entity1, revEntity1, RevisionType.ADD };
+        Object[] mockResult2 = new Object[] { entity2, revEntity2, RevisionType.MOD };
+
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addOrder(any())).thenReturn(auditQuery);
+        when(auditQuery.setFirstResult(0)).thenReturn(auditQuery);
+        when(auditQuery.setMaxResults(10)).thenReturn(auditQuery);
+        when(auditQuery.getResultList()).thenReturn(Arrays.asList(mockResult1, mockResult2));
+
+        List<AuditEntity<?>> results = auditDao.getRevisionsForEntityById(1, TestAuditedEntity.class, 0, 10, "desc");
+
+        assertNotNull(results);
+        assertThat(results, hasSize(2));
+        assertThat(results.get(0).getChangedBy(), is(10));
+        assertThat(results.get(1).getChangedBy(), is(20));
+    }
+
+    @Test
+    void shouldReturnEmptyList_WhenEntityIdNotFound() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addOrder(any())).thenReturn(auditQuery);
+        when(auditQuery.setFirstResult(0)).thenReturn(auditQuery);
+        when(auditQuery.setMaxResults(10)).thenReturn(auditQuery);
+        when(auditQuery.getResultList()).thenReturn(Collections.emptyList());
+
+        List<AuditEntity<?>> results = auditDao.getRevisionsForEntityById(999, TestAuditedEntity.class, 0, 10, "desc");
+
+        assertNotNull(results);
+        assertThat(results, empty());
+    }
+
+    @Test
+    void shouldReturnRevisionCount_WhenCountingByEntityId() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addProjection(any())).thenReturn(auditQuery);
+        when(auditQuery.getSingleResult()).thenReturn(15L);
+
+        long count = auditDao.countRevisionsForEntityById(1, TestAuditedEntity.class);
+
+        assertThat(count, is(15L));
+    }
+
+    @Test
+    void shouldReturnCountZero_WhenEntityIdNotFound() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addProjection(any())).thenReturn(auditQuery);
+        when(auditQuery.getSingleResult()).thenReturn(0L);
+
+        long count = auditDao.countRevisionsForEntityById(1, TestAuditedEntity.class);
+
+        assertThat(count, is(0L));
+    }
+
 }

@@ -21,6 +21,7 @@ import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityDetailsDTO;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -32,9 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class AuditServiceImplTest {
 
@@ -300,6 +299,96 @@ class AuditServiceImplTest {
             return id;
         }
         public void setId(Integer id) { this.id = id; }
+    }
+
+
+    @Test
+    void shouldReturnAuditEntities_WhenFetchingByEntityId() {
+        AuditEntity<?> mockEntity1 = mock(AuditEntity.class);
+        AuditEntity<?> mockEntity2 = mock(AuditEntity.class);
+
+        when(auditDao.getRevisionsForEntityById(1, TestEntity.class, 0, 10, "desc"))
+                .thenReturn(Arrays.asList(mockEntity1, mockEntity2));
+
+        List<AuditEntity<?>> result = auditService.getEntityAuditRevisionsById(1, TestEntity.class, 0, 10, "desc");
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertSame(mockEntity1, result.get(0));
+        assertSame(mockEntity2, result.get(1));
+    }
+
+    @Test
+    void shouldReturnEmptyList_WhenNoRevisionsFoundByEntityId() {
+        when(auditDao.getRevisionsForEntityById(999, TestEntity.class, 0, 10, "desc"))
+                .thenReturn(Collections.emptyList());
+
+        List<AuditEntity<?>> result = auditService.getEntityAuditRevisionsById(999, TestEntity.class, 0, 10, "desc");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldReturnRevisionCount_WhenCountingByEntityId() {
+        when(auditDao.countRevisionsForEntityById(1, TestEntity.class)).thenReturn(25L);
+
+        long count = auditService.countEntityAuditRevisionsById(1, TestEntity.class);
+
+        assertEquals(25L, count);
+    }
+
+    @Test
+    void shouldReturnZero_WhenNoRevisionsFoundForCountByEntityId() {
+        when(auditDao.countRevisionsForEntityById(999, TestEntity.class)).thenReturn(0L);
+
+        long count = auditService.countEntityAuditRevisionsById(999, TestEntity.class);
+
+        assertEquals(0L, count);
+    }
+
+    @Test
+    void shouldReturnDetailedAuditDTOs_WhenGivenAuditEntities() {
+        try (MockedStatic<Context> context = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            User user = mock(User.class);
+
+            AuditEntity<?> mockEntity = mock(AuditEntity.class);
+            OpenmrsRevisionEntity revEntity = mock(OpenmrsRevisionEntity.class);
+            when(revEntity.getId()).thenReturn(1);
+            when(revEntity.getChangedBy()).thenReturn(5);
+            when(mockEntity.getRevisionEntity()).thenReturn(revEntity);
+            when(mockEntity.getChangedBy()).thenReturn(5);
+            doReturn(new TestEntity()).when(mockEntity).getEntity();
+
+            when(user.getDisplayString()).thenReturn("Test User");
+            context.when(Context::getUserService).thenReturn(userService);
+            when(userService.getUser(5)).thenReturn(user);
+
+            when(auditDao.getEntitiesModifiedInRevision(1, Collections.emptySet()))
+                    .thenReturn(Collections.emptyList());
+
+            List<AuditEntity<?>> auditEntities = Collections.singletonList(mockEntity);
+            List<AuditEntityDetailsDTO> result = auditService.getEntityDetailedAudit(auditEntities, TestEntity.class);
+
+            assertNotNull(result);
+            assertEquals(1, result.size());
+
+            AuditEntityDetailsDTO dto = result.get(0);
+            assertEquals("Test User", dto.getChangedBy());
+
+            verify(userService).getUser(5);
+
+        }
+    }
+
+    @Test
+    void shouldReturnEmptyList_WhenGivenEmptyAuditEntities() {
+        List<AuditEntity<?>> emptyList = Collections.emptyList();
+        List<AuditEntityDetailsDTO> result = auditService.getEntityDetailedAudit(emptyList, TestEntity.class);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
 }

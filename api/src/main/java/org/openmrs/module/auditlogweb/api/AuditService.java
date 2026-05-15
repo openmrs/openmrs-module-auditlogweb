@@ -263,10 +263,11 @@ public interface AuditService {
     /**
      * Counts the total number of audit revisions recorded for a specific Patient.
      *
-     * @param patientId the integer primary key of the Patient
+     * @param patientId     the integer primary key of the Patient
+     * @param entityClass   entity to count the revisions for
      * @return the total revision count
      */
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    long countPatientAuditRevisions(Integer patientId);
+    long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass);
 
 }

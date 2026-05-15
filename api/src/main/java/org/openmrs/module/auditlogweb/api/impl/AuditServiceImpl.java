@@ -399,7 +399,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         return dto;
     }
 
-    private AuditEntityDetailsDTO buildEntityAuditDetailsDTO(
+    private AuditEntityDetailsDTO buildEntityAuditDetailsDTO(                                                            
             AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields, List<RelatedEntityDto> relatedEntities
     ){
         String username = resolveUsername(entity.getChangedBy());
@@ -460,8 +460,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
 
-    public long countPatientAuditRevisions(Integer patientId) {
-        return auditDao.countRevisionsForPatientById(patientId);
+    public long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass) {
+        return auditDao.countRevisionsForEntityById(patientId, entityClass);
     }
 
 }
