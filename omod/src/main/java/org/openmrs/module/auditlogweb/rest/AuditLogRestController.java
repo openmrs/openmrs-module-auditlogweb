@@ -105,7 +105,7 @@ public class AuditLogRestController {
         return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
     }
 
-    @GetMapping("/fetchByEntity")
+    @GetMapping("/fetchEntityRevision")
     public AuditLogDetailDTO getAuditLogByEntity(
             @RequestParam() String entityName,
             @RequestParam() String entityId,
