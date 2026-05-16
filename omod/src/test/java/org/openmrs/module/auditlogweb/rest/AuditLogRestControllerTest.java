@@ -10,13 +10,20 @@ package org.openmrs.module.auditlogweb.rest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.hibernate.ObjectNotFoundException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import org.openmrs.GlobalProperty;
+import org.openmrs.Patient;
+import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.rest.exceptions.RestExceptionHandler;
 import org.springframework.test.web.servlet.MockMvc;
@@ -182,4 +189,81 @@ public class AuditLogRestControllerTest {
                         .param("size", "-10"))
                 .andExpect(status().isOk());
     }
+
+    /**
+     * Tests {@code AuditLogRestController#getAuditLogByEntity}
+     * Verifies the revision endpoint rejects missing required parameters and throws the bad request message.
+     */
+    @Test
+    public void shouldReturnBadRequestWhenFetchEntityRevisionParametersAreMissing() throws Exception {
+        mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision")
+                        .param("entityName", "")
+                        .param("entityId", "")
+                        .param("revisionId", "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", is("Missing the one or more required parameter")));
+    }
+
+    /**
+     * Tests {@code AuditLogRestController#getAuditLogByEntity}
+     * When no request parameters are provided at all, Spring fails binding and
+     * the controller advice returns a 500 Internal Server Error.
+     */
+    @Test
+    public void shouldReturnInternalServerErrorWhenFetchEntityRevisionParamsAbsent() throws Exception {
+        mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error", is("Internal Server Error")))
+                .andExpect(jsonPath("$.message", is("An unexpected error occurred")));
+    }
+
+    /**
+     * Tests {@code AuditLogRestController#getAuditLogByEntity}
+     * Verifies the revision endpoint resolves an entity class and returns the mapped audit details.
+     */
+    @Test
+    public void shouldFetchEntityRevisionForResolvedEntityClass() throws Exception {
+            AuditEntity<?> auditEntity = mock(AuditEntity.class);
+            AuditLogDetailDTO auditLogDetailDTO = mock(AuditLogDetailDTO.class);
+
+            try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+                    utilClassMock.when(() -> UtilClass.resolveAuditedEntityClass("Patient")).thenReturn(Patient.class);
+                    when(auditService.getAuditEntityRevisionById(Patient.class, 42, 7)).thenReturn((AuditEntity<Patient>) auditEntity);
+                    when(auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)))
+                                    .thenReturn(Collections.singletonList(auditLogDetailDTO));
+
+                    mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision")
+                                                    .param("entityName", "Patient")
+                                                    .param("entityId", "42")
+                                                    .param("revisionId", "7"))
+                                    .andExpect(status().isOk());
+
+                    verify(auditService).getAuditEntityRevisionById(Patient.class, 42, 7);
+                    verify(auditService).mapAuditEntitiesToDetails(Collections.singletonList(auditEntity));
+            }
+    }
+
+    /**
+     * Tests {@code AuditLogRestController#getAuditLogByEntity}
+     * Verifies the revision endpoint returns a bad request when the audited record is missing.
+     * @throws Exception    throws the bad request error message
+     */
+    @Test
+    public void shouldReturnBadRequestWhenFetchEntityRevisionDataIsMissing() throws Exception {
+            try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+                    utilClassMock.when(() -> UtilClass.resolveAuditedEntityClass("Patient")).thenReturn(Patient.class);
+                    when(auditService.getAuditEntityRevisionById(Patient.class, 42, 7))
+                                    .thenThrow(new ObjectNotFoundException(42,"Patient"));
+
+                    mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision")
+                                                    .param("entityName", "Patient")
+                                                    .param("entityId", "42")
+                                                    .param("revisionId", "7"))
+                                    .andExpect(status().isBadRequest());
+            }
+    }
+
+
+  
 }

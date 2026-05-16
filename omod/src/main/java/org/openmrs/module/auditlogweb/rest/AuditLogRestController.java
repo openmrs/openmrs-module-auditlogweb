@@ -132,7 +132,6 @@ public class AuditLogRestController {
         try {
             auditEntity = auditService.getAuditEntityRevisionById(entityClass, entityIdVal, revisionId);
         } catch (ObjectNotFoundException ex) {
-            log.debug("Audit for entity {} with id {} not found", entityName, entityId);
             throw new ObjectNotFoundException("Audit for entity {} not found ", entityName);
         }
 
