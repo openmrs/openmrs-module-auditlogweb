@@ -13,8 +13,8 @@ import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
-import org.openmrs.module.auditlogweb.api.dto.AuditEntityDetailResponseDTO;
-import org.openmrs.module.auditlogweb.api.dto.AuditEntityDetailsDTO;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,7 +44,7 @@ public class PatientLogRestController {
      * @return {@code AuditLogResponseDto} a structured, paginated response containing the patient's audit log entries
      */
     @GetMapping
-    public AuditEntityDetailResponseDTO getPatientAuditLogs(
+    public AuditLogResponseDto getPatientAuditLogs(
             @RequestParam(required = false) String uuid,
             @RequestParam(required = false) String identifier,
             @RequestParam(required = false) String name,
@@ -68,12 +68,12 @@ public class PatientLogRestController {
 
         List<AuditEntity<?>> revisions = auditService.getEntityAuditRevisionsById(patientId, patient.getClass(), page, size, "desc" );
 
-        List<AuditEntityDetailsDTO> logs = auditService.getEntityDetailedAudit(revisions, patient.getClass());
+        List<AuditLogDetailDTO> logs = auditService.getEntityDetailedAudit(revisions, patient.getClass());
 
         long total = auditService.countEntityAuditRevisionsById(patientId, patient.getClass());
         int totalPages = (int) Math.ceil(total / (double) size);
 
-        return new AuditEntityDetailResponseDTO(Math.toIntExact(total), page, totalPages, logs);
+        return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, logs);
     }
 
     /**

@@ -18,7 +18,6 @@ import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
-import org.openmrs.module.auditlogweb.api.dto.AuditEntityDetailsDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.RelatedEntityDto;
@@ -399,12 +398,12 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
         return dto;
     }
 
-    private AuditEntityDetailsDTO buildEntityAuditDetailsDTO(                                                            
+    private AuditLogDetailDTO buildEntityAuditDetailsDTO(
             AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields, List<RelatedEntityDto> relatedEntities
     ){
         String username = resolveUsername(entity.getChangedBy());
 
-        AuditEntityDetailsDTO dto = new AuditEntityDetailsDTO();
+        AuditLogDetailDTO dto = new AuditLogDetailDTO();
         dto.setRevisionID(entity.getRevisionEntity().getId());
         dto.setEntityType(currentEntity.getClass().getSimpleName());
         dto.setEventType(String.valueOf(entity.getRevisionType()));
@@ -422,8 +421,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
 
-    public List<AuditEntityDetailsDTO> getEntityDetailedAudit(List<AuditEntity<?>> auditEntities, Class<?> entityClass) {
-        List<AuditEntityDetailsDTO> entityAudList = new ArrayList<>();
+    public List<AuditLogDetailDTO> getEntityDetailedAudit(List<AuditEntity<?>> auditEntities, Class<?> entityClass) {
+        List<AuditLogDetailDTO> entityAudList = new ArrayList<>();
 
         for (AuditEntity<?> entity : auditEntities) {
             Object currentEntity = entity.getEntity();
@@ -451,7 +450,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                 }
             }
 
-            AuditEntityDetailsDTO dto = buildEntityAuditDetailsDTO(entity, currentEntity, changedFields, relatedEntities);
+            AuditLogDetailDTO dto = buildEntityAuditDetailsDTO(entity, currentEntity, changedFields, relatedEntities);
 
             entityAudList.add(dto);
         }

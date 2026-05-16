@@ -20,7 +20,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
-import org.openmrs.module.auditlogweb.api.dto.AuditEntityDetailsDTO;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -373,12 +373,12 @@ class AuditServiceImplTest {
                     .thenReturn(Collections.emptyList());
 
             List<AuditEntity<?>> auditEntities = Collections.singletonList(mockEntity);
-            List<AuditEntityDetailsDTO> result = auditService.getEntityDetailedAudit(auditEntities, TestEntity.class);
+            List<AuditLogDetailDTO> result = auditService.getEntityDetailedAudit(auditEntities, TestEntity.class);
 
             assertNotNull(result);
             assertEquals(1, result.size());
 
-            AuditEntityDetailsDTO dto = result.get(0);
+            AuditLogDetailDTO dto = result.get(0);
             assertEquals("Test User", dto.getChangedBy());
 
             verify(userService).getUser(5);
@@ -389,7 +389,7 @@ class AuditServiceImplTest {
     @Test
     void shouldReturnEmptyList_WhenGivenEmptyAuditEntities() {
         List<AuditEntity<?>> emptyList = Collections.emptyList();
-        List<AuditEntityDetailsDTO> result = auditService.getEntityDetailedAudit(emptyList, TestEntity.class);
+        List<AuditLogDetailDTO> result = auditService.getEntityDetailedAudit(emptyList, TestEntity.class);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
