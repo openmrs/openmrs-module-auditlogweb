@@ -26,7 +26,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/rest/" + RestConstants.VERSION_1 + "/auditlogs/patient")
+@RequestMapping("/rest/" + RestConstants.VERSION_1 + "/auditlogs/patients")
 public class PatientLogRestController {
 
     private final AuditService auditService;
