@@ -202,7 +202,7 @@ public class AuditLogRestControllerTest {
                         .param("revisionId", "1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
-                .andExpect(jsonPath("$.message", is("Missing the one or more required parameter")));
+                .andExpect(jsonPath("$.message", is("One or more required parameters are empty")));
     }
 
     /**
@@ -213,9 +213,9 @@ public class AuditLogRestControllerTest {
     @Test
     public void shouldReturnInternalServerErrorWhenFetchEntityRevisionParamsAbsent() throws Exception {
         mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error", is("Internal Server Error")))
-                .andExpect(jsonPath("$.message", is("An unexpected error occurred")));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", is("Missing required parameters")));
     }
 
     /**

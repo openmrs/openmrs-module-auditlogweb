@@ -54,9 +54,14 @@ public class PatientLogRestController {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
 
-        if (uuid == null && identifier == null && name == null) {
-            throw new IllegalArgumentException("At least one search parameter must be provided either 'uuid', 'identifier', or 'name'.");
+        if ((uuid == null || uuid.trim().isEmpty()) &&
+                (identifier == null || identifier.trim().isEmpty()) &&
+                (name == null || name.trim().isEmpty())) {
+            throw new IllegalArgumentException(
+                    "At least one search parameter must be provided either 'uuid', 'identifier', or 'name'."
+            );
         }
+
 
         Patient patient = resolvePatient(uuid, identifier, name);
 

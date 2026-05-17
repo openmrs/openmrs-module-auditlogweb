@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -63,6 +64,11 @@ public class RestExceptionHandler {
                 ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown"
         );
         return buildResponseEntity("Bad Request", message, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, String>> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        return buildResponseEntity("Bad Request", "Missing required parameters", HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ObjectNotFoundException.class)

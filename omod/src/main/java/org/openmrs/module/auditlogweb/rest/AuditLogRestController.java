@@ -111,9 +111,8 @@ public class AuditLogRestController {
             @RequestParam() String entityId,
             @RequestParam() Integer revisionId
     ){
-        if (entityName == null || entityId == null || revisionId == null
-                || entityName.isEmpty() || entityId.isEmpty()) {
-            throw new IllegalArgumentException("Missing the one or more required parameter");
+        if (entityName.trim().isEmpty() || entityId.trim().isEmpty()) {
+            throw new IllegalArgumentException("One or more required parameters are empty");
         }
 
         Class<?> entityClass = UtilClass.resolveAuditedEntityClass(entityName);
