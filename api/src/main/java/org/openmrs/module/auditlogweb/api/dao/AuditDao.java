@@ -509,19 +509,19 @@ public class AuditDao {
      * Retrieves a paginated list of audit revisions for a specific Patient entity,
      * identified by its integer primary key.
      *
-     * @param patientId the integer primary key of the Patient
+     * @param entityId the integer primary key of the Entity
      * @param page      the page number (0-based)
      * @param size      the number of records per page
      * @param sortOrder "asc" or "desc" by revision timestamp
      * @return a paginated list of {@link AuditEntity} records for the patient
      */
-    public List<AuditEntity<?>> getRevisionsForEntityById(Integer patientId, Class<?> entityClass, int page, int size, String sortOrder) {
+    public List<AuditEntity<?>> getRevisionsForEntityById(Integer entityId, Class<?> entityClass, int page, int size, String sortOrder) {
         try {
             AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
 
             AuditQuery query = auditReader.createQuery()
                     .forRevisionsOfEntity(entityClass, false, true)
-                    .add(org.hibernate.envers.query.AuditEntity.id().eq(patientId));
+                    .add(org.hibernate.envers.query.AuditEntity.id().eq(entityId));
 
             if ("asc".equalsIgnoreCase(sortOrder)) {
                 query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").asc());
@@ -554,16 +554,16 @@ public class AuditDao {
     /**
      * Counts the total number of audit revisions for a specific Patient entity.
      *
-     * @param patientId the integer primary key of the Patient
+     * @param entityId the integer primary key of the Entity
      * @return the total number of recorded revisions for this patient
      */
-    public long countRevisionsForEntityById(Integer patientId, Class<?> entityClass) {
+    public long countRevisionsForEntityById(Integer entityId, Class<?> entityClass) {
         try {
             AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
 
             Number count = (Number) auditReader.createQuery()
                     .forRevisionsOfEntity(entityClass, false, true)
-                    .add(org.hibernate.envers.query.AuditEntity.id().eq(patientId))
+                    .add(org.hibernate.envers.query.AuditEntity.id().eq(entityId))
                     .addProjection(org.hibernate.envers.query.AuditEntity.revisionNumber().count())
                     .getSingleResult();
 
