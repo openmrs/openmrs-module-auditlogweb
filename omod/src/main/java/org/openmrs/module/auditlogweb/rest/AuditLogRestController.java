@@ -24,10 +24,11 @@ import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.text.ParseException;
@@ -105,11 +106,11 @@ public class AuditLogRestController {
         return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
     }
 
-    @GetMapping("/fetchEntityRevision")
+    @GetMapping("/{revisionId}")
     public AuditLogDetailDTO getAuditLogByEntity(
+            @PathVariable Integer revisionId,
             @RequestParam() String entityName,
-            @RequestParam() String entityId,
-            @RequestParam() Integer revisionId
+            @RequestParam() String entityId
     ){
         if (entityName.trim().isEmpty() || entityId.trim().isEmpty()) {
             throw new IllegalArgumentException("One or more required parameters are empty");

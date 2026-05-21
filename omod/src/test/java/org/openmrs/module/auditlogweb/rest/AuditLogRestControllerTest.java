@@ -196,10 +196,9 @@ public class AuditLogRestControllerTest {
      */
     @Test
     public void shouldReturnBadRequestWhenFetchEntityRevisionParametersAreMissing() throws Exception {
-        mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision")
+        mockMvc.perform(get("/rest/v1/auditlogs/1")
                         .param("entityName", "")
-                        .param("entityId", "")
-                        .param("revisionId", "1"))
+                        .param("entityId", ""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
                 .andExpect(jsonPath("$.message", is("One or more required parameters are empty")));
@@ -212,7 +211,7 @@ public class AuditLogRestControllerTest {
      */
     @Test
     public void shouldReturnInternalServerErrorWhenFetchEntityRevisionParamsAbsent() throws Exception {
-        mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision"))
+        mockMvc.perform(get("/rest/v1/auditlogs/1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
                 .andExpect(jsonPath("$.message", is("Missing required parameters")));
@@ -233,10 +232,9 @@ public class AuditLogRestControllerTest {
                     when(auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)))
                                     .thenReturn(Collections.singletonList(auditLogDetailDTO));
 
-                    mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision")
+                    mockMvc.perform(get("/rest/v1/auditlogs/7")
                                                     .param("entityName", "Patient")
-                                                    .param("entityId", "42")
-                                                    .param("revisionId", "7"))
+                                                    .param("entityId", "42"))
                                     .andExpect(status().isOk());
 
                     verify(auditService).getAuditEntityRevisionById(Patient.class, 42, 7);
@@ -256,10 +254,9 @@ public class AuditLogRestControllerTest {
                     when(auditService.getAuditEntityRevisionById(Patient.class, 42, 7))
                                     .thenThrow(new ObjectNotFoundException(42,"Patient"));
 
-                    mockMvc.perform(get("/rest/v1/auditlogs/fetchEntityRevision")
+                    mockMvc.perform(get("/rest/v1/auditlogs/7")
                                                     .param("entityName", "Patient")
-                                                    .param("entityId", "42")
-                                                    .param("revisionId", "7"))
+                                                    .param("entityId", "42"))
                                     .andExpect(status().isBadRequest());
             }
     }
