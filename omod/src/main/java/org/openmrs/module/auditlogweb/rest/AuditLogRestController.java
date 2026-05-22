@@ -21,8 +21,6 @@ import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.webservices.rest.web.RestConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,7 +54,6 @@ import java.util.List;
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/auditlogs")
 public class AuditLogRestController {
 
-    private final Logger log = LoggerFactory.getLogger(AuditLogRestController.class);
     private final AuditService auditService;
 
     /**
