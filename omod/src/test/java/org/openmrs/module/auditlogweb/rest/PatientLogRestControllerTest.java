@@ -183,6 +183,4 @@ public class PatientLogRestControllerTest {
 
         verify(auditService).getEntityAuditRevisionsById(2, Patient.class, 0, 20, "desc");
     }
-
-    
 }
