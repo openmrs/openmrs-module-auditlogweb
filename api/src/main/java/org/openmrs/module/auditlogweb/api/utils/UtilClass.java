@@ -102,7 +102,6 @@ public class UtilClass {
                     try {
                         return Class.forName(auditedClassName);
                     } catch (ClassNotFoundException e) {
-                        log.debug("Could not load audited class {} while resolving {}", auditedClassName, className);
                         return null;
                     }
                 })
