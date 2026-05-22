@@ -20,5 +20,4 @@ public class AuditLogDetailDTO {
     private Date changedOn;
     private List<AuditFieldDiff> changes;
     private List<RelatedEntityDto> relatedEntities;
-
 }
