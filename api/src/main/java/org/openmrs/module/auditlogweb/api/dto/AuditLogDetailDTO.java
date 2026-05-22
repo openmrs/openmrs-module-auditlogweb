@@ -12,7 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuditLogDetailDTO {
-
     private Integer revisionID;
     private String entityType;
     private String eventType;
