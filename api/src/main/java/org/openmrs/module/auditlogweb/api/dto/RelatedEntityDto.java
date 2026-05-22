@@ -15,14 +15,9 @@ import org.hibernate.envers.RevisionType;
 @Data
 @AllArgsConstructor
 public class RelatedEntityDto {
-
     private String className;
-
     private String simpleName;
-
     private String entityIdValue;
-
     private int revisionId;
-
     private RevisionType revisionType;
 }
