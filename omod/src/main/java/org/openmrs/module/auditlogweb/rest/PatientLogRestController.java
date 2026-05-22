@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + "/auditlogs/patients")
