@@ -18,7 +18,4 @@ public final class AuditlogwebConstants {
 
     public static final String SESSION_ATTR_LOGGED_IN_USER = "LOGGED_IN_USER";
 
-    public static final String SESSION_ATTR_LOGIN_FIXATION = "AUDIT_LOGIN_FIXATION_SESSION";
-
-
 }

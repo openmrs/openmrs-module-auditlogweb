@@ -15,8 +15,8 @@ import javax.servlet.http.HttpSessionListener;
 import lombok.RequiredArgsConstructor;
 import org.openmrs.api.context.UserContext;
 import org.openmrs.module.auditlogweb.AuditlogwebConstants;
-import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.web.WebConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +51,8 @@ public class SessionTimeoutListener implements HttpSessionListener {
             log.debug("Session not destroyed because of explicit logout");
         }
 
-        // Skip the pre-login session destroyed by Spring Security's session fixation protection.
-        // On successful login, SecurityEventListener stamps this marker on the current session.
-        // Moments later, Spring Security invalidates that session (and creates a new one),
-        // triggering sessionDestroyed — but this is NOT a real timeout.
-        if (Boolean.TRUE.equals(session.getAttribute(AuditlogwebConstants.SESSION_ATTR_LOGIN_FIXATION))) {
+        // Skip the pre-login session destroyed by login session fixation protection.
+        if (LoginFixationSessionTracker.consume(session.getId())) {
             log.debug("Session destroyed due to session fixation on login, skipping SESSION_TIMEOUT");
             return;
         }
@@ -82,18 +79,12 @@ public class SessionTimeoutListener implements HttpSessionListener {
         }
     }
 
-    // Fetch the username either from the session or from the user context as fallback
+    // Fetch the username either from the session or from the user context as fallback.
     private String resolveUsername(HttpSession session) {
         log.debug("Called the resolveUsername method for session [{}]", session.getId());
-        String username = (String) session.getAttribute(AuditlogwebConstants.SESSION_ATTR_LOGGED_IN_USER);
-        log.debug("Got the username [{}]", username);
-        if (username != null) {
-            log.debug("Username found from session [{}]", username);
-            return username;
-        }
-
+        String username = "";
         try {
-            log.debug("Session id before getting usercontext {}", session.getId());
+            log.debug("Session id before getting user context {}", session.getId());
             Object raw = session.getAttribute(WebConstants.OPENMRS_USER_CONTEXT_HTTPSESSION_ATTR);
             if (raw instanceof UserContext) {
                 UserContext userContext = (UserContext) raw;
@@ -106,10 +97,9 @@ public class SessionTimeoutListener implements HttpSessionListener {
                 }
             }
         } catch (Exception e) {
-            log.warn("Could not read UserContext from session", e);
+            log.error("Could not read UserContext from session", e);
         }
 
-        log.debug("resovleUsername returning username : [{}]", username);
         return username;
     }
 
