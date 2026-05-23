@@ -190,10 +190,6 @@ public class AuditLogRestControllerTest {
                 .andExpect(status().isOk());
     }
 
-    /**
-     * Tests {@code AuditLogRestController#getAuditLogByEntity}
-     * Verifies the revision endpoint rejects missing required parameters and throws the bad request message.
-     */
     @Test
     public void shouldReturnBadRequestWhenFetchEntityRevisionParametersAreMissing() throws Exception {
         mockMvc.perform(get("/rest/v1/auditlogs/1")
@@ -204,11 +200,6 @@ public class AuditLogRestControllerTest {
                 .andExpect(jsonPath("$.message", is("One or more required parameters are empty")));
     }
 
-    /**
-     * Tests {@code AuditLogRestController#getAuditLogByEntity}
-     * When no request parameters are provided at all, Spring fails binding and
-     * the controller advice returns a 500 Internal Server Error.
-     */
     @Test
     public void shouldReturnInternalServerErrorWhenFetchEntityRevisionParamsAbsent() throws Exception {
         mockMvc.perform(get("/rest/v1/auditlogs/1"))
@@ -217,10 +208,6 @@ public class AuditLogRestControllerTest {
                 .andExpect(jsonPath("$.message", is("Missing required parameters")));
     }
 
-    /**
-     * Tests {@code AuditLogRestController#getAuditLogByEntity}
-     * Verifies the revision endpoint resolves an entity class and returns the mapped audit details.
-     */
     @Test
     public void shouldFetchEntityRevisionForResolvedEntityClass() throws Exception {
             AuditEntity<?> auditEntity = mock(AuditEntity.class);
@@ -242,11 +229,6 @@ public class AuditLogRestControllerTest {
             }
     }
 
-    /**
-     * Tests {@code AuditLogRestController#getAuditLogByEntity}
-     * Verifies the revision endpoint returns a bad request when the audited record is missing.
-     * @throws Exception    throws the bad request error message
-     */
     @Test
     public void shouldReturnBadRequestWhenFetchEntityRevisionDataIsMissing() throws Exception {
             try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
@@ -260,7 +242,4 @@ public class AuditLogRestControllerTest {
                                     .andExpect(status().isBadRequest());
             }
     }
-
-
-  
 }

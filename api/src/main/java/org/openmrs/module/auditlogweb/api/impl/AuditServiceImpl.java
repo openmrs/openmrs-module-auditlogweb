@@ -347,7 +347,6 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
                 entityId = Integer.parseInt(entityId.toString());
             } catch (NumberFormatException e){
                 //If this exception occurred then it may be the uuid, which we're trying to convert to int, so leave it as string
-                log.debug("Entity ID is not an integer, leaving it as type string");
             }
         }
 

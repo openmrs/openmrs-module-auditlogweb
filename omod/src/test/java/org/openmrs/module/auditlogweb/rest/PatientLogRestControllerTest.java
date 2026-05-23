@@ -59,11 +59,6 @@ public class PatientLogRestControllerTest {
                 .build();
     }
 
-    /**
-     * Tests {@code PatientLogRestController#getPatientAuditLogs}
-     * It ensures request with no search parameters returns 400 Bad Request.
-     * @throws Exception    throws Bad Request error message
-     */
     @Test
     public void shouldReturnBadRequestWhenNoSearchParametersProvided() throws Exception {
         mockMvc.perform(get("/rest/v1/auditlogs/patients"))
@@ -72,11 +67,6 @@ public class PatientLogRestControllerTest {
                 .andExpect(jsonPath("$.message", is("At least one search parameter must be provided either 'uuid', 'identifier', or 'name'.")));
     }
 
-    /**
-     * Tests {@code PatientLogRestController#getPatientAuditLogs}
-     * It ensures missing patient lookup results in 400 Bad Request.
-     * @throws Exception    throws Bad Request error message
-     */
     @Test
     public void shouldReturnBadRequestWhenPatientNotFound() throws Exception {
         when(patientService.getPatientByUuid("missing-uuid")).thenReturn(null);
@@ -87,10 +77,6 @@ public class PatientLogRestControllerTest {
                 .andExpect(jsonPath("$.message", is("No patient found for the given search criteria.")));
     }
 
-    /**
-     * Tests {@code PatientLogRestController#getPatientAuditLogs}
-     * It verifies UUID lookup returns 200 OK and audit service is invoked.
-     */
     @Test
     public void shouldLookupByUuidAndReturnOk() throws Exception {
         Patient mockPatient = mock(Patient.class);
@@ -112,10 +98,6 @@ public class PatientLogRestControllerTest {
         verify(auditService).getEntityAuditRevisionsById(1, Patient.class, 0, 20, "desc");
     }
 
-    /**
-     * Tests {@code PatientLogRestController#getPatientAuditLogs}
-     * It verifies identifier lookup returns 200 OK and audit service is invoked.
-     */
     @Test
     public void shouldLookupByIdentifierAndReturnOk() throws Exception {
         Patient mockPatient = mock(Patient.class);
@@ -135,10 +117,6 @@ public class PatientLogRestControllerTest {
         verify(auditService).getEntityAuditRevisionsById(3, Patient.class, 0, 20, "desc");
     }
 
-    /**
-     * Tests {@code PatientLogRestController#getPatientAuditLogs}
-     * It verifies name lookup returns 200 OK and audit service is invoked.
-     */
     @Test
     public void shouldLookupByNameAndReturnOk() throws Exception {
         Patient mockPatient = mock(Patient.class);
@@ -158,10 +136,6 @@ public class PatientLogRestControllerTest {
         verify(auditService).getEntityAuditRevisionsById(4, Patient.class, 0, 20, "desc");
     }
 
-    /**
-     * Tests {@code PatientLogRestController#getPatientAuditLogs}
-     * It verifies negative/zero pagination values are normalized to defaults.
-     */
     @Test
     public void shouldCorrectInvalidPaginationValues() throws Exception {
         Patient mockPatient = mock(Patient.class);
