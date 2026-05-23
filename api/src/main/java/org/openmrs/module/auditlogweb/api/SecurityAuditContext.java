@@ -9,17 +9,19 @@
 package org.openmrs.module.auditlogweb.api;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 // Thread-scoped holder for HTTP request metadata captured by AuditContextFilter.
 public class SecurityAuditContext {
 
     private static final ThreadLocal<SecurityAuditContext> HOLDER = new ThreadLocal<>();
 
     private String ipAddress;
-
     private String userAgent;
-
     private String sessionId;
-
 
     public static void set(SecurityAuditContext ctx) {
         HOLDER.set(ctx);
@@ -33,27 +35,5 @@ public class SecurityAuditContext {
         HOLDER.remove();
     }
 
-    public String getIpAddress() {
-        return ipAddress;
-    }
 
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public String getUserAgent() {
-        return userAgent;
-    }
-
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
 }
