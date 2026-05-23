@@ -102,8 +102,8 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
                     details);
 
             if (event.isSuccess()) {
-                // Marks current pre-fixation session so SessionTimeoutListener ignores it.
-                // And Spring  invalidates it later during session fixation protection.
+                // Marks current pre-fixation session id so SessionTimeoutListener ignores it.
+                // The login flow invalidates that session later during fixation protection.
                 markSessionAsLoginFixation();
             }
         } catch (Exception e) {
@@ -204,8 +204,8 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
     }
 
     /**
-     * Stamps the current (pre-login) session with a marker indicating it will be replaced
-     * by a new session as part of Spring session fixation protection.
+     * It stamps the current (pre-login) session id with a marker indicating it will be replaced
+     * by a new session as part of login session fixation protection.
      * {@link SessionTimeoutListener} checks for this marker in {@code sessionDestroyed()}
      * to avoid logging a false SESSION_TIMEOUT when this session is invalidated.
      */
@@ -215,7 +215,7 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
             return;
         }
         try {
-            session.setAttribute(AuditlogwebConstants.SESSION_ATTR_LOGIN_FIXATION, TRUE);
+            LoginFixationSessionTracker.mark(session.getId());
         } catch (IllegalStateException e) {
             log.debug("Session already invalidated before setting LOGIN_FIXATION marker");
         }
