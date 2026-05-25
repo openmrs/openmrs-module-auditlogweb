@@ -8,7 +8,12 @@
  */
 package org.openmrs.module.auditlogweb.rest;
 
-import lombok.RequiredArgsConstructor;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.AuditService;
@@ -17,17 +22,13 @@ import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * REST controller for exposing audit log entries via the OpenMRS REST API.
@@ -72,26 +73,43 @@ public class AuditLogRestController {
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String entityType
+            @RequestParam(required = false) String entityType,
+            @RequestParam(defaultValue = "desc") String sortOrder,
+            @RequestParam(required = false) String action
     ) {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
+        if (!sortOrder.equalsIgnoreCase("asc") && !sortOrder.equalsIgnoreCase("desc")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid sortOrder: '" + sortOrder + "'. Expected 'asc' or 'desc'");
+        }
 
         Integer effectiveUserId = resolveUserId(userId, username);
         Date start = parseDate(startDate);
         Date end = parseDate(endDate);
 
-        boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
+        boolean fullDetails = userId != null || username != null || startDate != null
+                || endDate != null || entityType != null || action != null;
 
         List<AuditLogDetailDTO> auditDetails = auditService.mapAuditEntitiesToDetails(
-                auditService.getAllRevisionsAcrossEntitiesWithEntityType(page, size, effectiveUserId, start, end, entityType, "desc")
+                auditService.getAllRevisionsAcrossEntitiesWithEntityType(
+                        page, size, effectiveUserId, start, end, entityType, sortOrder)
         );
+
+        if (action != null && !action.trim().isEmpty()) {
+            String upperAction = action.trim().toUpperCase();
+            auditDetails = auditDetails.stream()
+                    .filter(d -> d.getEventType() != null &&
+                            d.getEventType().toUpperCase().contains(upperAction))
+                    .collect(java.util.stream.Collectors.toList());
+        }
 
         if (!fullDetails) {
             auditDetails.forEach(d -> d.setChanges(Collections.emptyList()));
         }
 
-        long total = auditService.countRevisionsAcrossEntitiesWithEntityType(effectiveUserId, start, end, entityType);
+        long total = auditService.countRevisionsAcrossEntitiesWithEntityType(
+                effectiveUserId, start, end, entityType);
         int totalPages = (int) Math.ceil(total / (double) size);
 
         return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);

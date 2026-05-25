@@ -8,7 +8,9 @@
  */
 package org.openmrs.module.auditlogweb.web.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.Date;
+import java.util.List;
+
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
@@ -16,9 +18,7 @@ import org.openmrs.module.auditlogweb.web.dto.AuditFilter;
 import org.openmrs.module.auditlogweb.web.dto.PaginatedAuditResult;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service class responsible for preparing audit log data for display in the UI.
@@ -55,7 +55,15 @@ public class AuditLogViewService {
         }
         return (List<AuditEntity<?>>)(List<?>) auditService.getAllRevisions(clazz, page, size, sortOrder);
     }
+    public List<AuditEntity<?>> fetchAuditLogs(Class<?> clazz, int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder) {
+    boolean hasFilters = userId != null || startDate != null || endDate != null;
 
+    if (hasFilters) {
+        return (List<AuditEntity<?>>)(List<?>) auditService.getRevisionsWithFilters(
+                clazz, page, size, userId, startDate, endDate, sortOrder);
+    }
+    return (List<AuditEntity<?>>)(List<?>) auditService.getAllRevisions(clazz, page, size, sortOrder);
+}
     /**
      * Counts the total number of audit log entries for the given audited entity class,
      * optionally filtered by user and date range.
@@ -119,15 +127,17 @@ public class AuditLogViewService {
 
         if (domainClassName != null && !domainClassName.isEmpty()) {
             Class<?> clazz = Class.forName(domainClassName);
-            List<AuditEntity<?>> audits = fetchAuditLogs(clazz, page, size, username, filters.getStartDate(), filters.getEndDate(), sortOrder);
+            List<AuditEntity<?>> audits = fetchAuditLogs(clazz, page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate(), sortOrder);
             long totalCount = countAuditLogs(clazz, username, filters.getStartDate(), filters.getEndDate());
             return new PaginatedAuditResult(audits, totalCount);
         } else {
-            List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntities(page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate(), sortOrder);
-            long totalCount = auditService.countRevisionsAcrossEntities(filters.getUserId(), filters.getStartDate(), filters.getEndDate());
-            return new PaginatedAuditResult(audits, totalCount);
+    List<AuditEntity<?>> audits = auditService.getAllRevisionsAcrossEntitiesWithEntityType(
+            page, size, filters.getUserId(), filters.getStartDate(), filters.getEndDate(), null, sortOrder);
+    long totalCount = auditService.countRevisionsAcrossEntitiesWithEntityType(
+            filters.getUserId(), filters.getStartDate(), filters.getEndDate(), null);
+    return new PaginatedAuditResult(audits, totalCount);
         }
-    }
+}
 
     /**
      * Parses raw filter input strings into an AuditFilter object.
