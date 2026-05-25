@@ -8,6 +8,7 @@
  */
 package org.openmrs.module.auditlogweb.rest.exceptions;
 
+import org.openmrs.api.context.ContextAuthenticationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -29,6 +30,7 @@ import java.util.Map;
  * <p>
  * Handled exceptions include:
  * <ul>
+ *     <li>{@link ContextAuthenticationException} - returns Forbidden (403) when user lacks a required privilege</li>
  *     <li>{@link IllegalArgumentException} - returns a Bad Request (400) with the exception message</li>
  *     <li>{@link ResponseStatusException} - returns a Bad Request (400) with the exception reason</li>
  *     <li>{@link NumberFormatException} - returns a Bad Request (400) with the exception message</li>
@@ -38,6 +40,11 @@ import java.util.Map;
  */
 @ControllerAdvice
 public class RestExceptionHandler {
+
+    @ExceptionHandler(ContextAuthenticationException.class)
+    public ResponseEntity<Map<String, String>> handleContextAuthenticationException(ContextAuthenticationException ex) {
+        return buildResponseEntity("Forbidden", ex.getMessage(), HttpStatus.FORBIDDEN);
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {

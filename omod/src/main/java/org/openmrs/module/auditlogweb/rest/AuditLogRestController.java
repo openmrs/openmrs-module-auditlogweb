@@ -74,6 +74,8 @@ public class AuditLogRestController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String entityType
     ) {
+        Context.requirePrivilege(AuditLogConstants.VIEW_AUDIT_LOGS);
+
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
 

@@ -8,6 +8,7 @@
  */
 package org.openmrs.module.auditlogweb.rest;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -17,6 +18,7 @@ import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
+import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.rest.exceptions.RestExceptionHandler;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,6 +41,8 @@ public class AuditLogRestControllerTest {
 
     private MockMvc mockMvc;
 
+    private MockedStatic<Context> contextMock;
+
     @Mock
     private AuditService auditService;
 
@@ -48,9 +52,17 @@ public class AuditLogRestControllerTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
+
         mockMvc = MockMvcBuilders.standaloneSetup(auditLogRestController)
                 .setControllerAdvice(new RestExceptionHandler())
                 .build();
+        contextMock = mockStatic(Context.class);
+        contextMock.when(() -> Context.requirePrivilege(anyString())).thenAnswer(invocation -> null);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        contextMock.close();
     }
 
     @Test
@@ -116,25 +128,23 @@ public class AuditLogRestControllerTest {
 
     @Test
     public void shouldResolveUsernameToUserId() throws Exception {
-        try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
-            UserService userService = mock(UserService.class);
-            User mockUser = new User(1);
-            contextMock.when(() -> Context.getUserService()).thenReturn(userService);
-            when(userService.getUserByUsername("testuser")).thenReturn(mockUser);
+        UserService userService = mock(UserService.class);
+        User mockUser = new User(1);
+        contextMock.when(() -> Context.getUserService()).thenReturn(userService);
+        when(userService.getUserByUsername("testuser")).thenReturn(mockUser);
 
-            when(auditService.getAllRevisionsAcrossEntitiesWithEntityType(0, 20, 1, null, null, null, "desc"))
-                    .thenReturn(Collections.emptyList());
-            when(auditService.mapAuditEntitiesToDetails(any()))
-                    .thenReturn(Collections.emptyList());
-            when(auditService.countRevisionsAcrossEntitiesWithEntityType(1, null, null, null))
-                    .thenReturn(1L);
+        when(auditService.getAllRevisionsAcrossEntitiesWithEntityType(0, 20, 1, null, null, null, "desc"))
+                .thenReturn(Collections.emptyList());
+        when(auditService.mapAuditEntitiesToDetails(any()))
+                .thenReturn(Collections.emptyList());
+        when(auditService.countRevisionsAcrossEntitiesWithEntityType(1, null, null, null))
+                .thenReturn(1L);
 
-            mockMvc.perform(get("/rest/v1/auditlogs")
-                            .param("username", "testuser"))
-                    .andExpect(status().isOk());
+        mockMvc.perform(get("/rest/v1/auditlogs")
+                        .param("username", "testuser"))
+                .andExpect(status().isOk());
 
-            verify(auditService).getAllRevisionsAcrossEntitiesWithEntityType(0, 20, 1, null, null, null, "desc");
-        }
+        verify(auditService).getAllRevisionsAcrossEntitiesWithEntityType(0, 20, 1, null, null, null, "desc");
     }
 
     @Test
@@ -180,6 +190,28 @@ public class AuditLogRestControllerTest {
 
         mockMvc.perform(get("/rest/v1/auditlogs")
                         .param("size", "-10"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void shouldReturn403WhenUserLacksViewAuditLogsPrivilege() throws Exception {
+        contextMock.when(() -> Context.requirePrivilege(anyString()))
+                   .thenThrow(new ContextAuthenticationException("Unauthorized"));
+
+        mockMvc.perform(get("/rest/v1/auditlogs"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void shouldReturn200WhenUserHasViewAuditLogsPrivilege() throws Exception {
+        when(auditService.getAllRevisionsAcrossEntitiesWithEntityType(0, 20, null, null, null, null, "desc"))
+                .thenReturn(Collections.emptyList());
+        when(auditService.mapAuditEntitiesToDetails(any()))
+                .thenReturn(Collections.emptyList());
+        when(auditService.countRevisionsAcrossEntitiesWithEntityType(null, null, null, null))
+                .thenReturn(0L);
+
+        mockMvc.perform(get("/rest/v1/auditlogs"))
                 .andExpect(status().isOk());
     }
 }
