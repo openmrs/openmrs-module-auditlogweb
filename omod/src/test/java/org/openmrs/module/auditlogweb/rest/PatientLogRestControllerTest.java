@@ -17,18 +17,14 @@ import org.openmrs.Patient;
 import org.openmrs.api.PatientService;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.rest.exceptions.RestExceptionHandler;
+import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.lang.reflect.Method;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
@@ -156,5 +152,22 @@ public class PatientLogRestControllerTest {
                 .andExpect(status().isOk());
 
         verify(auditService).getEntityAuditRevisionsById(2, Patient.class, 0, 20, "desc");
+    }
+
+    @Test
+    public void shouldReturnServiceUnavailableWhenAuditHistoryCannotBeRead() throws Exception {
+        Patient mockPatient = mock(Patient.class);
+        when(mockPatient.getPatientId()).thenReturn(42);
+        when(patientService.getPatientByUuid("uuid-42")).thenReturn(mockPatient);
+
+        when(auditService.getEntityAuditRevisionsById(42, Patient.class, 0, 20, "desc"))
+                .thenThrow(new AuditLogUnavailableException("Audit history could not be fetched, try again later", new RuntimeException()));
+
+        mockMvc.perform(get("/rest/v1/auditlogs/patients").param("uuid", "uuid-42"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error", is("Audit Log Unavailable")))
+                .andExpect(jsonPath("$.message", is("Audit history could not be fetched, try again later")));
+
+        verify(auditService, never()).countEntityAuditRevisionsById(anyInt(), any());
     }
 }

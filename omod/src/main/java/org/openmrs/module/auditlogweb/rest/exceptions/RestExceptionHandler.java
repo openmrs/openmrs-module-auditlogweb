@@ -9,6 +9,7 @@
 package org.openmrs.module.auditlogweb.rest.exceptions;
 
 import org.hibernate.ObjectNotFoundException;
+import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -74,6 +75,11 @@ public class RestExceptionHandler {
     @ExceptionHandler(ObjectNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleObjectNotFound(ObjectNotFoundException ex) {
         return buildResponseEntity("Bad Request", ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AuditLogUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleAuditLogUnavailable(AuditLogUnavailableException ex) {
+        return buildResponseEntity("Audit Log Unavailable", ex.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(Exception.class)

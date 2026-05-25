@@ -18,6 +18,7 @@ import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.exception.SQLGrammarException;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
@@ -543,11 +544,12 @@ public class AuditDao {
                     .collect(Collectors.toList());
         } catch (Exception ex) {
             if (isMissingAuditTableException(ex)) {
-                log.warn("Skipping revisions for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+                log.warn("Audit history is unavailable for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing",ex);
             } else {
                 log.error("Unexpected error while fetching revisions for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
+                throw new AuditLogUnavailableException("Audit history could not be fetched, try again later",ex);
             }
-            return new ArrayList<>();
         }
     }
 
@@ -570,11 +572,13 @@ public class AuditDao {
             return count != null ? count.longValue() : 0L;
         } catch (Exception ex) {
             if (isMissingAuditTableException(ex)) {
-                log.warn("Skipping count for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+                log.warn("Audit history count is unavailable for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing",ex);
             } else {
                 log.error("Unexpected error while fetching revision counts for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
+                throw new AuditLogUnavailableException("Audit history count could not be fetched, try again later",ex);
+
             }
-            return 0L;
         }
     }
 }
