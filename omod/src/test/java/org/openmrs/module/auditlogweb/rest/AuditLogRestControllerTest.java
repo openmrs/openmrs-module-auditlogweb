@@ -15,9 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
-import org.openmrs.GlobalProperty;
 import org.openmrs.Patient;
-import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
@@ -239,7 +237,7 @@ public class AuditLogRestControllerTest {
                     mockMvc.perform(get("/rest/v1/auditlogs/7")
                                                     .param("entityName", "Patient")
                                                     .param("entityId", "42"))
-                                    .andExpect(status().isBadRequest());
+                                    .andExpect(status().isNotFound());
             }
     }
 }

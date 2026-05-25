@@ -506,10 +506,10 @@ public class AuditDao {
     }
 
     /**
-     * Retrieves a paginated list of audit revisions for a specific Patient entity,
+     * Retrieves a paginated list of audit revisions for a specific entity,
      * identified by its integer primary key.
      *
-     * @param entityId the integer primary key of the Entity
+     * @param entityId the integer primary key of the entity
      * @param page      the page number (0-based)
      * @param size      the number of records per page
      * @param sortOrder "asc" or "desc" by revision timestamp

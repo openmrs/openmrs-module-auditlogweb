@@ -73,7 +73,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(ObjectNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleObjectNotFound(ObjectNotFoundException ex) {
-        return buildResponseEntity("Bad Request", ex.getMessage(), HttpStatus.BAD_REQUEST);
+        return buildResponseEntity("Bad Request", ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)
