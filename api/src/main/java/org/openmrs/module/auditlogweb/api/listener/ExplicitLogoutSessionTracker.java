@@ -6,28 +6,28 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.auditlogweb.listener;
+package org.openmrs.module.auditlogweb.api.listener;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * It tracks pre-login session ids that are destroyed during login session fixation protection,
- * so those destroys are not audited as real session timeouts.
+ * Tracks sessions that were destroyed after an explicit logout, so destruction
+ * is not audited as a session timeout.
  */
-final class LoginFixationSessionTracker {
+public final class ExplicitLogoutSessionTracker {
 
     private static final Set<String> SESSION_IDS = ConcurrentHashMap.newKeySet();
 
-    private LoginFixationSessionTracker() {}
+    private ExplicitLogoutSessionTracker() {}
 
-    static void mark(String sessionId) {
+    public static void mark(String sessionId) {
         if (sessionId != null) {
             SESSION_IDS.add(sessionId);
         }
     }
 
-    static boolean consume(String sessionId) {
+    public static boolean consume(String sessionId) {
         return sessionId != null && SESSION_IDS.remove(sessionId);
     }
 }

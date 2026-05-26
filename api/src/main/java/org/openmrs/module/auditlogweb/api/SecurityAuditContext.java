@@ -22,6 +22,7 @@ public class SecurityAuditContext {
     private String ipAddress;
     private String userAgent;
     private String sessionId;
+    private String loggedInUsername;
 
     public static void set(SecurityAuditContext ctx) {
         HOLDER.set(ctx);
