@@ -6,29 +6,21 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.auditlogweb.listener;
-
-import javax.servlet.http.HttpSession;
+package org.openmrs.module.auditlogweb.api.listener;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.openmrs.api.APIException;
-import org.openmrs.api.context.Context;
 import org.openmrs.event.LoginAttemptEvent;
 import org.openmrs.event.LogoutEvent;
-import org.openmrs.module.auditlogweb.AuditlogwebConstants;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
 import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
-import org.openmrs.module.auditlogweb.web.AuditContextFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
-
-import static java.lang.Boolean.TRUE;
 
 /**
  * It receives security-related event from the Spring ApplicationEvent registered on core module for events 
@@ -125,13 +117,7 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
         String username = event.getUsername();
 
         if (StringUtils.isBlank(username)) {
-            HttpSession session = AuditContextFilter.getCurrentSession();
-            if (session != null) {
-                Object sessionUser = session.getAttribute(AuditlogwebConstants.SESSION_ATTR_LOGGED_IN_USER);
-                if (sessionUser instanceof String) {
-                    username = (String) sessionUser;
-                }
-            }
+            username = ctx != null ? ctx.getLoggedInUsername() : null;
         }
 
         log.debug("SecurityEventListener: logging LOGOUT for user [{}]", username);
@@ -150,7 +136,7 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
                 sessionId,
                 null);
         log.info("Log out event saved ");
-        // Stamp the session so SessionTimeoutListener knows this was an explicit logout,
+        // Marking the session so SessionTimeoutListener knows this was an explicit logout,
         // not a timeout when the container later calls #sessionDestroyed.
         markSessionAsExplicitLogout(ctx);
         } catch (Exception e) {
@@ -192,15 +178,11 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
      * @param ctx   the security audit context
      */
     private void markSessionAsExplicitLogout(SecurityAuditContext ctx) {
-        HttpSession session = AuditContextFilter.getCurrentSession();
-        if (session == null) {
+        String sessionId = ctx != null ? ctx.getSessionId() : null;
+        if (sessionId == null) {
             return;
         }
-        try {
-            session.setAttribute(AuditlogwebConstants.SESSION_ATTR_EXPLICIT_LOGOUT, TRUE);
-        } catch (IllegalStateException e) {
-            log.warn("Session already invalidated before setting it as EXPLICIT_LOGOUT");
-        }
+        ExplicitLogoutSessionTracker.mark(sessionId);
     }
 
     /**
@@ -210,15 +192,12 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
      * to avoid logging a false SESSION_TIMEOUT when this session is invalidated.
      */
     private void markSessionAsLoginFixation() {
-        HttpSession session = AuditContextFilter.getCurrentSession();
-        if (session == null) {
+        SecurityAuditContext ctx = SecurityAuditContext.get();
+        String sessionId = ctx != null ? ctx.getSessionId() : null;
+        if (sessionId == null) {
             return;
         }
-        try {
-            LoginFixationSessionTracker.mark(session.getId());
-        } catch (IllegalStateException e) {
-            log.debug("Session already invalidated before setting LOGIN_FIXATION marker");
-        }
+        LoginFixationSessionTracker.mark(sessionId);
     }
 
 }

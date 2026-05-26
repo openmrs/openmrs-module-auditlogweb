@@ -13,9 +13,12 @@ import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.UserContext;
-import org.openmrs.module.auditlogweb.AuditlogwebConstants;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.listener.ExplicitLogoutSessionTracker;
+import org.openmrs.module.auditlogweb.api.listener.LoginFixationSessionTracker;
+import org.openmrs.module.auditlogweb.api.listener.SecurityEventListener;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.web.WebConstants;
 import org.slf4j.Logger;
@@ -44,7 +47,7 @@ public class SessionTimeoutListener implements HttpSessionListener {
         HttpSession session = event.getSession();
         log.debug("Session destroyed id {}", session.getId());
 
-        if (Boolean.TRUE.equals(session.getAttribute(AuditlogwebConstants.SESSION_ATTR_EXPLICIT_LOGOUT))) {
+        if (ExplicitLogoutSessionTracker.consume(session.getId())) {
             log.debug("Session destroyed after explicit logout, skipping it");
             return;
         } else {
@@ -58,7 +61,7 @@ public class SessionTimeoutListener implements HttpSessionListener {
         }
 
         String username = resolveUsername(session);
-        if (username == null) {
+        if (StringUtils.isBlank(username)) {
             log.debug("Session destroyed but no authenticated user found, skipping it");
             return;
         } else {
@@ -82,25 +85,25 @@ public class SessionTimeoutListener implements HttpSessionListener {
     // Fetch the username either from the session or from the user context as fallback.
     private String resolveUsername(HttpSession session) {
         log.debug("Called the resolveUsername method for session [{}]", session.getId());
-        String username = "";
         try {
             log.debug("Session id before getting user context {}", session.getId());
             Object raw = session.getAttribute(WebConstants.OPENMRS_USER_CONTEXT_HTTPSESSION_ATTR);
             if (raw instanceof UserContext) {
                 UserContext userContext = (UserContext) raw;
                 if (userContext.getAuthenticatedUser() != null) {
-                    username = userContext.getAuthenticatedUser().getUsername();
+                    String username = userContext.getAuthenticatedUser().getUsername();
                     if (username == null || username.isEmpty()) {
                         username = userContext.getAuthenticatedUser().getSystemId();
                         log.debug("Username found from UserContext [{}]", username);
                     }
+                    return username;
                 }
             }
         } catch (Exception e) {
             log.error("Could not read UserContext from session", e);
         }
 
-        return username;
+        return null;
     }
 
 }
