@@ -9,9 +9,7 @@
 package org.openmrs.module.auditlogweb.api.listener;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.openmrs.event.LoginAttemptEvent;
-import org.openmrs.event.LogoutEvent;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
@@ -39,8 +37,6 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
 
             if (event instanceof LoginAttemptEvent) {
                 handleLoginAttempt((LoginAttemptEvent) event);
-            } else if (event instanceof LogoutEvent) {
-                handleLogout((LogoutEvent) event);
             }
         } catch (Exception e) {
             log.error("SecurityEventListener: unexpected error while processing event [{}]",
@@ -104,47 +100,6 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
     }
 
     /**
-     * Handles the logout event triggered by the user
-     * 
-     * @param event   it's the logout event published from the core module
-     */
-    private void handleLogout(LogoutEvent event) {
-        try{
-        SecurityAuditContext ctx = SecurityAuditContext.get();
-        String ipAddress = ctx != null ? ctx.getIpAddress() : null;
-        String userAgent = ctx != null ? ctx.getUserAgent() : null;
-        String sessionId = ctx != null ? ctx.getSessionId() : null;
-        String username = event.getUsername();
-
-        if (StringUtils.isBlank(username)) {
-            username = ctx != null ? ctx.getLoggedInUsername() : null;
-        }
-
-        log.debug("SecurityEventListener: logging LOGOUT for user [{}]", username);
-
-        if (auditService == null) {
-            log.warn("SecurityEventListener: AuditService is not registered, skipping logout audit event");
-            return;
-        }
-
-        auditService.logSecurityEvent(
-                AuditSecurityEventType.LOGOUT,
-                username,
-                event.getUserId(),
-                ipAddress,
-                userAgent,
-                sessionId,
-                null);
-        log.info("Log out event saved ");
-        // Marking the session so SessionTimeoutListener knows this was an explicit logout,
-        // not a timeout when the container later calls #sessionDestroyed.
-        markSessionAsExplicitLogout(ctx);
-        } catch (Exception e) {
-            log.error("Failed to log logout event for user [{}]", event.getUsername(), e);
-        }
-    }
-
-    /**
      * Resolves the login event type based on the login attempt event.
      * 
      * @param event   it's the login attempt event published from the core module
@@ -172,23 +127,9 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
     }
 
     /**
-     * Marks the session as explicitly logged out. This will be used by the
-     * {@link SessionTimeoutListener} to determine whether the logout was explicit or not.
-     * 
-     * @param ctx   the security audit context
-     */
-    private void markSessionAsExplicitLogout(SecurityAuditContext ctx) {
-        String sessionId = ctx != null ? ctx.getSessionId() : null;
-        if (sessionId == null) {
-            return;
-        }
-        ExplicitLogoutSessionTracker.mark(sessionId);
-    }
-
-    /**
      * It stamps the current (pre-login) session id with a marker indicating it will be replaced
      * by a new session as part of login session fixation protection.
-     * {@link SessionTimeoutListener} checks for this marker in {@code sessionDestroyed()}
+     * SessionTimeoutListener in omod checks for this marker in {@code sessionDestroyed()}
      * to avoid logging a false SESSION_TIMEOUT when this session is invalidated.
      */
     private void markSessionAsLoginFixation() {
@@ -199,5 +140,4 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
         }
         LoginFixationSessionTracker.mark(sessionId);
     }
-
 }
