@@ -49,7 +49,8 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> handleResponseStatusException(ResponseStatusException ex) {
-        return buildResponseEntity("Bad Request", ex.getReason(), HttpStatus.BAD_REQUEST);
+        HttpStatus status = ex.getStatus();
+        return buildResponseEntity(status.getReasonPhrase(), ex.getReason(), status);
     }
 
     @ExceptionHandler(NumberFormatException.class)
@@ -74,7 +75,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(ObjectNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleObjectNotFound(ObjectNotFoundException ex) {
-        return buildResponseEntity("Bad Request", ex.getMessage(), HttpStatus.NOT_FOUND);
+        return buildResponseEntity("Not found", ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(AuditLogUnavailableException.class)

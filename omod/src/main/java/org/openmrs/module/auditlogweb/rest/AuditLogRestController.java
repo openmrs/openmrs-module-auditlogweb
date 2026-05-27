@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.persistence.NoResultException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -128,8 +129,8 @@ public class AuditLogRestController {
         AuditEntity<?> auditEntity;
         try {
             auditEntity = auditService.getAuditEntityRevisionById(entityClass, entityIdVal, revisionId);
-        } catch (ObjectNotFoundException ex) {
-            throw new ObjectNotFoundException("Audit for entity {} not found ", entityName);
+        } catch (NoResultException | ObjectNotFoundException ex) {
+            throw new ObjectNotFoundException("Audit for entity not found",entityName);
         }
 
         return  auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)).get(0);

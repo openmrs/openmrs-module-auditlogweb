@@ -199,7 +199,7 @@ public class AuditLogRestControllerTest {
     }
 
     @Test
-    public void shouldReturnInternalServerErrorWhenFetchEntityRevisionParamsAbsent() throws Exception {
+    public void shouldReturnBadRequestWhenFetchEntityRevisionParamsAbsent() throws Exception {
         mockMvc.perform(get("/rest/v1/auditlogs/1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
