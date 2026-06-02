@@ -8,10 +8,13 @@
  */
 package org.openmrs.module.auditlogweb.api.aop;
 
-import java.lang.reflect.Method;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
@@ -20,7 +23,7 @@ import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
 import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.aop.AfterReturningAdvice;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,19 +31,27 @@ import org.springframework.stereotype.Component;
  * and stamps the event like : PASSWORD_CHANGED, PASSWORD_RESET_REQUEST, PASSWORD_RESET
  *
  */
+@Aspect
 @Component
 @RequiredArgsConstructor
-public class PasswordAuditAdvice implements AfterReturningAdvice {
+
+public class PasswordAuditAdvice  {
 
     private static final Logger log = LoggerFactory.getLogger(PasswordAuditAdvice.class);
     private final AuditService auditService;
 
-    @Override
-    public void afterReturning(Object returnValue, Method method, Object[] args, Object target) {
-        String methodName = method.getName();
-        boolean isPasswordResetRequestSuccess = false;
+    @AfterReturning(
+            pointcut = "execution(* org.openmrs.api.UserService.isSecretAnswer(..))"
+                    + " || execution(* org.openmrs.api.UserService.changePassword(..))",
+            returning = "returnValue")
+    public void afterReturning(JoinPoint joinPoint, Object returnValue) {
 
-        if (!isPasswordMethod(methodName)) return;
+        if (AopUtils.isAopProxy(joinPoint.getTarget())) return;
+
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        String methodName = signature.getMethod().getName();
+        Object[] args = joinPoint.getArgs();
+        boolean isPasswordResetRequestSuccess = false;
 
         try {
             SecurityAuditContext ctx = SecurityAuditContext.get();
@@ -99,19 +110,6 @@ public class PasswordAuditAdvice implements AfterReturningAdvice {
         } catch (Exception e) {
             log.error("Failed to log password audit event for method [{}]", methodName, e);
         }
-    }
-
-    /**
-     * It checks whether the method name is one we care about for password
-     * auditing. Currently, treats `#isSecretAnswer` and `#changePassword` as
-     * relevant.
-     *
-     * @param methodName the method name to check
-     * @return true when the method is related to password activity
-     */
-    private boolean isPasswordMethod(String methodName) {
-        return "isSecretAnswer".equals(methodName)
-                || "changePassword".equals(methodName);
     }
 
     /**

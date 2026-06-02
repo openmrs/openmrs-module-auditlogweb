@@ -28,31 +28,12 @@ public class AuditlogwebActivator extends BaseModuleActivator {
     @Override
     public void started() {
         log.info("Started Auditlogweb");
-        try {
-            List<PasswordAuditAdvice> beans = Context.getRegisteredComponents(PasswordAuditAdvice.class);
-            if (beans.isEmpty()) {
-                log.error("PasswordAuditAdvice bean not found in Spring context, password changes will not be audited");
-                return;
-            }
-            passwordAuditAdvice = beans.get(0);
-            Context.addAdvice(UserService.class, passwordAuditAdvice);
-            log.debug("PasswordAuditAdvice registered on UserService");
-        } catch (Exception e) {
-            log.error("Failed to register PasswordAuditAdvice", e);
-        }
+
     }
 
     @Override
     public void stopped() {
         log.info("Stopped Auditlogweb");
-        try {
-            if (passwordAuditAdvice != null) {
-                Context.removeAdvice(UserService.class, passwordAuditAdvice);
-                passwordAuditAdvice = null;
-                log.info("PasswordAuditAdvice removed from UserService");
-            }
-        } catch (Exception e) {
-            log.error("Auditlogweb: Failed to remove PasswordAuditAdvice", e);
-        }
+
     }
 }
