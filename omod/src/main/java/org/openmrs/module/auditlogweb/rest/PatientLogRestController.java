@@ -35,9 +35,9 @@ public class PatientLogRestController {
      * Retrieves paginated audit log entries for a specific patient.
      * <p>The patient is resolved using one of the provided parameters.
      *
-     * @param uuid       the patient's UUID (highest priority)
-     * @param identifier any patient identifier string (second priority)
-     * @param name       the patient's display/given name,partial match (lowest priority)
+     * @param uuid       the patient's UUID (first priority)
+     * @param id         the patient Id
+       Either one of these param should be there on request
      * @param page       zero-based page index (default 0)
      * @param size       number of results per page (default 20)
      * @return {@code AuditLogResponseDto} a structured, paginated response containing the patient's audit log entries
@@ -45,24 +45,20 @@ public class PatientLogRestController {
     @GetMapping
     public AuditLogResponseDto getPatientAuditLogs(
             @RequestParam(required = false) String uuid,
-            @RequestParam(required = false) String identifier,
-            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
 
-        if ((uuid == null || uuid.trim().isEmpty()) &&
-                (identifier == null || identifier.trim().isEmpty()) &&
-                (name == null || name.trim().isEmpty())) {
+        if ((uuid == null || uuid.trim().isEmpty()) && id == null) {
             throw new IllegalArgumentException(
-                    "At least one search parameter must be provided either 'uuid', 'identifier', or 'name'."
+                    "At least one search parameter must be provided either uuid or id."
             );
         }
 
-
-        Patient patient = resolvePatient(uuid, identifier, name);
+        Patient patient = resolvePatient(uuid, id);
 
         if (patient == null) {
             throw new IllegalArgumentException("No patient found for the given search criteria.");
@@ -90,30 +86,15 @@ public class PatientLogRestController {
      *   <li>Name          partial name search; first match is used</li>
      * </ol>
      *
-     * @param uuid       optional patient UUID
-     * @param identifier optional patient identifier string
-     * @param name       optional patient name (partial)
+     * @param uuid       patient UUID
+     * @param id         patient Id
      * @return the resolved {@link Patient}, or {@code null} if none found
      */
-    private Patient resolvePatient(String uuid, String identifier, String name) {
+    private Patient resolvePatient(String uuid, Integer id) {
         if (uuid != null && !uuid.isEmpty()) {
             return patientService.getPatientByUuid(uuid);
         }
 
-        if (identifier != null && !identifier.isEmpty()) {
-            List<Patient> byIdentifier = patientService.getPatients(null, identifier, null, false);
-            if (!byIdentifier.isEmpty()) {
-                return byIdentifier.get(0);
-            }
-        }
-
-        if (name != null && !name.isEmpty()) {
-            List<Patient> byName = patientService.getPatients(name, null, null, false);
-            if (!byName.isEmpty()) {
-                return byName.get(0);
-            }
-        }
-
-        return null;
+        return patientService.getPatient(id);
     }
 }

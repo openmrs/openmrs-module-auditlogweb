@@ -60,7 +60,7 @@ public class PatientLogRestControllerTest {
         mockMvc.perform(get("/rest/v1/auditlogs/patients"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
-                .andExpect(jsonPath("$.message", is("At least one search parameter must be provided either 'uuid', 'identifier', or 'name'.")));
+                .andExpect(jsonPath("$.message", is("At least one search parameter must be provided either uuid or id.")));
     }
 
     @Test
@@ -95,10 +95,10 @@ public class PatientLogRestControllerTest {
     }
 
     @Test
-    public void shouldLookupByIdentifierAndReturnOk() throws Exception {
+    public void shouldLookupByPatientIdAndReturnOk() throws Exception {
         Patient mockPatient = mock(Patient.class);
         when(mockPatient.getPatientId()).thenReturn(3);
-        when(patientService.getPatients(null, "ID-123", null, false)).thenReturn(Collections.singletonList(mockPatient));
+        when(patientService.getPatient(3)).thenReturn(mockPatient);
 
         when(auditService.getEntityAuditRevisionsById(3, Patient.class, 0, 20, "desc"))
                 .thenReturn(Collections.emptyList());
@@ -107,29 +107,10 @@ public class PatientLogRestControllerTest {
         when(auditService.countEntityAuditRevisionsById(3, Patient.class))
                 .thenReturn(0L);
 
-        mockMvc.perform(get("/rest/v1/auditlogs/patients").param("identifier", "ID-123"))
+        mockMvc.perform(get("/rest/v1/auditlogs/patients").param("id", "3"))
                 .andExpect(status().isOk());
 
         verify(auditService).getEntityAuditRevisionsById(3, Patient.class, 0, 20, "desc");
-    }
-
-    @Test
-    public void shouldLookupByNameAndReturnOk() throws Exception {
-        Patient mockPatient = mock(Patient.class);
-        when(mockPatient.getPatientId()).thenReturn(4);
-        when(patientService.getPatients("John Doe", null, null, false)).thenReturn(Collections.singletonList(mockPatient));
-
-        when(auditService.getEntityAuditRevisionsById(4, Patient.class, 0, 20, "desc"))
-                .thenReturn(Collections.emptyList());
-        when(auditService.getEntityDetailedAudit(any(), eq(Patient.class)))
-                .thenReturn(Collections.emptyList());
-        when(auditService.countEntityAuditRevisionsById(4, Patient.class))
-                .thenReturn(0L);
-
-        mockMvc.perform(get("/rest/v1/auditlogs/patients").param("name", "John Doe"))
-                .andExpect(status().isOk());
-
-        verify(auditService).getEntityAuditRevisionsById(4, Patient.class, 0, 20, "desc");
     }
 
     @Test
