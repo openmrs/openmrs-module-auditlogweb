@@ -6,10 +6,9 @@
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
-package org.openmrs.module.auditlogweb.advice;
+package org.openmrs.module.auditlogweb.api.aop;
 
 import java.lang.reflect.Method;
-import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
