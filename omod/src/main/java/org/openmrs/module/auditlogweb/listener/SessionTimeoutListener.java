@@ -37,36 +37,16 @@ public class SessionTimeoutListener implements HttpSessionListener {
     private final AuditService auditService;
 
     @Override
-    public void sessionCreated(HttpSessionEvent event) {
-        // No action needed on session creation.
-        log.debug("Session created id {}", event.getSession().getId());
-    }
-
-    @Override
     public void sessionDestroyed(HttpSessionEvent event) {
         HttpSession session = event.getSession();
-        log.debug("Session destroyed id {}", session.getId());
 
-        if (ExplicitLogoutSessionTracker.consume(session.getId())) {
-            log.debug("Session destroyed after explicit logout, skipping it");
-            return;
-        } else {
-            log.debug("Session not destroyed because of explicit logout");
-        }
+        if (ExplicitLogoutSessionTracker.consume(session.getId())) return;
 
         // Skip the pre-login session destroyed by login session fixation protection.
-        if (LoginFixationSessionTracker.consume(session.getId())) {
-            log.debug("Session destroyed due to session fixation on login, skipping SESSION_TIMEOUT");
-            return;
-        }
+        if (LoginFixationSessionTracker.consume(session.getId())) return;
 
         String username = resolveUsername(session);
-        if (StringUtils.isBlank(username)) {
-            log.debug("Session destroyed but no authenticated user found, skipping it");
-            return;
-        } else {
-            log.debug("Session destroyed but authenticated user found [{}]", username);
-        }
+        if (StringUtils.isBlank(username)) return;
 
         try {
             auditService.logSecurityEvent(
@@ -82,11 +62,9 @@ public class SessionTimeoutListener implements HttpSessionListener {
         }
     }
 
-    // Fetch the username either from the session or from the user context as fallback.
+    // Fetch the username the user context.
     private String resolveUsername(HttpSession session) {
-        log.debug("Called the resolveUsername method for session [{}]", session.getId());
         try {
-            log.debug("Session id before getting user context {}", session.getId());
             Object raw = session.getAttribute(WebConstants.OPENMRS_USER_CONTEXT_HTTPSESSION_ATTR);
             if (raw instanceof UserContext) {
                 UserContext userContext = (UserContext) raw;
@@ -94,7 +72,6 @@ public class SessionTimeoutListener implements HttpSessionListener {
                     String username = userContext.getAuthenticatedUser().getUsername();
                     if (username == null || username.isEmpty()) {
                         username = userContext.getAuthenticatedUser().getSystemId();
-                        log.debug("Username found from UserContext [{}]", username);
                     }
                     return username;
                 }

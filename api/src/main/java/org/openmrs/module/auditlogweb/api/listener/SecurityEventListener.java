@@ -34,7 +34,6 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         try {
-
             if (event instanceof LoginAttemptEvent) {
                 handleLoginAttempt((LoginAttemptEvent) event);
             }
@@ -51,10 +50,8 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
      * @param event   it's the login attempt event published from the core module
      */
     private void handleLoginAttempt(LoginAttemptEvent event) {
-
         try {
             AuditSecurityEventType eventType = resolveLoginEventType(event);
-
             SecurityAuditContext ctx = SecurityAuditContext.get();
             String sessionId = ctx != null ? ctx.getSessionId() : null;
             String ipAddress = ctx != null ? ctx.getIpAddress() : null;
@@ -68,12 +65,9 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
             }
 
             String details = buildLoginDetails(event);
-
             if (event.isSuccess()) {
                 details = "";
             }
-
-            log.debug("Logging {} for user [{}]", eventType, event.getUsername());
 
             if (auditService == null) {
                 log.warn("AuditService is not registered, skipping login audit event");
@@ -135,9 +129,7 @@ public class SecurityEventListener implements ApplicationListener<ApplicationEve
     private void markSessionAsLoginFixation() {
         SecurityAuditContext ctx = SecurityAuditContext.get();
         String sessionId = ctx != null ? ctx.getSessionId() : null;
-        if (sessionId == null) {
-            return;
-        }
+        if (sessionId == null) return;
         LoginFixationSessionTracker.mark(sessionId);
     }
 }
