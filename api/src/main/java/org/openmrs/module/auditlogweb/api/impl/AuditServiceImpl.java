@@ -331,8 +331,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logSecurityEvent(AuditSecurityEventType eventType, String username, Integer userId,
             String ipAddress, String userAgent, String sessionId, String detailsJson) {
-        log.info("Going to save the security event type of "+eventType+", of username : "+ username+
-        "and details : "+detailsJson);
+
         AuditSecurityEvent event = new AuditSecurityEvent();
         event.setEventType(eventType);
         event.setUsername(username);

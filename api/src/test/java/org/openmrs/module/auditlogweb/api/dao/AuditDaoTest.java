@@ -469,10 +469,6 @@ class AuditDaoTest {
         verify(session, times(1)).save(event);
     }
 
-    /**
-     * #getSecurityEvents, with all filters null still returns available object.
-     * Verifies pagination parameters are applied and result list is returned.
-     */
     @Test
     void shouldReturnSecurityEvents_WhenNoFiltersProvided() {
         List<AuditSecurityEvent> expected = Collections.singletonList(
@@ -491,10 +487,6 @@ class AuditDaoTest {
         assertThat(result.get(0).getEventType(), is(AuditSecurityEventType.LOGOUT));
     }
 
-    /**
-     * #getSecurityEvents, with eventType and username filters.
-     * Verifies the query parameters are bound via setParameter.
-     */
     @Test
     void shouldReturnFilteredSecurityEvents_WhenEventTypeAndUsernameProvided() {
         AuditSecurityEvent event = buildSecurityEvent(AuditSecurityEventType.LOGIN_FAILURE, "admin");
@@ -520,10 +512,6 @@ class AuditDaoTest {
         verify(securityEventQuery).setParameter(eq("username"), eq("%admin%"));
     }
 
-    /**
-     * #getSecurityEvents, with date-range filters applied.
-     * Verifies startDate / endDate parameters are bound.
-     */
     @Test
     void shouldReturnSecurityEvents_WhenDateRangeProvided() {
         Date start = new Date(System.currentTimeMillis() - 86_400_000); // yesterday
@@ -547,9 +535,6 @@ class AuditDaoTest {
         verify(securityEventQuery).setParameter("endDate", end);
     }
 
-    /**
-     * #countSecurityEvents, with no filters, it verifies count is returned correctly.
-     */
     @Test
     void shouldReturnSecurityEventCount_WhenNoFiltersProvided() {
         when(session.createQuery(anyString(), eq(Long.class)))
@@ -561,10 +546,6 @@ class AuditDaoTest {
         assertThat(count, is(42L));
     }
 
-    /**
-     * #countSecurityEvents, when getSingleResult() returns null case of empty result.
-     * The DAO should fall back to 0L instead of NullPointerException.
-     */
     @Test
     void shouldReturnZeroCount_WhenCountSecurityEventsReturnsNull() {
         when(session.createQuery(anyString(), eq(Long.class)))
@@ -576,9 +557,6 @@ class AuditDaoTest {
         assertThat(count, is(0L));
     }
 
-    /**
-     * #countSecurityEvents, with eventType filter, it verifies the parameter is bound.
-     */
     @Test
     void shouldReturnSecurityEventCount_WhenEventTypeFilterProvided() {
         when(session.createQuery(anyString(), eq(Long.class)))
@@ -593,9 +571,6 @@ class AuditDaoTest {
         verify(countQuery).setParameter("eventType", AuditSecurityEventType.PASSWORD_CHANGED);
     }
 
-    /**
-     * #getSecurityEventById, verifies a single event is fetched by its primary key.
-     */
     @Test
     void shouldReturnSecurityEvent_WhenFoundById() {
         AuditSecurityEvent expected = buildSecurityEvent(AuditSecurityEventType.SESSION_TIMEOUT, "user1");
@@ -613,9 +588,6 @@ class AuditDaoTest {
         assertThat(result.getId(), is(99L));
     }
 
-    /**
-     * #getSecurityEventById, verifies null is returned when the event is not found.
-     */
     @Test
     void shouldReturnNull_WhenSecurityEventNotFoundById() {
         when(session.createQuery(anyString(), eq(AuditSecurityEvent.class)))
@@ -628,9 +600,6 @@ class AuditDaoTest {
         assertNull(result);
     }
 
-    /**
-     * #getRelatedSecurityEvents, verifies events are fetched by sessionId with a limit.
-     */
     @Test
     void shouldReturnRelatedSecurityEvents_WhenSessionIdProvided() {
         String sessionId = "sess-abc-123";
@@ -651,9 +620,6 @@ class AuditDaoTest {
         verify(securityEventQuery).setMaxResults(5);
     }
 
-    /**
-     * #getRelatedSecurityEvents, verifies empty list returned when session has no events.
-     */
     @Test
     void shouldReturnEmptyList_WhenNoRelatedSecurityEventsFound() {
         when(session.createQuery(anyString(), eq(AuditSecurityEvent.class)))
@@ -668,7 +634,7 @@ class AuditDaoTest {
         assertThat(result, empty());
     }
 
-    /** Helper function to build a minimal AuditSecurityEvent for use in tests. */
+    /** Helper function to build AuditSecurityEvent for use in tests. */
     private AuditSecurityEvent buildSecurityEvent(AuditSecurityEventType type, String username) {
         AuditSecurityEvent event = new AuditSecurityEvent();
         event.setEventType(type);
