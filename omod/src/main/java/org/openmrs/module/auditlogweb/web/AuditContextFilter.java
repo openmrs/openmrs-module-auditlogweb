@@ -41,7 +41,6 @@ public class AuditContextFilter extends OncePerRequestFilter {
 
             SecurityAuditContext ctx = buildContext(request, session);
             SecurityAuditContext.set(ctx);
-
         } catch (Exception e) {
             log.warn("AuditContextFilter: failed to populate SecurityAuditContext", e);
         }
@@ -53,14 +52,13 @@ public class AuditContextFilter extends OncePerRequestFilter {
         }
     }
 
-
     private SecurityAuditContext buildContext(HttpServletRequest request, HttpSession session) {
         SecurityAuditContext ctx = new SecurityAuditContext();
         ctx.setIpAddress(resolveClientIp(request));
         ctx.setUserAgent(request.getHeader("User-Agent"));
         if (session != null) {
             ctx.setSessionId(session.getId());
-            ctx.setLoggedInUsername(resolveLoggedInUsername(session));
+            ctx.setLoggedInUsername(resolveLoggedInUsername());
         }
         return ctx;
     }
@@ -73,14 +71,10 @@ public class AuditContextFilter extends OncePerRequestFilter {
         return request.getRemoteAddr();
     }
 
-    private String resolveLoggedInUsername(HttpSession session) {
-        String username = resolveUsernameFromUserContext(session);
-        if (!StringUtils.isBlank(username)) {
-            return username;
-        }
+    private String resolveLoggedInUsername() {
 
         if (Context.isAuthenticated() && Context.getAuthenticatedUser() != null) {
-            username = Context.getAuthenticatedUser().getUsername();
+            String username = Context.getAuthenticatedUser().getUsername();
             if (!StringUtils.isBlank(username)) {
                 return username;
             }
