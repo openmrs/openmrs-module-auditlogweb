@@ -16,6 +16,7 @@ import org.hibernate.envers.Audited;
 import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.envers.query.AuditQueryCreator;
+import org.hibernate.exception.SQLGrammarException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,11 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -38,9 +41,14 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
+
 
 class AuditDaoTest {
 
@@ -319,4 +327,122 @@ class AuditDaoTest {
             assertThat(result, is(2L));
         }
     }
+
+    @Test
+    void shouldReturnAuditEntities_WhenFetchingRevisionsByEntityId() {
+        TestAuditedEntity entity1 = new TestAuditedEntity();
+        TestAuditedEntity entity2 = new TestAuditedEntity();
+        OpenmrsRevisionEntity revEntity1 = mock(OpenmrsRevisionEntity.class);
+        OpenmrsRevisionEntity revEntity2 = mock(OpenmrsRevisionEntity.class);
+        when(revEntity1.getChangedBy()).thenReturn(10);
+        when(revEntity2.getChangedBy()).thenReturn(20);
+
+        Object[] mockResult1 = new Object[] { entity1, revEntity1, RevisionType.ADD };
+        Object[] mockResult2 = new Object[] { entity2, revEntity2, RevisionType.MOD };
+
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addOrder(any())).thenReturn(auditQuery);
+        when(auditQuery.setFirstResult(0)).thenReturn(auditQuery);
+        when(auditQuery.setMaxResults(10)).thenReturn(auditQuery);
+        when(auditQuery.getResultList()).thenReturn(Arrays.asList(mockResult1, mockResult2));
+
+        List<AuditEntity<?>> results = auditDao.getRevisionsForEntityById(1, TestAuditedEntity.class, 0, 10, "desc");
+
+        assertNotNull(results);
+        assertThat(results, hasSize(2));
+        assertThat(results.get(0).getChangedBy(), is(10));
+        assertThat(results.get(1).getChangedBy(), is(20));
+    }
+
+    @Test
+    void shouldReturnEmptyList_WhenEntityIdNotFound() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addOrder(any())).thenReturn(auditQuery);
+        when(auditQuery.setFirstResult(0)).thenReturn(auditQuery);
+        when(auditQuery.setMaxResults(10)).thenReturn(auditQuery);
+        when(auditQuery.getResultList()).thenReturn(Collections.emptyList());
+
+        List<AuditEntity<?>> results = auditDao.getRevisionsForEntityById(999, TestAuditedEntity.class, 0, 10, "desc");
+
+        assertNotNull(results);
+        assertThat(results, empty());
+    }
+
+    @Test
+    void shouldThrowAuditLogUnavailable_WhenAuditTableIsMissingForEntityId() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addOrder(any())).thenReturn(auditQuery);
+        when(auditQuery.setFirstResult(0)).thenReturn(auditQuery);
+        when(auditQuery.setMaxResults(10)).thenReturn(auditQuery);
+        when(auditQuery.getResultList()).thenThrow(
+                new SQLGrammarException("Table TestAuditedEntity_AUD doesn't exist", new SQLException("missing table"))
+        );
+
+        AuditLogUnavailableException exception = assertThrows(
+                AuditLogUnavailableException.class,
+                () -> auditDao.getRevisionsForEntityById(1, TestAuditedEntity.class, 0, 10, "desc")
+        );
+
+        assertThat(exception.getMessage(), is("Audit history is unavailable because its audit table is missing"));
+    }
+
+    @Test
+    void shouldThrowAuditLogUnavailable_WhenFetchingByEntityIdFails() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addOrder(any())).thenReturn(auditQuery);
+        when(auditQuery.setFirstResult(0)).thenReturn(auditQuery);
+        when(auditQuery.setMaxResults(10)).thenReturn(auditQuery);
+        when(auditQuery.getResultList()).thenThrow(new RuntimeException("database unavailable"));
+
+        AuditLogUnavailableException exception = assertThrows(
+                AuditLogUnavailableException.class,
+                () -> auditDao.getRevisionsForEntityById(1, TestAuditedEntity.class, 0, 10, "desc")
+        );
+
+        assertThat(exception.getMessage(), is("Audit history could not be fetched, try again later"));
+    }
+
+    @Test
+    void shouldReturnRevisionCount_WhenCountingByEntityId() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addProjection(any())).thenReturn(auditQuery);
+        when(auditQuery.getSingleResult()).thenReturn(15L);
+
+        long count = auditDao.countRevisionsForEntityById(1, TestAuditedEntity.class);
+
+        assertThat(count, is(15L));
+    }
+
+    @Test
+    void shouldReturnCountZero_WhenEntityIdNotFound() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addProjection(any())).thenReturn(auditQuery);
+        when(auditQuery.getSingleResult()).thenReturn(0L);
+
+        long count = auditDao.countRevisionsForEntityById(1, TestAuditedEntity.class);
+
+        assertThat(count, is(0L));
+    }
+
+    @Test
+    void shouldThrowAuditLogUnavailable_WhenCountingByEntityIdFails() {
+        when(queryCreator.forRevisionsOfEntity(TestAuditedEntity.class, false, true)).thenReturn(auditQuery);
+        when(auditQuery.add(any())).thenReturn(auditQuery);
+        when(auditQuery.addProjection(any())).thenReturn(auditQuery);
+        when(auditQuery.getSingleResult()).thenThrow(new RuntimeException("database unavailable"));
+
+        AuditLogUnavailableException exception = assertThrows(
+                AuditLogUnavailableException.class,
+                () -> auditDao.countRevisionsForEntityById(1, TestAuditedEntity.class)
+        );
+
+        assertThat(exception.getMessage(), is("Audit history count could not be fetched, try again later"));
+    }
+
 }

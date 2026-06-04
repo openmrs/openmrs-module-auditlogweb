@@ -8,10 +8,13 @@
  */
 package org.openmrs.module.auditlogweb.rest.exceptions;
 
+import org.hibernate.ObjectNotFoundException;
+import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -46,7 +49,8 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, String>> handleResponseStatusException(ResponseStatusException ex) {
-        return buildResponseEntity("Bad Request", ex.getReason(), HttpStatus.BAD_REQUEST);
+        HttpStatus status = ex.getStatus();
+        return buildResponseEntity(status.getReasonPhrase(), ex.getReason(), status);
     }
 
     @ExceptionHandler(NumberFormatException.class)
@@ -62,6 +66,21 @@ public class RestExceptionHandler {
                 ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown"
         );
         return buildResponseEntity("Bad Request", message, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, String>> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        return buildResponseEntity("Bad Request", "Missing required parameters", HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ObjectNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleObjectNotFound(ObjectNotFoundException ex) {
+        return buildResponseEntity("Not found", ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AuditLogUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleAuditLogUnavailable(AuditLogUnavailableException ex) {
+        return buildResponseEntity("Audit Log Unavailable", ex.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(Exception.class)

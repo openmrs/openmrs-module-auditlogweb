@@ -81,6 +81,42 @@ public class UtilClass {
     }
 
     /**
+     * It gets an audited entity class from either a fully qualified name or a simple class name.
+     *
+     * @param className the fully qualified class name or simple class name
+     * @return the matching class, or {@code null} if no match is found
+     */
+    public static Class<?> resolveAuditedEntityClass(String className) {
+        if (StringUtils.isBlank(className)) {
+            return null;
+        }
+
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException ignored) {
+            // Fall through to simple-name lookup.
+        }
+
+        List<Class<?>> matches = findClassesWithAnnotation().stream()
+                .map(auditedClassName -> {
+                    try {
+                        return Class.forName(auditedClassName);
+                    } catch (ClassNotFoundException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(className))
+                .collect(Collectors.toList());
+
+        if (matches.isEmpty()) {
+            return null;
+        }
+
+        return matches.get(0);
+    }
+
+    /**
      * Checks if a given class is annotated with {@link Audited}.
      *
      * @param clazz the class to inspect

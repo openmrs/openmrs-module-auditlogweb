@@ -18,6 +18,7 @@ import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.exception.SQLGrammarException;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
@@ -503,5 +504,81 @@ public class AuditDao {
         }
 
         return result;
+    }
+
+    /**
+     * Retrieves a paginated list of audit revisions for a specific entity,
+     * identified by its integer primary key.
+     *
+     * @param entityId the integer primary key of the entity
+     * @param page      the page number (0-based)
+     * @param size      the number of records per page
+     * @param sortOrder "asc" or "desc" by revision timestamp
+     * @return a paginated list of {@link AuditEntity} records for the patient
+     */
+    public List<AuditEntity<?>> getRevisionsForEntityById(Integer entityId, Class<?> entityClass, int page, int size, String sortOrder) {
+        try {
+            AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+
+            AuditQuery query = auditReader.createQuery()
+                    .forRevisionsOfEntity(entityClass, false, true)
+                    .add(org.hibernate.envers.query.AuditEntity.id().eq(entityId));
+
+            if ("asc".equalsIgnoreCase(sortOrder)) {
+                query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").asc());
+            } else {
+                query.addOrder(org.hibernate.envers.query.AuditEntity.revisionProperty("timestamp").desc());
+            }
+
+            query.setFirstResult(page * size).setMaxResults(size);
+
+            List<Object[]> results = query.getResultList();
+            return results.stream()
+                    .map(result -> {
+                        Object entity = result[0];
+                        OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) result[1];
+                        RevisionType revisionType = (RevisionType) result[2];
+                        Integer userId = revisionEntity.getChangedBy();
+                        return new AuditEntity<>(entity, revisionEntity, revisionType, userId);
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            if (isMissingAuditTableException(ex)) {
+                log.warn("Audit history is unavailable for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing",ex);
+            } else {
+                log.error("Unexpected error while fetching revisions for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
+                throw new AuditLogUnavailableException("Audit history could not be fetched, try again later",ex);
+            }
+        }
+    }
+
+    /**
+     * Counts the total number of audit revisions for a specific Patient entity.
+     *
+     * @param entityId the integer primary key of the Entity
+     * @return the total number of recorded revisions for this patient
+     */
+    public long countRevisionsForEntityById(Integer entityId, Class<?> entityClass) {
+        try {
+            AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+
+            Number count = (Number) auditReader.createQuery()
+                    .forRevisionsOfEntity(entityClass, false, true)
+                    .add(org.hibernate.envers.query.AuditEntity.id().eq(entityId))
+                    .addProjection(org.hibernate.envers.query.AuditEntity.revisionNumber().count())
+                    .getSingleResult();
+
+            return count != null ? count.longValue() : 0L;
+        } catch (Exception ex) {
+            if (isMissingAuditTableException(ex)) {
+                log.warn("Audit history count is unavailable for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
+                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing",ex);
+            } else {
+                log.error("Unexpected error while fetching revision counts for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
+                throw new AuditLogUnavailableException("Audit history count could not be fetched, try again later",ex);
+
+            }
+        }
     }
 }

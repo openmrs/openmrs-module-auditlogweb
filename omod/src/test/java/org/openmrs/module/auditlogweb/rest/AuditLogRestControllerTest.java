@@ -10,13 +10,18 @@ package org.openmrs.module.auditlogweb.rest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.hibernate.ObjectNotFoundException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import org.openmrs.Patient;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.rest.exceptions.RestExceptionHandler;
 import org.springframework.test.web.servlet.MockMvc;
@@ -181,5 +186,58 @@ public class AuditLogRestControllerTest {
         mockMvc.perform(get("/rest/v1/auditlogs")
                         .param("size", "-10"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void shouldReturnBadRequestWhenFetchEntityRevisionParametersAreMissing() throws Exception {
+        mockMvc.perform(get("/rest/v1/auditlogs/1")
+                        .param("entityName", "")
+                        .param("entityId", ""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", is("One or more required parameters are empty")));
+    }
+
+    @Test
+    public void shouldReturnBadRequestWhenFetchEntityRevisionParamsAbsent() throws Exception {
+        mockMvc.perform(get("/rest/v1/auditlogs/1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", is("Missing required parameters")));
+    }
+
+    @Test
+    public void shouldFetchEntityRevisionForResolvedEntityClass() throws Exception {
+            AuditEntity<?> auditEntity = mock(AuditEntity.class);
+            AuditLogDetailDTO auditLogDetailDTO = mock(AuditLogDetailDTO.class);
+
+            try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+                    utilClassMock.when(() -> UtilClass.resolveAuditedEntityClass("Patient")).thenReturn(Patient.class);
+                    when(auditService.getAuditEntityRevisionById(Patient.class, 42, 7)).thenReturn((AuditEntity<Patient>) auditEntity);
+                    when(auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)))
+                                    .thenReturn(Collections.singletonList(auditLogDetailDTO));
+
+                    mockMvc.perform(get("/rest/v1/auditlogs/7")
+                                                    .param("entityName", "Patient")
+                                                    .param("entityId", "42"))
+                                    .andExpect(status().isOk());
+
+                    verify(auditService).getAuditEntityRevisionById(Patient.class, 42, 7);
+                    verify(auditService).mapAuditEntitiesToDetails(Collections.singletonList(auditEntity));
+            }
+    }
+
+    @Test
+    public void shouldReturnBadRequestWhenFetchEntityRevisionDataIsMissing() throws Exception {
+            try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+                    utilClassMock.when(() -> UtilClass.resolveAuditedEntityClass("Patient")).thenReturn(Patient.class);
+                    when(auditService.getAuditEntityRevisionById(Patient.class, 42, 7))
+                                    .thenThrow(new ObjectNotFoundException(42,"Patient"));
+
+                    mockMvc.perform(get("/rest/v1/auditlogs/7")
+                                                    .param("entityName", "Patient")
+                                                    .param("entityId", "42"))
+                                    .andExpect(status().isNotFound());
+            }
     }
 }

@@ -9,20 +9,27 @@
 package org.openmrs.module.auditlogweb.rest;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.ObjectNotFoundException;
+import org.openmrs.GlobalProperty;
+import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.persistence.NoResultException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
@@ -96,6 +103,40 @@ public class AuditLogRestController {
 
         return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
     }
+
+    @GetMapping("/{revisionId}")
+    public AuditLogDetailDTO getAuditLogByEntity(
+            @PathVariable Integer revisionId,
+            @RequestParam() String entityName,
+            @RequestParam() String entityId
+    ){
+        if (entityName.trim().isEmpty() || entityId.trim().isEmpty()) {
+            throw new IllegalArgumentException("One or more required parameters are empty");
+        }
+
+        Class<?> entityClass = UtilClass.resolveAuditedEntityClass(entityName);
+        if (entityClass == null) {
+            throw new IllegalArgumentException("Cannot find class for " + entityName);
+        }
+
+        Object entityIdVal;
+        if (Role.class.isAssignableFrom(entityClass) || GlobalProperty.class.isAssignableFrom(entityClass)) {
+            entityIdVal = entityId;
+        } else {
+            entityIdVal = Integer.parseInt(entityId);
+        }
+
+        AuditEntity<?> auditEntity;
+        try {
+            auditEntity = auditService.getAuditEntityRevisionById(entityClass, entityIdVal, revisionId);
+        } catch (NoResultException | ObjectNotFoundException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "No audit revision found for " + entityName + " with id " + entityId, ex);
+        }
+
+        return  auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)).get(0);
+    }
+
     /**
      * Parses a date string in "dd/MM/yyyy" format.
      *
