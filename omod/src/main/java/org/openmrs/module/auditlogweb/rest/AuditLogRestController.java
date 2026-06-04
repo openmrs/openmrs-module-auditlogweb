@@ -130,7 +130,8 @@ public class AuditLogRestController {
         try {
             auditEntity = auditService.getAuditEntityRevisionById(entityClass, entityIdVal, revisionId);
         } catch (NoResultException | ObjectNotFoundException ex) {
-            throw new ObjectNotFoundException("Audit for entity not found",entityName);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "No audit revision found for " + entityName + " with id " + entityId, ex);
         }
 
         return  auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)).get(0);
