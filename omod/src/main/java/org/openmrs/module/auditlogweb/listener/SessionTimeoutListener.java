@@ -18,7 +18,7 @@ import org.openmrs.api.context.UserContext;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.listener.ExplicitLogoutSessionTracker;
 import org.openmrs.module.auditlogweb.api.listener.LoginFixationSessionTracker;
-import org.openmrs.module.auditlogweb.api.listener.SecurityEventListener;
+import org.openmrs.module.auditlogweb.api.listener.LogoutListener;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.web.WebConstants;
 import org.slf4j.Logger;
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Logs {@code SESSION_TIMEOUT} events when an HTTP session expires.
- * Explicit logouts are skipped because {@link SecurityEventListener} already records them.
+ * Explicit logouts are skipped because {@link LogoutListener} already records them.
  */
 @Component
 @RequiredArgsConstructor
