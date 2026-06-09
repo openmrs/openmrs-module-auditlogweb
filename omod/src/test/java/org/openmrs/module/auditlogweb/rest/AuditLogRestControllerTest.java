@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -134,6 +135,26 @@ public class AuditLogRestControllerTest {
                     .andExpect(status().isOk());
 
             verify(auditService).getAllRevisionsAcrossEntitiesWithEntityType(0, 20, 1, null, null, null, "desc");
+        }
+    }
+
+    @Test
+    public void shouldReturnEmptyResultForUnknownUsername() throws Exception {
+        try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
+            UserService userService = mock(UserService.class);
+            contextMock.when(() -> Context.getUserService()).thenReturn(userService);
+            when(userService.getUserByUsername("unknown")).thenReturn(null);
+
+            mockMvc.perform(get("/rest/v1/auditlogs")
+                            .param("username", "unknown"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalLogs", is(0)))
+                    .andExpect(jsonPath("$.currentPage", is(0)))
+                    .andExpect(jsonPath("$.totalPages", is(0)))
+                    .andExpect(jsonPath("$.logs", is(Collections.emptyList())));
+
+            verify(userService).getUserByUsername("unknown");
+            verifyNoInteractions(auditService);
         }
     }
 
