@@ -592,7 +592,6 @@ public class AuditDao {
      */
     public void saveSecurityEvent(AuditSecurityEvent event) {
         sessionFactory.getCurrentSession().save(event);
-        log.info("Data saved for the security event {}", event.getEventType());
     }
 
     /**

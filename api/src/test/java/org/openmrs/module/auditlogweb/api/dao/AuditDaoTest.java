@@ -458,11 +458,6 @@ class AuditDaoTest {
         assertThat(exception.getMessage(), is("Audit history count could not be fetched, try again later"));
     }
 
-
-    /**
-     * #saveSecurityEvent, verifies that session.save() is called with the event object.
-     * The DAO delegates directly to Hibernate session, we just confirm the interaction.
-     */
     @Test
     void shouldSaveSecurityEvent_WhenValidEventIsProvided() {
         AuditSecurityEvent event = buildSecurityEvent(AuditSecurityEventType.LOGIN_SUCCESS, "admin");
