@@ -149,16 +149,16 @@ public class AuditLogRestController {
      * Parses a date string in "dd/MM/yyyy" format.
      *
      * @param dateStr the date string to parse
-     * @param endDay if the date is end date
+     * @param isEndDay if the date is end date
      * @return the parsed {@link Date} object, or null if the input is null or empty
      * @throws RuntimeException if the date string cannot be parsed
      */
-    private Date parseDate(String dateStr, boolean endDay) {
+    private Date parseDate(String dateStr, boolean isEndDay) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             LocalDate parsedDate = LocalDate.parse(dateStr.trim(), formatter);
-            return endDay ? UtilClass.toEndDate(parsedDate) : UtilClass.toStartDate(parsedDate);
+            return isEndDay ? UtilClass.toEndDate(parsedDate) : UtilClass.toStartDate(parsedDate);
         } catch (DateTimeParseException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Invalid date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
