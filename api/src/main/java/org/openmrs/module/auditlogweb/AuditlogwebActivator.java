@@ -8,14 +8,9 @@
  */
 package org.openmrs.module.auditlogweb;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.api.UserService;
-import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
-import org.openmrs.module.auditlogweb.api.aop.PasswordAuditAdvice;
 
 /**
  * This class contains the logic that is run every time this module is either started or shutdown
@@ -23,17 +18,14 @@ import org.openmrs.module.auditlogweb.api.aop.PasswordAuditAdvice;
 public class AuditlogwebActivator extends BaseModuleActivator {
 
     private Log log = LogFactory.getLog(this.getClass());
-    private PasswordAuditAdvice passwordAuditAdvice;
 
     @Override
     public void started() {
         log.info("Started Auditlogweb");
-
     }
 
     @Override
     public void stopped() {
         log.info("Stopped Auditlogweb");
-
     }
 }

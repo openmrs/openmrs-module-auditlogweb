@@ -81,24 +81,4 @@ public class AuditContextFilter extends OncePerRequestFilter {
         }
         return null;
     }
-
-    //TODO : Remove this function because , this is only for the Logout event , after implementing user session lisntener remove this
-    private String resolveUsernameFromUserContext(HttpSession session) {
-        try {
-            Object raw = session.getAttribute(WebConstants.OPENMRS_USER_CONTEXT_HTTPSESSION_ATTR);
-            if (raw instanceof UserContext) {
-                UserContext userContext = (UserContext) raw;
-                if (userContext.getAuthenticatedUser() != null) {
-                    String username = userContext.getAuthenticatedUser().getUsername();
-                    if (StringUtils.isBlank(username)) {
-                        username = userContext.getAuthenticatedUser().getSystemId();
-                    }
-                    return username;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Could not read UserContext from session", e);
-        }
-        return null;
-    }
 }

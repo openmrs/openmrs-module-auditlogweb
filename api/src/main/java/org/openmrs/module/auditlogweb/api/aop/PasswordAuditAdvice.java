@@ -155,7 +155,6 @@ public class PasswordAuditAdvice  {
 
         if (args != null && args.length > 0 && args[0] instanceof User) {
             userId = ((User) args[0]).getUserId();
-            log.info("Got the userId in resolveUserId: {}", userId);
         }
 
         try {
