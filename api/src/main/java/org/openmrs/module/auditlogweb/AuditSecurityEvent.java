@@ -1,4 +1,4 @@
-/**
+    /**
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -8,6 +8,8 @@
  */
 package org.openmrs.module.auditlogweb;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
 import javax.persistence.Column;
@@ -25,6 +27,8 @@ import java.util.Date;
  */
 @Entity
 @Table(name = "audit_security_event")
+@Getter
+@Setter
 public class AuditSecurityEvent {
 
     @Id
@@ -60,75 +64,4 @@ public class AuditSecurityEvent {
     @Column(name = "details", columnDefinition = "TEXT")
     private String details;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public AuditSecurityEventType getEventType() {
-        return eventType;
-    }
-
-    public void setEventType(AuditSecurityEventType eventType) {
-        this.eventType = eventType;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
-
-    public Date getEventTime() {
-        return eventTime;
-    }
-
-    public void setEventTime(Date eventTime) {
-        this.eventTime = eventTime;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-
-    public String getUserAgent() {
-        return userAgent;
-    }
-
-    public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public String getDetails() {
-        return details;
-    }
-
-    public void setDetails(String details) {
-        this.details = details;
-    }
 }
