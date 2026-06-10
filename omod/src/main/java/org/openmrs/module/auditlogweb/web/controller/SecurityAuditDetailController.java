@@ -55,10 +55,6 @@ public class SecurityAuditDetailController {
     public ModelAndView showDetails(HttpServletRequest request, ModelMap model) {
         try {
 
-            if(!Context.hasPrivilege(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)){
-                return new ModelAndView(ACCESS_DENIED_VIEW);
-            }
-
             String eventIdParam = request.getParameter("eventId");
 
             if (eventIdParam == null || eventIdParam.isEmpty()) {
