@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -102,6 +103,26 @@ class AuthenticationAdviceTest {
     }
 
     @Test
+    void shouldReturnAuthenticatedUserWhenLoginAuditFails() throws Throwable {
+        setRequestContext();
+        when(joinPoint.proceed()).thenReturn(user);
+        doThrow(new IllegalStateException("Error saving audit log"))
+                .when(auditService).logSecurityEvent(
+                        AuditSecurityEventType.LOGIN_SUCCESS,
+                        USERNAME,
+                        1,
+                        IP_ADDRESS,
+                        USER_AGENT,
+                        SESSION_ID,
+                        "");
+
+        Object result = advice.authenticate(joinPoint);
+
+        assertSame(user, result);
+        assertTrue(LoginFixationSessionTracker.consume(SESSION_ID));
+    }
+
+    @Test
     void shouldSkipSuccessfulLoginAuditDuringPendingPasswordReset() throws Throwable {
         setRequestContext();
         PasswordResetFlowContext.markResetRequest(SESSION_ID);
@@ -146,6 +167,28 @@ class AuthenticationAdviceTest {
                 USER_AGENT,
                 SESSION_ID,
                 "{\"failureReason\":\"INVALID_USERNAME\",\"accountLocked\":false}");
+    }
+
+    @Test
+    void shouldRethrowOriginalAuthenticationExceptionWhenFailureAuditFails() throws Throwable {
+        setRequestContext();
+        ContextAuthenticationException exception = authenticationFailure("unknown", "Login failed");
+        mockUserLookup("unknown", "unknown", null);
+        doThrow(new IllegalStateException("Error saving audit log"))
+                .when(auditService).logSecurityEvent(
+                        AuditSecurityEventType.LOGIN_FAILURE,
+                        "unknown",
+                        null,
+                        IP_ADDRESS,
+                        USER_AGENT,
+                        SESSION_ID,
+                        "{\"failureReason\":\"INVALID_USERNAME\",\"accountLocked\":false}");
+
+        ContextAuthenticationException thrown = assertThrows(
+                ContextAuthenticationException.class,
+                () -> advice.authenticate(joinPoint));
+
+        assertSame(exception, thrown);
     }
 
     @Test
