@@ -22,7 +22,7 @@
     </div>
 
     <c:if test="${not empty errorMessage}">
-        <div class="error-box">${errorMessage}</div>
+        <div class="error-box"><c:out value="${errorMessage}"/></div>
     </c:if>
 
     <c:if test="${not empty event}">
@@ -32,23 +32,23 @@
                 <tbody>
                     <tr>
                         <td class="label-cell">Event ID</td>
-                        <td>${event.id}</td>
+                        <td><c:out value="${event.id}"/></td>
                     </tr>
                     <tr>
                         <td class="label-cell">Event Type</td>
                         <td>
                             <c:choose>
                                 <c:when test="${fn:contains(event.eventType,'LOGIN_SUCCESS')}">
-                                     <span class="badge badge-login-success">${event.eventType}</span>
+                                     <span class="badge badge-login-success"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:when test="${fn:contains(event.eventType, 'PASSWORD') || fn:contains(event.eventType, 'LOGOUT')}">
-                                    <span class="badge badge-logout">${event.eventType}</span>
+                                    <span class="badge badge-logout"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:when test="${fn:contains(event.eventType, 'LOGIN_FAILURE') ||  fn:contains(event.eventType, 'ACCOUNT')}">
-                                    <span class="badge badge-security">${event.eventType}</span>
+                                    <span class="badge badge-security"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:otherwise>
-                                    <span class="badge badge-password">${event.eventType}</span>
+                                    <span class="badge badge-password"><c:out value="${event.eventType}"/></span>
                                 </c:otherwise>
                             </c:choose>
                         </td>
@@ -57,7 +57,7 @@
                         <td class="label-cell">Username</td>
                         <td>
                             <c:choose>
-                                <c:when test="${not empty event.username}">${event.username}</c:when>
+                                <c:when test="${not empty event.username}"><c:out value="${event.username}"/></c:when>
                                 <c:otherwise><span class="null-value">-</span></c:otherwise>
                             </c:choose>
                         </td>
@@ -66,7 +66,7 @@
                         <td class="label-cell">User ID</td>
                         <td>
                             <c:choose>
-                                <c:when test="${not empty event.userId}">${event.userId}</c:when>
+                                <c:when test="${not empty event.userId}"><c:out value="${event.userId}"/></c:when>
                                 <c:otherwise><span class="null-value">-</span></c:otherwise>
                             </c:choose>
                         </td>
@@ -79,7 +79,7 @@
                         <td class="label-cell">IP Address</td>
                         <td>
                             <c:choose>
-                                <c:when test="${not empty event.ipAddress}">${event.ipAddress}</c:when>
+                                <c:when test="${not empty event.ipAddress}"><c:out value="${event.ipAddress}"/></c:when>
                                 <c:otherwise><span class="null-value">-</span></c:otherwise>
                             </c:choose>
                         </td>
@@ -89,7 +89,7 @@
                         <td class="user-agent-cell">
                             <c:choose>
                                 <c:when test="${not empty event.userAgent}">
-                                    <span class="truncate-user-agent">${event.userAgent}</span>
+                                    <span class="truncate-user-agent"><c:out value="${event.userAgent}"/></span>
                                 </c:when>
                                 <c:otherwise><span class="null-value">-</span></c:otherwise>
                             </c:choose>
@@ -99,7 +99,7 @@
                         <td class="label-cell">Session ID</td>
                         <td class="session-id-cell">
                             <c:choose>
-                                <c:when test="${not empty event.sessionId}">${event.sessionId}</c:when>
+                                <c:when test="${not empty event.sessionId}"><c:out value="${event.sessionId}"/></c:when>
                                 <c:otherwise><span class="null-value">-</span></c:otherwise>
                             </c:choose>
                         </td>
@@ -142,22 +142,22 @@
                                 <td>
                                     <c:choose>
                                         <c:when test="${fn:contains(relEvent.eventType,'LOGIN_SUCCESS')}">
-                                             <span class="badge badge-login-success">${relEvent.eventType}</span>
+                                             <span class="badge badge-login-success"><c:out value="${relEvent.eventType}"/></span>
                                         </c:when>
                                         <c:when test="${fn:contains(relEvent.eventType, 'PASSWORD') || fn:contains(relEvent.eventType, 'LOGOUT')}">
-                                            <span class="badge badge-logout">${relEvent.eventType}</span>
+                                            <span class="badge badge-logout"><c:out value="${relEvent.eventType}"/></span>
                                         </c:when>
                                         <c:when test="${fn:contains(relEvent.eventType, 'LOGIN_FAILURE') ||  fn:contains(relEvent.eventType, 'ACCOUNT')}">
-                                            <span class="badge badge-security">${relEvent.eventType}</span>
+                                            <span class="badge badge-security"><c:out value="${relEvent.eventType}"/></span>
                                         </c:when>
                                         <c:otherwise>
-                                            <span class="badge badge-password">${relEvent.eventType}</span>
+                                            <span class="badge badge-password"><c:out value="${relEvent.eventType}"/></span>
                                         </c:otherwise>
                                     </c:choose>
                                 </td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${not empty relEvent.username}">${relEvent.username}</c:when>
+                                        <c:when test="${not empty relEvent.username}"><c:out value="${relEvent.username}"/></c:when>
                                         <c:otherwise><span class="null-value">-</span></c:otherwise>
                                     </c:choose>
                                 </td>
@@ -166,7 +166,7 @@
                                     <c:set var="detailsText" value="IP: ${ipText}"/>
                                     <c:choose>
                                         <c:when test="${relEvent.id == event.id}"><strong>This Event</strong></c:when>
-                                        <c:otherwise>${detailsText}</c:otherwise>
+                                        <c:otherwise><c:out value="${detailsText}"/></c:otherwise>
                                     </c:choose>
                                 </td>
                             </tr>
@@ -177,7 +177,7 @@
         </c:if>
 
         <div class="footer-actions">
-            <a href="${pageContext.request.contextPath}/module/auditlogweb/securityauditlogs.form" class="btn btn-secondary">
+            <a href="<c:out value='${pageContext.request.contextPath}'/>/module/auditlogweb/securityauditlogs.form" class="btn btn-secondary">
                 Back to Audit Logs
             </a>
         </div>

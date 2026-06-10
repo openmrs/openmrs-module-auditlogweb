@@ -19,7 +19,7 @@
     <p class="security-subtitle">Review and filter the security audit records for compliance and monitoring.</p>
 
     <form id="securityAuditForm" action="securityauditlogs.form" method="get" autocomplete="off">
-        <input type="hidden" id="pageInput" name="page" value="${currentPage != null ? currentPage : 0}"/>
+        <input type="hidden" id="pageInput" name="page" value="<c:out value='${currentPage != null ? currentPage : 0}'/>"/>
 
         <div class="security-filter-panel">
             <div>
@@ -27,24 +27,24 @@
                 <select id="eventType" name="eventType">
                     <option value="">All</option>
                     <c:forEach var="type" items="${eventTypes}">
-                        <option value="${type}" <c:if test="${eventType == type}">selected</c:if>>${type}</option>
+                        <option value="<c:out value='${type}'/>" <c:if test="${eventType == type}">selected</c:if>><c:out value="${type}"/></option>
                     </c:forEach>
                 </select>
             </div>
 
             <div>
                 <label for="username">USER</label>
-                <input type="text" id="username" name="username" value="${usernameFilter}" placeholder="Search users..."/>
+                <input type="text" id="username" name="username" value="<c:out value='${usernameFilter}'/>" placeholder="Search users..."/>
             </div>
 
             <div>
                 <label for="startDate">FROM DATE</label>
-                <input type="date" id="startDate" name="startDate" value="${startDate}"/>
+                <input type="date" id="startDate" name="startDate" value="<c:out value='${startDate}'/>"/>
             </div>
 
             <div>
                 <label for="endDate">TO DATE</label>
-                <input type="date" id="endDate" name="endDate" value="${endDate}"/>
+                <input type="date" id="endDate" name="endDate" value="<c:out value='${endDate}'/>"/>
             </div>
 
             <div>
@@ -64,7 +64,7 @@
     </form>
 
     <c:if test="${not empty errorMessage}">
-        <div class="error-box">${errorMessage}</div>
+        <div class="error-box"><c:out value="${errorMessage}"/></div>
     </c:if>
 
     <table class="security-table">
@@ -83,27 +83,29 @@
                 <c:forEach var="event" items="${events}">
                     <c:set var="detailUrl"
                            value="${pageContext.request.contextPath}/module/auditlogweb/viewSecurityAudit.form?eventId=${event.id}" />
-                    <tr class="security-row" onclick="window.location.href='${detailUrl}'">
-                        <td>${event.eventTime}</td>
+                    <tr class="security-row" onclick="window.location.href='<c:out value="${detailUrl}"/>'">
+                        <td><c:out value="${event.eventTime}"/></td>
                         <td>
                             <c:choose>
                                 <c:when test="${fn:contains(event.eventType,'LOGIN_SUCCESS')}">
-                                     <span class="badge badge-login-success">${event.eventType}</span>
+                                     <span class="badge badge-login-success"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:when test="${fn:contains(event.eventType, 'PASSWORD') || fn:contains(event.eventType, 'LOGOUT')}">
-                                    <span class="badge badge-logout">${event.eventType}</span>
+                                    <span class="badge badge-logout"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:when test="${fn:contains(event.eventType, 'LOGIN_FAILURE') ||  fn:contains(event.eventType, 'ACCOUNT')}">
-                                    <span class="badge badge-security">${event.eventType}</span>
+                                    <span class="badge badge-security"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:otherwise>
-                                    <span class="badge badge-password">${event.eventType}</span>
+                                    <span class="badge badge-password"><c:out value="${event.eventType}"/></span>
                                 </c:otherwise>
                             </c:choose>
                         </td>
                         <td>
                             <c:choose>
-                                <c:when test="${not empty event.username}">${event.username}</c:when>
+                                <c:when test="${not empty event.username}">
+                                    <c:out value="${event.username}" />
+                                </c:when>
                                 <c:otherwise>system</c:otherwise>
                             </c:choose>
                         </td>
@@ -138,10 +140,10 @@
     </table>
 
     <div class="security-pagination">
-        <div>Showing page ${currentPage + 1} of ${totalPages > 0 ? totalPages : 1} | Total records: ${totalCount}</div>
+        <div>Showing page <c:out value="${currentPage + 1}"/> of <c:out value="${totalPages > 0 ? totalPages : 1}"/> | Total records: <c:out value="${totalCount}"/></div>
         <div>
-            <button type="button" class="pager-btn" onclick="goToPage(${currentPage - 1})" <c:if test="${!hasPreviousPage}">disabled</c:if>>Previous</button>
-            <button type="button" class="pager-btn" onclick="goToPage(${currentPage + 1})" <c:if test="${!hasNextPage}">disabled</c:if>>Next</button>
+            <button type="button" class="pager-btn" onclick="goToPage(<c:out value='${currentPage - 1}'/>)" <c:if test="${!hasPreviousPage}">disabled</c:if>>Previous</button>
+            <button type="button" class="pager-btn" onclick="goToPage(<c:out value='${currentPage + 1}'/>)" <c:if test="${!hasNextPage}">disabled</c:if>>Next</button>
         </div>
     </div>
 </div>
