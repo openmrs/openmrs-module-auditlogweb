@@ -60,7 +60,7 @@ public class AuthenticationAdvice {
             }
 
             User user = (User) result;
-            auditService.logSecurityEvent(
+            safelyLogSecurityEvent(
                     AuditSecurityEventType.LOGIN_SUCCESS,
                     user.getUsername(),
                     user.getUserId(),
@@ -90,7 +90,7 @@ public class AuthenticationAdvice {
 
             User user = resolveUser(login);
             if(user == null){
-                auditService.logSecurityEvent(
+                safelyLogSecurityEvent(
                         AuditSecurityEventType.LOGIN_FAILURE,
                         login,
                         null,
@@ -115,7 +115,7 @@ public class AuthenticationAdvice {
                 eventType = AuditSecurityEventType.LOGIN_FAILURE;
                 reason = "Invalid credential";
             }
-            auditService.logSecurityEvent(
+            safelyLogSecurityEvent(
                     eventType,
                     user.getUsername(),
                     user.getUserId(),
@@ -125,6 +125,15 @@ public class AuthenticationAdvice {
                     buildLoginDetails(reason,isAccountLocked));
 
             throw ex;
+        }
+    }
+
+    private void safelyLogSecurityEvent(AuditSecurityEventType eventType, String username, Integer userId,
+                                        String ipAddress, String userAgent, String sessionId, String detailsJson) {
+        try {
+            auditService.logSecurityEvent(eventType, username, userId, ipAddress, userAgent, sessionId, detailsJson);
+        } catch (Exception e) {
+            log.error("Failed to log authentication security event", e);
         }
     }
 
