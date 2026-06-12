@@ -19,18 +19,13 @@ public class AuditlogwebActivator extends BaseModuleActivator {
 
     private Log log = LogFactory.getLog(this.getClass());
 
-    /**
-     * @see #started()
-     */
+    @Override
     public void started() {
         log.info("Started Auditlogweb");
     }
 
-    /**
-     * @see #shutdown()
-     */
-    public void shutdown() {
-        log.info("Shutdown Auditlogweb");
+    @Override
+    public void stopped() {
+        log.info("Stopped Auditlogweb");
     }
-
 }
