@@ -84,9 +84,16 @@ public class AuditLogRestController {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
 
-        Integer effectiveUserId = resolveUserId(userId, username);
         Date start = parseDate(startDate);
         Date end = parseDate(endDate);
+
+        Integer effectiveUserId = userId;
+        if (effectiveUserId == null && username != null && !username.isEmpty()) {
+            effectiveUserId = resolveUserIdFromUsername(username);
+            if (effectiveUserId == null) {
+                return new AuditLogResponseDto(0, page, 0, Collections.emptyList());
+            }
+        }
 
         boolean fullDetails = userId != null || username != null || startDate != null || endDate != null || entityType != null;
 
@@ -156,12 +163,8 @@ public class AuditLogRestController {
         }
     }
 
-    private Integer resolveUserId(Integer userId, String username) {
-        if (userId != null) return userId;
-        if (username != null && !username.isEmpty()) {
-            User u = Context.getUserService().getUserByUsername(username);
-            if (u != null) return u.getUserId();
-        }
-        return null;
+    private Integer resolveUserIdFromUsername(String username) {
+        User user = Context.getUserService().getUserByUsername(username);
+        return user != null ? user.getUserId() : null;
     }
 }
