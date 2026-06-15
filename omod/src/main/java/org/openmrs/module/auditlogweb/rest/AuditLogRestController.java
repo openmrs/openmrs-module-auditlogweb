@@ -33,6 +33,7 @@ import javax.persistence.NoResultException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -156,12 +157,13 @@ public class AuditLogRestController {
     private Date parseDate(String dateStr, boolean isEndDay) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uuuu").
+                    withResolverStyle(ResolverStyle.STRICT);
             LocalDate parsedDate = LocalDate.parse(dateStr.trim(), formatter);
             return isEndDay ? UtilClass.toEndDate(parsedDate) : UtilClass.toStartDate(parsedDate);
         } catch (DateTimeParseException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Invalid date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
+                    "Invalid month date or date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
         }
     }
 

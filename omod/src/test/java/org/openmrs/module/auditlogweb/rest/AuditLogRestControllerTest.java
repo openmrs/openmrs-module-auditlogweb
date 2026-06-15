@@ -84,7 +84,7 @@ public class AuditLogRestControllerTest {
                         .param("startDate", "2025/01/01"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
-                .andExpect(jsonPath("$.message", is("Invalid date format: '2025/01/01'. Expected format: DD/MM/YYYY")));
+                                .andExpect(jsonPath("$.message", is("Invalid month date or date format: '2025/01/01'. Expected format: DD/MM/YYYY")));
     }
 
     @Test
@@ -306,52 +306,12 @@ public class AuditLogRestControllerTest {
     }
 
     @Test
-    public void shouldNormalizeInvalidMonthDateAndReturnLogs() throws Exception {
-        Date expectedStartDate = UtilClass.toStartDate(LocalDate.of(2025, 2, 28));
-        Date expectedEndDate = UtilClass.toEndDate(LocalDate.of(2025, 4, 30));
-        AuditEntity<?> auditEntity = mock(AuditEntity.class);
-        AuditLogDetailDTO log = new AuditLogDetailDTO(
-                7,
-                "Patient",
-                "UPDATED",
-                "admin",
-                expectedStartDate,
-                Collections.emptyList(),
-                Collections.emptyList()
-        );
-
-        when(auditService.getAllRevisionsAcrossEntitiesWithEntityType(
-                0, 20, null, expectedStartDate, expectedEndDate, null, "desc"))
-                .thenReturn(Collections.singletonList(auditEntity));
-        when(auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)))
-                .thenReturn(Collections.singletonList(log));
-        when(auditService.countRevisionsAcrossEntitiesWithEntityType(
-                null, expectedStartDate, expectedEndDate, null))
-                .thenReturn(1L);
-
+    public void shouldReturnBadRequestForInvalidMonthDate() throws Exception {
         mockMvc.perform(get("/rest/v1/auditlogs")
-                        .param("startDate", "31/02/2025")
-                        .param("endDate", "31/04/2025"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalLogs", is(1)))
-                .andExpect(jsonPath("$.currentPage", is(0)))
-                .andExpect(jsonPath("$.totalPages", is(1)))
-                .andExpect(jsonPath("$.logs[0].revisionID", is(7)))
-                .andExpect(jsonPath("$.logs[0].entityType", is("Patient")));
-
-        verify(auditService).getAllRevisionsAcrossEntitiesWithEntityType(
-                eq(0), eq(20), eq(null), eq(expectedStartDate), eq(expectedEndDate), eq(null), eq("desc"));
-        verify(auditService).countRevisionsAcrossEntitiesWithEntityType(
-                eq(null), eq(expectedStartDate), eq(expectedEndDate), eq(null));
-    }
-
-    @Test
-    public void shouldReturnBadRequestForInvalidEndDate() throws Exception {
-        mockMvc.perform(get("/rest/v1/auditlogs")
-                        .param("endDate", "2025-01-31"))
+                        .param("startDate", "31/02/2025"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
                 .andExpect(jsonPath("$.message",
-                        is("Invalid date format: '2025-01-31'. Expected format: DD/MM/YYYY")));
+                        is("Invalid month date or date format: '31/02/2025'. Expected format: DD/MM/YYYY")));
     }
 }

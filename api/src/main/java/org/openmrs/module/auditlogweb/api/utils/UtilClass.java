@@ -252,7 +252,7 @@ public class UtilClass {
      * @return the corresponding {@link Date} at end of day, or {@code null} if input is null
      */
     public static Date toEndDate(LocalDate date) {
-            return date == null ? null : Date.from(date.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+        return date == null ? null : Date.from(date.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
     }
 
     /**
