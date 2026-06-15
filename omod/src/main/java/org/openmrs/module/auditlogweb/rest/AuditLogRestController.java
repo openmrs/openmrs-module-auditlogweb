@@ -30,8 +30,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.persistence.NoResultException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -84,8 +86,8 @@ public class AuditLogRestController {
         if (page < 0) page = 0;
         if (size <= 0) size = 20;
 
-        Date start = parseDate(startDate);
-        Date end = parseDate(endDate);
+        Date start = parseDate(startDate, false);
+        Date end = parseDate(endDate, true);
 
         Integer effectiveUserId = userId;
         if (effectiveUserId == null && username != null && !username.isEmpty()) {
@@ -148,18 +150,20 @@ public class AuditLogRestController {
      * Parses a date string in "dd/MM/yyyy" format.
      *
      * @param dateStr the date string to parse
+     * @param isEndDay if the date is end date
      * @return the parsed {@link Date} object, or null if the input is null or empty
      * @throws RuntimeException if the date string cannot be parsed
      */
-    private Date parseDate(String dateStr) {
+    private Date parseDate(String dateStr, boolean isEndDay) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            sdf.setLenient(false);
-            return sdf.parse(dateStr);
-        } catch (ParseException e) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uuuu").
+                    withResolverStyle(ResolverStyle.STRICT);
+            LocalDate parsedDate = LocalDate.parse(dateStr.trim(), formatter);
+            return isEndDay ? UtilClass.toEndDate(parsedDate) : UtilClass.toStartDate(parsedDate);
+        } catch (DateTimeParseException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Invalid date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
+                    "Invalid month date or date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
         }
     }
 
