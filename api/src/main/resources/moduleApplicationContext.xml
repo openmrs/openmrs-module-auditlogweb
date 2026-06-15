@@ -24,4 +24,33 @@
   		    http://www.springframework.org/schema/util/spring-util-3.0.xsd">
 
     <context:component-scan base-package="org.openmrs.module.auditlogweb" />
+    <aop:aspectj-autoproxy proxy-target-class="false" />
+
+    <bean id="auditlogweb.AuditService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="target">
+            <bean class="org.openmrs.module.auditlogweb.api.impl.AuditServiceImpl">
+                <constructor-arg ref="auditlogweb.AuditlogwebDao"/>
+            </bean>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors"/>
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource"/>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.auditlogweb.api.AuditService</value>
+                <ref bean="auditlogweb.AuditService"/>
+            </list>
+        </property>
+    </bean>
+
 </beans>

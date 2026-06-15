@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
  * by user or date range.
  */
 @RequiredArgsConstructor
-@Service
 public class AuditServiceImpl extends BaseOpenmrsService implements AuditService {
 
     private final Logger log = LoggerFactory.getLogger(AuditServiceImpl.class);
