@@ -84,7 +84,7 @@ public class AuditLogRestControllerTest {
                         .param("startDate", "2025/01/01"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("Bad Request")))
-                                .andExpect(jsonPath("$.message", is("Invalid month date or date format: '2025/01/01'. Expected format: DD/MM/YYYY")));
+                .andExpect(jsonPath("$.message", is("Invalid month date or date format: '2025/01/01'. Expected format: DD/MM/YYYY")));
     }
 
     @Test
