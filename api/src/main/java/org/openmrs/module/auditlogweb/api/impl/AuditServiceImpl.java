@@ -24,7 +24,6 @@ import org.openmrs.module.auditlogweb.api.dto.RelatedEntityDto;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Date;
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
  * by user or date range.
  */
 @RequiredArgsConstructor
-@Service
 public class AuditServiceImpl extends BaseOpenmrsService implements AuditService {
 
     private final Logger log = LoggerFactory.getLogger(AuditServiceImpl.class);
