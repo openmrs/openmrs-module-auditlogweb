@@ -133,7 +133,7 @@ public class AuthenticationAdvice {
         try {
             auditService.logSecurityEvent(eventType, username, userId, ipAddress, userAgent, sessionId, detailsJson);
         } catch (Exception e) {
-            log.error("Failed to log authentication security event", e);
+            log.error("Failed to log authentication security event [{}] for user [{}]", eventType, username, e);
         }
     }
 

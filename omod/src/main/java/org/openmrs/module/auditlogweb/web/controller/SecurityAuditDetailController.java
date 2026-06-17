@@ -9,10 +9,9 @@
 package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.openmrs.api.context.Context;
+import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
 import org.openmrs.module.auditlogweb.api.AuditService;
-import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -89,7 +88,9 @@ public class SecurityAuditDetailController {
 
             return new ModelAndView(VIEW, model);
 
-        } catch (Exception e) {
+        }catch(APIAuthenticationException e) {
+            return new ModelAndView(ACCESS_DENIED_VIEW, model);
+        }catch (Exception e) {
             logger.error("Error loading security audit detail: ", e);
             model.addAttribute("errorMessage", "Error loading audit data: " + e.getMessage());
             return new ModelAndView(VIEW, model);

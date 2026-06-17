@@ -9,8 +9,8 @@
 package org.openmrs.module.auditlogweb.web.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
-import org.openmrs.module.auditlogweb.AuditlogwebConstants;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
@@ -81,6 +81,8 @@ public class SecurityAuditlogwebController {
             model.addAttribute("endDate", endDate);
             model.addAttribute("page", "securityauditlogs");
             model.addAttribute("eventTypes", getEventTypes());
+        } catch(APIAuthenticationException e){
+            return ACCESS_DENIED_VIEW;
         } catch (Exception e) {
             log.error("Failed to load security audit logs", e);
             model.addAttribute("errorMessage", "An error occurred while loading security audit logs.");
