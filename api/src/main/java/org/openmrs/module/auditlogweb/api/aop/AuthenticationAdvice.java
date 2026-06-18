@@ -16,7 +16,10 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.hibernate.SessionFactory;
 import org.openmrs.User;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
+import org.openmrs.util.OpenmrsConstants;
+import java.util.concurrent.TimeUnit;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
 import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
@@ -101,11 +104,10 @@ public class AuthenticationAdvice {
                 throw ex;
             }
 
-            String message = ex.getMessage();
             AuditSecurityEventType eventType = null;
             String reason = null;
             boolean isAccountLocked = false;
-            if("Invalid number of connection attempts. Please try again later.".equals(message)){
+            if (isAccountLocked(user)) {
                 log.debug("Authentication event : ACCOUNT_LOCKED");
                 eventType = AuditSecurityEventType.ACCOUNT_LOCKED;
                 isAccountLocked = true;
@@ -126,6 +128,34 @@ public class AuthenticationAdvice {
 
             throw ex;
         }
+    }
+
+    private boolean isAccountLocked(User user) {
+        if (user != null) {
+            String lockoutTimestampStr = user.getUserProperty(OpenmrsConstants.USER_PROPERTY_LOCKOUT_TIMESTAMP);
+            if (StringUtils.isNotBlank(lockoutTimestampStr)) {
+                try {
+                    long lockoutTime = Long.parseLong(lockoutTimestampStr);
+                    long waitingTimeInMinutes = 5;
+                    try {
+                        String gpVal = Context.getAdministrationService().getGlobalProperty(OpenmrsConstants.GP_UNLOCK_ACCOUNT_WAITING_TIME);
+                        if (StringUtils.isNotBlank(gpVal)) {
+                            waitingTimeInMinutes = Long.parseLong(gpVal);
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to read global property: {}", OpenmrsConstants.GP_UNLOCK_ACCOUNT_WAITING_TIME, e);
+                    }
+                    long lockoutPeriod = TimeUnit.MINUTES.toMillis(waitingTimeInMinutes);
+                    long diff = System.currentTimeMillis() - lockoutTime;
+                    if (Math.abs(diff) < lockoutPeriod) {
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("Failed to parse lockoutTimestamp [{}] for user [{}]", lockoutTimestampStr, user.getUsername(), e);
+                }
+            }
+        }
+        return false;
     }
 
     private void safelyLogSecurityEvent(AuditSecurityEventType eventType, String username, Integer userId,

@@ -16,24 +16,32 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
+import org.openmrs.api.AdministrationService;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
 import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
 import org.openmrs.module.auditlogweb.api.listener.LoginFixationSessionTracker;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
+import org.openmrs.util.OpenmrsConstants;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.mock;
+
 
 class AuthenticationAdviceTest {
 
@@ -213,26 +221,64 @@ class AuthenticationAdviceTest {
     }
 
     @Test
-    void shouldLogAccountLockedEventForTooManyAttempts() throws Throwable {
+    void shouldLogAccountLockedEventEvenIfLockoutTimestampIsUnderUnlockTime() throws Throwable {
         setRequestContext();
-        ContextAuthenticationException exception = authenticationFailure(
-                USERNAME,
-                "Invalid number of connection attempts. Please try again later.");
+        ContextAuthenticationException exception = authenticationFailure(USERNAME, "Login failed");
         mockUserLookup(USERNAME, USERNAME, user);
+        
+        when(user.getUserProperty(OpenmrsConstants.USER_PROPERTY_LOCKOUT_TIMESTAMP))
+                .thenReturn(String.valueOf(System.currentTimeMillis()));
 
-        ContextAuthenticationException thrown = assertThrows(
-                ContextAuthenticationException.class,
-                () -> advice.authenticate(joinPoint));
+        try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
+            AdministrationService adminService = mock(AdministrationService.class);
+            contextMock.when(() -> Context.getAdministrationService()).thenReturn(adminService);
+            when(adminService.getGlobalProperty(OpenmrsConstants.GP_UNLOCK_ACCOUNT_WAITING_TIME)).thenReturn("5");
 
-        assertSame(exception, thrown);
-        verify(auditService).logSecurityEvent(
-                AuditSecurityEventType.ACCOUNT_LOCKED,
-                USERNAME,
-                1,
-                IP_ADDRESS,
-                USER_AGENT,
-                SESSION_ID,
-                "{\"failureReason\":\"Too many attempts\",\"accountLocked\":true}");
+            ContextAuthenticationException thrown = assertThrows(
+                    ContextAuthenticationException.class,
+                    () -> advice.authenticate(joinPoint));
+
+            assertSame(exception, thrown);
+            verify(auditService).logSecurityEvent(
+                    AuditSecurityEventType.ACCOUNT_LOCKED,
+                    USERNAME,
+                    1,
+                    IP_ADDRESS,
+                    USER_AGENT,
+                    SESSION_ID,
+                    "{\"failureReason\":\"Too many attempts\",\"accountLocked\":true}");
+        }
+    }
+
+    @Test
+    void shouldLogLoginFailureEventIfLockoutTimestampIsExpired() throws Throwable {
+        setRequestContext();
+        ContextAuthenticationException exception = authenticationFailure(USERNAME, "Login failed");
+        mockUserLookup(USERNAME, USERNAME, user);
+        
+        long expiredTime = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(6);
+        when(user.getUserProperty(OpenmrsConstants.USER_PROPERTY_LOCKOUT_TIMESTAMP))
+                .thenReturn(String.valueOf(expiredTime));
+
+        try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
+            AdministrationService adminService = mock(AdministrationService.class);
+            contextMock.when(Context::getAdministrationService).thenReturn(adminService);
+            when(adminService.getGlobalProperty(OpenmrsConstants.GP_UNLOCK_ACCOUNT_WAITING_TIME)).thenReturn("5");
+
+            ContextAuthenticationException thrown = assertThrows(
+                    ContextAuthenticationException.class,
+                    () -> advice.authenticate(joinPoint));
+
+            assertSame(exception, thrown);
+            verify(auditService).logSecurityEvent(
+                    AuditSecurityEventType.LOGIN_FAILURE,
+                    USERNAME,
+                    1,
+                    IP_ADDRESS,
+                    USER_AGENT,
+                    SESSION_ID,
+                    "{\"failureReason\":\"Invalid credential\",\"accountLocked\":false}");
+        }
     }
 
     @Test
