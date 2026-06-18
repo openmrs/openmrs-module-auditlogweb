@@ -60,9 +60,6 @@ public class SecurityAuditlogwebController {
         Date end = parseEndDate(endDate);
 
         try {
-            if(!Context.hasPrivilege(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)){
-                return ACCESS_DENIED_VIEW;
-            }
 
             List<AuditSecurityEvent> events = auditService.getSecurityEvents(eventType, username, start, end, page, size);
             long totalCount = auditService.countSecurityEvents(eventType, username, start, end);

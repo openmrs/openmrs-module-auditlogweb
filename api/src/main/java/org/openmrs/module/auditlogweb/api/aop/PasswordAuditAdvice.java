@@ -34,7 +34,6 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 @RequiredArgsConstructor
-
 public class PasswordAuditAdvice  {
 
     private static final Logger log = LoggerFactory.getLogger(PasswordAuditAdvice.class);
