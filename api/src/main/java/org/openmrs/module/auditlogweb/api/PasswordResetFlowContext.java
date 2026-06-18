@@ -41,7 +41,7 @@ public final class PasswordResetFlowContext {
     }
 
     /**
-     * Marks the password reset flow for the given session as completed and then removes it.
+     * Marks the password reset flow for the given session as completed by removing its state.
      *
      * @param sessionId the session identifier for the password reset flow
      */
@@ -49,12 +49,6 @@ public final class PasswordResetFlowContext {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             return;
         }
-
-        PasswordResetFlowState state = STATES.computeIfAbsent(sessionId, key -> new PasswordResetFlowState());
-        synchronized (state) {
-            state.resetCompleted = true;
-        }
-        // Remove stored state after completion to keep the low memory usage 
         STATES.remove(sessionId);
     }
 
