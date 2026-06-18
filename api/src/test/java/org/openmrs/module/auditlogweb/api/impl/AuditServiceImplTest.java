@@ -371,8 +371,8 @@ class AuditServiceImplTest {
     @Test
     void shouldReturnSecurityEventById(){
         AuditSecurityEvent securityEvent = new AuditSecurityEvent();
-        when(auditDao.getSecurityEventById(12L)).thenReturn(securityEvent);
-        AuditSecurityEvent result = auditService.getSecurityEventById(12L);
+        when(auditDao.getSecurityEventById(12)).thenReturn(securityEvent);
+        AuditSecurityEvent result = auditService.getSecurityEventById(12);
 
         assertNotNull(result);
         assertEquals(securityEvent, result);

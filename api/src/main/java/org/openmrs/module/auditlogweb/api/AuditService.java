@@ -323,7 +323,7 @@ public interface AuditService {
      * @return the {@link AuditSecurityEvent}, or null if not found
      */
     @Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
-    AuditSecurityEvent getSecurityEventById(Long eventId);
+    AuditSecurityEvent getSecurityEventById(Integer eventId);
 
     /**
      * Retrieves the most recent N security events from the same session (for related activity).

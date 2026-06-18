@@ -700,7 +700,7 @@ public class AuditDao {
      * @param eventId the primary key ID of the security event
      * @return the {@link AuditSecurityEvent}, or null if not found
      */
-    public AuditSecurityEvent getSecurityEventById(Long eventId) {
+    public AuditSecurityEvent getSecurityEventById(Integer eventId) {
         Query<AuditSecurityEvent> query = sessionFactory.getCurrentSession()
                 .createQuery("from AuditSecurityEvent e where e.id = :eventId", AuditSecurityEvent.class);
         query.setParameter("eventId", eventId);

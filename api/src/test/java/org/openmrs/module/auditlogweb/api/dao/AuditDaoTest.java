@@ -571,28 +571,28 @@ class AuditDaoTest {
     @Test
     void shouldReturnSecurityEvent_WhenFoundById() {
         AuditSecurityEvent expected = buildSecurityEvent(AuditSecurityEventType.SESSION_TIMEOUT, "user1");
-        expected.setId(99L);
+        expected.setId(99);
 
         when(session.createQuery(anyString(), eq(AuditSecurityEvent.class)))
                 .thenReturn(securityEventQuery);
-        when(securityEventQuery.setParameter("eventId", 99L)).thenReturn(securityEventQuery);
+        when(securityEventQuery.setParameter("eventId", 99)).thenReturn(securityEventQuery);
         when(securityEventQuery.uniqueResult()).thenReturn(expected);
 
-        AuditSecurityEvent result = auditDao.getSecurityEventById(99L);
+        AuditSecurityEvent result = auditDao.getSecurityEventById(99);
 
         assertNotNull(result);
         assertSame(expected, result);
-        assertThat(result.getId(), is(99L));
+        assertThat(result.getId(), is(99));
     }
 
     @Test
     void shouldReturnNull_WhenSecurityEventNotFoundById() {
         when(session.createQuery(anyString(), eq(AuditSecurityEvent.class)))
                 .thenReturn(securityEventQuery);
-        when(securityEventQuery.setParameter("eventId", 404L)).thenReturn(securityEventQuery);
+        when(securityEventQuery.setParameter("eventId", 404)).thenReturn(securityEventQuery);
         when(securityEventQuery.uniqueResult()).thenReturn(null);
 
-        AuditSecurityEvent result = auditDao.getSecurityEventById(404L);
+        AuditSecurityEvent result = auditDao.getSecurityEventById(404);
 
         assertNull(result);
     }

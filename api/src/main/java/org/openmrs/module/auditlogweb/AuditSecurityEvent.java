@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.openmrs.BaseOpenmrsObject;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
 import javax.persistence.Column;
@@ -29,11 +30,11 @@ import java.util.Date;
 @Table(name = "audit_security_event")
 @Getter
 @Setter
-public class AuditSecurityEvent {
+public class AuditSecurityEvent extends BaseOpenmrsObject {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     /**
      * One of: LOGIN_SUCCESS, LOGIN_FAILURE, ACCOUNT_LOCKED, LOGOUT,

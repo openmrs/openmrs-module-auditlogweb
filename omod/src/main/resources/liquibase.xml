@@ -13,8 +13,11 @@
         </preConditions>
         <comment>Create audit_security_event table for security event logging</comment>
         <createTable tableName="audit_security_event">
-            <column name="id" type="BIGINT" autoIncrement="true">
+            <column name="id" type="INT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="uuid" type="VARCHAR(38)">
+                <constraints unique="true" nullable="false"/>
             </column>
             <column name="event_type" type="VARCHAR(50)">
                 <constraints nullable="false"/>

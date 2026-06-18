@@ -61,9 +61,9 @@ public class SecurityAuditDetailController {
                 return new ModelAndView(VIEW, model);
             }
 
-            Long eventId;
+            Integer eventId;
             try {
-                eventId = Long.parseLong(eventIdParam);
+                eventId = Integer.parseInt(eventIdParam);
             } catch (NumberFormatException e) {
                 model.addAttribute("errorMessage", "Invalid event ID format.");
                 return new ModelAndView(VIEW, model);

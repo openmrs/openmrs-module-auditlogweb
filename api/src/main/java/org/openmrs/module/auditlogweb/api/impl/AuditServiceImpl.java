@@ -371,7 +371,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     @Override
-    public AuditSecurityEvent getSecurityEventById(Long eventId) {
+    public AuditSecurityEvent getSecurityEventById(Integer eventId) {
         return auditDao.getSecurityEventById(eventId);
     }
 
