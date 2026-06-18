@@ -88,22 +88,25 @@ public class PasswordAuditAdvice  {
             Integer userId = getUserId(args);
             String details = buildDetails(methodName,isPasswordResetRequestSuccess);
 
-            if (auditService == null) {
-                log.warn("Audit service is not registered, skipping password audit event for method [{}]", methodName);
-                return;
+            try {
+                if (auditService == null) {
+                    log.warn("Audit service is not registered, skipping password audit event for method [{}]", methodName);
+                    return;
+                }
+
+                auditService.logSecurityEvent(eventType, username, userId, ipAddress, userAgent, sessionId, details);
             }
-
-            auditService.logSecurityEvent(eventType, username, userId,ipAddress, userAgent, sessionId, details);
-
-            /* Checking whether this #changePassword call was triggered as part of a password reset
-              flow after successful secret answer verification. If so, then mark the reset request as completed and remove it.
-              This check is performed at the end because we first need to know whether
-              #changePassword belongs to a password reset or a normal password change,
-              so the correct event can be stored in the database.
-             */
-            if ("changePassword".equals(methodName) && PasswordResetFlowContext.hasPendingResetRequest(sessionId)
-                    && PasswordResetFlowContext.isPasswordChangedBySystem(sessionId)) {
-                PasswordResetFlowContext.markResetCompleted(sessionId);
+            finally {
+                /* Checking whether this #changePassword call was triggered as part of a password reset
+                  flow after successful secret answer verification. If so, then mark the reset request as completed and remove it.
+                  This check is performed at the end because we first need to know whether
+                  #changePassword belongs to a password reset or a normal password change,
+                  so the correct event can be stored in the database.
+                 */
+                if ("changePassword".equals(methodName) && PasswordResetFlowContext.hasPendingResetRequest(sessionId)
+                        && PasswordResetFlowContext.isPasswordChangedBySystem(sessionId)) {
+                    PasswordResetFlowContext.markResetCompleted(sessionId);
+                }
             }
 
         } catch (Exception e) {

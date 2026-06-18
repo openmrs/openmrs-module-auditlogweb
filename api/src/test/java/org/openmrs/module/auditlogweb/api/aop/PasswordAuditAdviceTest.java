@@ -208,6 +208,21 @@ class PasswordAuditAdviceTest {
         verify(auditService, never()).logSecurityEvent(any(), any(), any(), any(), any(), any(), any());
     }
 
+    @Test
+    void shouldCompleteResetFlowEvenIfAuditServiceThrowsException() throws Exception {
+        setRequestContext();
+        PasswordResetFlowContext.markResetRequest(SESSION_ID);
+        PasswordResetFlowContext.setPasswordChangedBySystem(SESSION_ID, true);
+        mockInvocation("changePassword", user, "temporary-password", "new-password");
+
+        org.mockito.Mockito.doThrow(new RuntimeException("Database error"))
+                .when(auditService).logSecurityEvent(any(), any(), any(), any(), any(), any(), any());
+
+        advice.afterReturning(joinPoint, null);
+
+        assertFalse(PasswordResetFlowContext.hasPendingResetRequest(SESSION_ID));
+    }
+
     private void setRequestContext() {
         SecurityAuditContext context = new SecurityAuditContext();
         context.setIpAddress(IP_ADDRESS);
