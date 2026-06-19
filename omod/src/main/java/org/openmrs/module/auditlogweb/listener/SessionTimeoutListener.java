@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.UserContext;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
 import org.openmrs.module.auditlogweb.api.listener.ExplicitLogoutSessionTracker;
 import org.openmrs.module.auditlogweb.api.listener.LoginFixationSessionTracker;
 import org.openmrs.module.auditlogweb.api.listener.LogoutListener;
@@ -39,6 +40,8 @@ public class SessionTimeoutListener implements HttpSessionListener {
     @Override
     public void sessionDestroyed(HttpSessionEvent event) {
         HttpSession session = event.getSession();
+
+        PasswordResetFlowContext.clear(session.getId());
 
         if (ExplicitLogoutSessionTracker.consume(session.getId())) return;
 

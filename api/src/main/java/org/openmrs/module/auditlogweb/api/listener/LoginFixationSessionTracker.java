@@ -21,7 +21,7 @@ public final class LoginFixationSessionTracker {
 
     private LoginFixationSessionTracker() {}
 
-   public static void mark(String sessionId) {
+    public static void mark(String sessionId) {
         if (sessionId != null) {
             SESSION_IDS.add(sessionId);
         }

@@ -53,6 +53,15 @@ public final class PasswordResetFlowContext {
     }
 
     /**
+     * Clears and reclaims any tracked password reset state for the given session ID.
+     *
+     * @param sessionId the session identifier to clear
+     */
+    public static void clear(String sessionId) {
+        markResetCompleted(sessionId);
+    }
+
+    /**
      * Checks whether there is a pending(not yet completed) password reset request for the given session.
      * Returns false for null/empty session IDs or when no state is found.
      *
