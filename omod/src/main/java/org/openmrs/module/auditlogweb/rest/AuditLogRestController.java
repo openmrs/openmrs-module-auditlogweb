@@ -167,6 +167,14 @@ public class AuditLogRestController {
         }
     }
 
+    @GetMapping("/entityTypes")
+    public List<String> getAuditEntityTypes() {
+        if (!Context.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+        return UtilClass.getAuditedEntitiesNames();
+    }
+
     private Integer resolveUserIdFromUsername(String username) {
         User user = Context.getUserService().getUserByUsername(username);
         return user != null ? user.getUserId() : null;

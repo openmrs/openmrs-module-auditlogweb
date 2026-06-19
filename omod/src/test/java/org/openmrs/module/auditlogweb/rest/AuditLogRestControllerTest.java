@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import static org.hamcrest.Matchers.is;
@@ -313,5 +314,30 @@ public class AuditLogRestControllerTest {
                 .andExpect(jsonPath("$.error", is("Bad Request")))
                 .andExpect(jsonPath("$.message",
                         is("Invalid month date or date format: '31/02/2025'. Expected format: DD/MM/YYYY")));
+    }
+
+    @Test
+    public void shouldNotReturnAuditEntityTypesListToUnAuthenticatedUser() throws Exception {
+        try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
+            contextMock.when(Context::isAuthenticated).thenReturn(false);
+
+            mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Test
+    public void shouldReturnEntityTypesWhenAuthenticated() throws Exception {
+        try (MockedStatic<Context> contextMock = mockStatic(Context.class);
+             MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+            contextMock.when(Context::isAuthenticated).thenReturn(true);
+            utilClassMock.when(UtilClass::getAuditedEntitiesNames)
+                    .thenReturn(Arrays.asList("Patient", "Encounter"));
+
+            mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0]", is("Patient")))
+                    .andExpect(jsonPath("$[1]", is("Encounter")));
+        }
     }
 }

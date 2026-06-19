@@ -434,4 +434,12 @@ public class UtilClass {
         
         return fieldTypes;
     }
+
+    public static List<String> getAuditedEntitiesNames() {
+
+        List<String> list = findClassesWithAnnotation();
+        return list.stream()
+                .map((entity) ->  entity.substring(entity.lastIndexOf(".") + 1))
+                .collect(Collectors.toList());
+    }
 }
