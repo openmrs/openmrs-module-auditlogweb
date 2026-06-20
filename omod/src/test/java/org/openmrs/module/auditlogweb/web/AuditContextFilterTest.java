@@ -127,4 +127,19 @@ class AuditContextFilterTest {
         assertThrows(ServletException.class, () -> filter.doFilter(request, response, filterChain));
         assertNull(SecurityAuditContext.get());
     }
+
+    @Test
+    void shouldContinueFilterChainAndKeepContextNullWhenExceptionThrownInBuildContext() throws Exception {
+        when(request.getSession(false)).thenThrow(new RuntimeException("Session retrieval error"));
+
+        doAnswer(invocation -> {
+            assertNull(SecurityAuditContext.get());
+            return null;
+        }).when(filterChain).doFilter(request, response);
+
+        filter.doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityAuditContext.get());
+    }
 }
