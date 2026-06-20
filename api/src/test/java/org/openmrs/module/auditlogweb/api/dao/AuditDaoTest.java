@@ -631,6 +631,23 @@ class AuditDaoTest {
         assertThat(result, empty());
     }
 
+    @Test
+    void shouldBindUnknownEventType_WhenGivenSecurityEventIsInvalid() {
+        when(session.createQuery(anyString(), eq(AuditSecurityEvent.class)))
+                .thenReturn(securityEventQuery);
+        when(securityEventQuery.setParameter(eq("eventType"), eq(AuditSecurityEventType.UNKNOWN)))
+                .thenReturn(securityEventQuery);
+        when(securityEventQuery.setFirstResult(anyInt())).thenReturn(securityEventQuery);
+        when(securityEventQuery.setMaxResults(anyInt())).thenReturn(securityEventQuery);
+        when(securityEventQuery.getResultList()).thenReturn(Collections.emptyList());
+
+        List<AuditSecurityEvent> result = auditDao.getSecurityEvents("INVALID_EVENT", null, null, null, 0, 10);
+
+        assertNotNull(result);
+        assertThat(result, empty());
+        verify(securityEventQuery).setParameter("eventType", AuditSecurityEventType.UNKNOWN);
+    }
+
     /** Helper function to build AuditSecurityEvent for use in tests. */
     private AuditSecurityEvent buildSecurityEvent(AuditSecurityEventType type, String username) {
         AuditSecurityEvent event = new AuditSecurityEvent();

@@ -19,12 +19,17 @@ public enum AuditSecurityEventType {
     SESSION_TIMEOUT,
     PASSWORD_CHANGED,
     PASSWORD_RESET_REQUEST,
-    PASSWORD_RESET;
+    PASSWORD_RESET,
+    UNKNOWN;
 
     public static AuditSecurityEventType fromName(String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
-        return AuditSecurityEventType.valueOf(value.trim().toUpperCase());
+        try {
+            return AuditSecurityEventType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return UNKNOWN;
+        }
     }
 }

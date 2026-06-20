@@ -33,4 +33,17 @@ class ServiceAuthorizationTest extends BaseContextSensitiveTest {
         assertThrows(APIAuthenticationException.class,
                 () -> Context.getService(AuditService.class).getAuditLogsCount());
     }
+
+    @Test
+    void shouldRejectAuditServiceCallsWhenUserLacksViewSecurityAuditLogsPrivilege() {
+        UserContext userContext = mock(UserContext.class);
+        when(userContext.hasPrivilege(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)).thenReturn(false);
+        when(userContext.isAuthenticated()).thenReturn(true);
+
+        contextMockHelper.setUserContext(userContext);
+
+        assertFalse(Context.hasPrivilege(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS));
+        assertThrows(APIAuthenticationException.class,
+                () -> Context.getService(AuditService.class).getSecurityEventById(1));
+    }
 }
