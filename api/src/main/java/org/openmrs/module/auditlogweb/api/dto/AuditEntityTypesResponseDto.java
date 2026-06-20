@@ -17,5 +17,5 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AuditEntityTypesResponseDto {
-    private List<String> entities;
+    private List<String> entityTypes;
 }
