@@ -336,8 +336,8 @@ public class AuditLogRestControllerTest {
 
             mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.entities[0]", is("Patient")))
-                    .andExpect(jsonPath("$.entities[1]", is("Encounter")));
+                    .andExpect(jsonPath("$.entityTypes[0]", is("Patient")))
+                    .andExpect(jsonPath("$.entityTypes[1]", is("Encounter")));
         }
     }
 }
