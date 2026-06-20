@@ -20,6 +20,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 
@@ -402,12 +403,12 @@ class AuditServiceImplTest {
             utilClassMock.when(UtilClass::findClassesWithAnnotation)
                     .thenReturn(Arrays.asList("org.openmrs.Allergy", "org.openmrs.Cohort"));
 
-            List<String> names = auditService.getAuditedEntitiesNames();
+            AuditEntityTypesResponseDto entityTypes = auditService.getAuditedEntitiesNames();
 
-            assertNotNull(names);
-            assertEquals(2, names.size());
-            assertEquals("Allergy", names.get(0));
-            assertEquals("Cohort", names.get(1));
+            assertNotNull(entityTypes);
+            assertEquals(2,entityTypes.getEntityTypes().size());
+            assertEquals("Allergy", entityTypes.getEntityTypes().get(0));
+            assertEquals("Cohort",entityTypes.getEntityTypes().get(1));
         }
     }
 

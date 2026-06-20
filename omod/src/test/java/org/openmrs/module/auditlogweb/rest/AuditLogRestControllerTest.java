@@ -20,6 +20,7 @@ import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.api.AuditService;
@@ -321,8 +322,9 @@ public class AuditLogRestControllerTest {
             try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
                     utilClassMock.when(UtilClass::findClassesWithAnnotation)
                                     .thenReturn(Arrays.asList("org.openmrs.Allergy", "org.openmrs.Cohort"));
+                AuditEntityTypesResponseDto entityTypesResponseDto = new AuditEntityTypesResponseDto(Arrays.asList("Allergy", "Cohort"));
                     when(auditService.getAuditedEntitiesNames())
-                                    .thenReturn(Arrays.asList("Allergy", "Cohort"));
+                                    .thenReturn(entityTypesResponseDto);
 
             mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
                     .andExpect(status().isOk())

@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb.api;
 
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
@@ -270,5 +271,5 @@ public interface AuditService {
     long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass);
 
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<String> getAuditedEntitiesNames();
+    AuditEntityTypesResponseDto getAuditedEntitiesNames();
 }

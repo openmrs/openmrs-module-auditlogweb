@@ -170,7 +170,7 @@ public class AuditLogRestController {
 
     @GetMapping("/entityTypes")
     public AuditEntityTypesResponseDto getAuditEntityTypes() {
-        return new AuditEntityTypesResponseDto(auditService.getAuditedEntitiesNames());
+        return auditService.getAuditedEntitiesNames();
     }
 
     private Integer resolveUserIdFromUsername(String username) {
