@@ -18,6 +18,7 @@ import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -168,11 +169,11 @@ public class AuditLogRestController {
     }
 
     @GetMapping("/entityTypes")
-    public List<String> getAuditEntityTypes() {
+    public AuditEntityTypesResponseDto getAuditEntityTypes() {
         if (!Context.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
         }
-        return UtilClass.getAuditedEntitiesNames();
+        return new AuditEntityTypesResponseDto(UtilClass.getAuditedEntitiesNames());
     }
 
     private Integer resolveUserIdFromUsername(String username) {
