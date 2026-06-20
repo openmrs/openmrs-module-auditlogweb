@@ -142,21 +142,6 @@ public class UtilClassUnitTest {
         assertTrue(foundChildField);
     }
 
-    @Test
-    public void getAuditedEntitiesNames_shouldReturnSimpleNames() {
-        try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class, Mockito.CALLS_REAL_METHODS)) {
-            utilClassMock.when(UtilClass::findClassesWithAnnotation)
-                    .thenReturn(Arrays.asList("org.openmrs.Allergy", "org.openmrs.Cohort"));
-            
-            List<String> names = UtilClass.getAuditedEntitiesNames();
-
-            assertNotNull(names);
-            assertEquals(2, names.size());
-            assertEquals("Allergy", names.get(0));
-            assertEquals("Cohort", names.get(1));
-        }
-    }
-
     // Dummy Audited class for testing only
     @Audited
     public static class TestAuditedClass {}

@@ -269,4 +269,6 @@ public interface AuditService {
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass);
 
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+    List<String> getAuditedEntitiesNames();
 }

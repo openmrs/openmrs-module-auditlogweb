@@ -317,27 +317,17 @@ public class AuditLogRestControllerTest {
     }
 
     @Test
-    public void shouldNotReturnAuditEntityTypesListToUnAuthenticatedUser() throws Exception {
-        try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
-            contextMock.when(Context::isAuthenticated).thenReturn(false);
-
-            mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
-                    .andExpect(status().isUnauthorized());
-        }
-    }
-
-    @Test
     public void shouldReturnEntityTypesWhenAuthenticated() throws Exception {
-        try (MockedStatic<Context> contextMock = mockStatic(Context.class);
-             MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
-            contextMock.when(Context::isAuthenticated).thenReturn(true);
-            utilClassMock.when(UtilClass::getAuditedEntitiesNames)
-                    .thenReturn(Arrays.asList("Patient", "Encounter"));
+            try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+                    utilClassMock.when(UtilClass::findClassesWithAnnotation)
+                                    .thenReturn(Arrays.asList("org.openmrs.Allergy", "org.openmrs.Cohort"));
+                    when(auditService.getAuditedEntitiesNames())
+                                    .thenReturn(Arrays.asList("Allergy", "Cohort"));
 
             mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.entityTypes[0]", is("Patient")))
-                    .andExpect(jsonPath("$.entityTypes[1]", is("Encounter")));
+                            .andExpect(jsonPath("$.entityTypes[0]", is("Allergy")))
+                            .andExpect(jsonPath("$.entityTypes[1]", is("Cohort")));
         }
     }
 }

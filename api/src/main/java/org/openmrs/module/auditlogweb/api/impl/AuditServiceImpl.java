@@ -34,6 +34,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.openmrs.module.auditlogweb.api.utils.UtilClass.findClassesWithAnnotation;
+
 
 /**
  * Default implementation of the {@link AuditService} interface.
@@ -294,7 +296,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     public List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
                                                                             Date startDate, Date endDate, String entityType, String sortOrder) {
         if (entityType != null && !entityType.trim().isEmpty()) {
-            boolean isValid = UtilClass.findClassesWithAnnotation().stream()
+            boolean isValid = findClassesWithAnnotation().stream()
                     .map(className -> {
                         try {
                             return Class.forName(className);
@@ -458,6 +460,14 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
     public long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass) {
         return auditDao.countRevisionsForEntityById(patientId, entityClass);
+    }
+
+    public List<String> getAuditedEntitiesNames() {
+
+        List<String> list = findClassesWithAnnotation();
+        return list.stream()
+                .map((entity) ->  entity.substring(entity.lastIndexOf(".") + 1))
+                .collect(Collectors.toList());
     }
 
 }

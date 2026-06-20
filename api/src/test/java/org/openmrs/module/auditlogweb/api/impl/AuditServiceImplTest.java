@@ -21,6 +21,7 @@ import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -393,6 +394,21 @@ class AuditServiceImplTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getAuditedEntitiesNames_shouldReturnSimpleNames() {
+        try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+            utilClassMock.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Arrays.asList("org.openmrs.Allergy", "org.openmrs.Cohort"));
+
+            List<String> names = auditService.getAuditedEntitiesNames();
+
+            assertNotNull(names);
+            assertEquals(2, names.size());
+            assertEquals("Allergy", names.get(0));
+            assertEquals("Cohort", names.get(1));
+        }
     }
 
 }
