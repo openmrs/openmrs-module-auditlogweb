@@ -18,6 +18,7 @@ import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -165,6 +166,11 @@ public class AuditLogRestController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Invalid month date or date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
         }
+    }
+
+    @GetMapping("/entityTypes")
+    public AuditEntityTypesResponseDto getAuditEntityTypes() {
+        return auditService.getAuditedEntitiesNames();
     }
 
     private Integer resolveUserIdFromUsername(String username) {

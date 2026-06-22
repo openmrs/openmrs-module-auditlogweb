@@ -18,6 +18,7 @@ import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.RelatedEntityDto;
@@ -33,7 +34,6 @@ import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 /**
  * Default implementation of the {@link AuditService} interface.
@@ -458,6 +458,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
     public long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass) {
         return auditDao.countRevisionsForEntityById(patientId, entityClass);
+    }
+
+    public AuditEntityTypesResponseDto getAuditedEntitiesNames() {
+        List<String> entityTypes = UtilClass.findClassesWithAnnotation().stream()
+                .map((entity) ->  entity.substring(entity.lastIndexOf(".") + 1))
+                .collect(Collectors.toList());
+        return new AuditEntityTypesResponseDto(entityTypes);
     }
 
 }

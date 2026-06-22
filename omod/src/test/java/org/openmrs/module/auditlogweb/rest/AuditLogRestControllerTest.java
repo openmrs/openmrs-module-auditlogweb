@@ -20,6 +20,7 @@ import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.api.AuditService;
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import static org.hamcrest.Matchers.is;
@@ -313,5 +315,21 @@ public class AuditLogRestControllerTest {
                 .andExpect(jsonPath("$.error", is("Bad Request")))
                 .andExpect(jsonPath("$.message",
                         is("Invalid month date or date format: '31/02/2025'. Expected format: DD/MM/YYYY")));
+    }
+
+    @Test
+    public void shouldReturnEntityTypes() throws Exception {
+            try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
+                    utilClassMock.when(UtilClass::findClassesWithAnnotation)
+                                    .thenReturn(Arrays.asList("org.openmrs.Allergy", "org.openmrs.Cohort"));
+                AuditEntityTypesResponseDto entityTypesResponseDto = new AuditEntityTypesResponseDto(Arrays.asList("Allergy", "Cohort"));
+                    when(auditService.getAuditedEntitiesNames())
+                                    .thenReturn(entityTypesResponseDto);
+
+            mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
+                    .andExpect(status().isOk())
+                            .andExpect(jsonPath("$.entityTypes[0]", is("Allergy")))
+                            .andExpect(jsonPath("$.entityTypes[1]", is("Cohort")));
+        }
     }
 }
