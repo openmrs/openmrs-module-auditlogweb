@@ -5,5 +5,69 @@
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
  
+    <changeSet id="auditlogweb-20260622-create-read-audit-log-table" author="sudhanshu_raj">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="read_audit_log"/>
+            </not>
+        </preConditions>
+        <createTable tableName="read_audit_log">
+            <column name="id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="entity_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="read_success" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+            <column name="username" type="varchar(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="user_id" type="int">
+                <constraints nullable="true"/>
+            </column>
+            <column name="event_time" type="datetime">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ip_address" type="varchar(50)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="user_agent" type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="session_id" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="uuid" type="char(38)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="auditlogweb-20260622-create-read-audit-entity-metadata-table" author="sudhanshu_raj">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="read_audit_entity_metadata"/>
+            </not>
+        </preConditions>
+        <createTable tableName="read_audit_entity_metadata">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="read_audit_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_uuid" type="varchar(38)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint constraintName="fk_read_audit_entity_metadata_read_audit"
+                                 baseTableName="read_audit_entity_metadata"
+                                 baseColumnNames="read_audit_id"
+                                 referencedTableName="read_audit_log"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
 
 </databaseChangeLog>
