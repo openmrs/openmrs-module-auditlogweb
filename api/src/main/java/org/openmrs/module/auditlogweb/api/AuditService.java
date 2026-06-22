@@ -10,6 +10,7 @@ package org.openmrs.module.auditlogweb.api;
 
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypeDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 
@@ -268,5 +269,16 @@ public interface AuditService {
      */
     @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
     long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass);
+
+    /**
+     * Returns all Envers-audited entity types discovered on the classpath.
+     * <p>
+     * Each entry includes the simple class name (for use as the {@code entityType} REST filter)
+     * and the fully qualified class name.
+     *
+     * @return a sorted list of audited entity type descriptors
+     */
+    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+    List<AuditEntityTypeDto> getAuditedEntityTypes();
 
 }

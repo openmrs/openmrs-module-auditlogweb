@@ -16,6 +16,7 @@ import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogResponseDto;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
@@ -111,6 +112,16 @@ public class AuditLogRestController {
         int totalPages = (int) Math.ceil(total / (double) size);
 
         return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, auditDetails);
+    }
+
+    /**
+     * Returns all Envers-audited entity types available for audit log filtering.
+     *
+     * @return a list of entity type descriptors with simple and fully qualified class names
+     */
+    @GetMapping("/entityTypes")
+    public AuditEntityTypesResponseDto getEntityTypes() {
+        return new AuditEntityTypesResponseDto(auditService.getAuditedEntityTypes());
     }
 
     @GetMapping("/{revisionId}")

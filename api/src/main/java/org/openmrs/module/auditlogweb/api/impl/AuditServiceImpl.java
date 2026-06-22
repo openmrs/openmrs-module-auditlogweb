@@ -18,6 +18,7 @@ import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypeDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.RelatedEntityDto;
@@ -25,6 +26,7 @@ import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Date;
 import java.util.ArrayList;
@@ -458,6 +460,27 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
     public long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass) {
         return auditDao.countRevisionsForEntityById(patientId, entityClass);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<AuditEntityTypeDto> getAuditedEntityTypes() {
+        return UtilClass.findClassesWithAnnotation().stream()
+                .map(className -> {
+                    try {
+                        Class<?> clazz = Class.forName(className);
+                        return new AuditEntityTypeDto(clazz.getSimpleName(), className);
+                    }
+                    catch (ClassNotFoundException e) {
+                        log.warn("Audited class not found on classpath: {}", className);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(AuditEntityTypeDto::getSimpleName, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
     }
 
 }

@@ -20,6 +20,7 @@ import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypeDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.api.AuditService;
@@ -28,8 +29,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.any;
@@ -303,6 +306,25 @@ public class AuditLogRestControllerTest {
                 eq(0), eq(20), eq(null), eq(expectedStartDate), eq(expectedEndDate), eq(null), eq("desc"));
         verify(auditService).countRevisionsAcrossEntitiesWithEntityType(
                 eq(null), eq(expectedStartDate), eq(expectedEndDate), eq(null));
+    }
+
+    @Test
+    public void shouldReturnEntityTypes() throws Exception {
+        List<AuditEntityTypeDto> entityTypes = Arrays.asList(
+                new AuditEntityTypeDto("Patient", "org.openmrs.Patient"),
+                new AuditEntityTypeDto("User", "org.openmrs.User")
+        );
+        when(auditService.getAuditedEntityTypes()).thenReturn(entityTypes);
+
+        mockMvc.perform(get("/rest/v1/auditlogs/entityTypes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.entityTypes.length()", is(2)))
+                .andExpect(jsonPath("$.entityTypes[0].simpleName", is("Patient")))
+                .andExpect(jsonPath("$.entityTypes[0].className", is("org.openmrs.Patient")))
+                .andExpect(jsonPath("$.entityTypes[1].simpleName", is("User")))
+                .andExpect(jsonPath("$.entityTypes[1].className", is("org.openmrs.User")));
+
+        verify(auditService).getAuditedEntityTypes();
     }
 
     @Test

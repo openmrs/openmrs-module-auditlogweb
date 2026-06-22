@@ -20,7 +20,9 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
+import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypeDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -295,6 +297,22 @@ class AuditServiceImplTest {
                 1, null, null, "Patient");
 
         assertEquals(55L, count);
+    }
+
+    @Test
+    void shouldReturnAuditedEntityTypes() {
+        try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
+            utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
+                    .thenReturn(Arrays.asList("org.openmrs.Patient", "org.openmrs.User"));
+
+            List<AuditEntityTypeDto> result = auditService.getAuditedEntityTypes();
+
+            assertEquals(2, result.size());
+            assertEquals("Patient", result.get(0).getSimpleName());
+            assertEquals("org.openmrs.Patient", result.get(0).getClassName());
+            assertEquals("User", result.get(1).getSimpleName());
+            assertEquals("org.openmrs.User", result.get(1).getClassName());
+        }
     }
 
     public static class TestEntity {
