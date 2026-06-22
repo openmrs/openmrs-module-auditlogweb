@@ -318,7 +318,7 @@ public class AuditLogRestControllerTest {
     }
 
     @Test
-    public void shouldReturnEntityTypes throws Exception {
+    public void shouldReturnEntityTypes() throws Exception {
             try (MockedStatic<UtilClass> utilClassMock = mockStatic(UtilClass.class)) {
                     utilClassMock.when(UtilClass::findClassesWithAnnotation)
                                     .thenReturn(Arrays.asList("org.openmrs.Allergy", "org.openmrs.Cohort"));
