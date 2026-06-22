@@ -4,6 +4,34 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9
                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
- 
+
+    <changeSet id="auditlogweb-2026-04-create-audit-security-event" author="sudhanshu-raj">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="audit_security_event"/>
+            </not>
+        </preConditions>
+        <comment>Create audit_security_event table for security event logging</comment>
+        <createTable tableName="audit_security_event">
+            <column name="id" type="INT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="uuid" type="VARCHAR(38)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="event_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(50)"/>
+            <column name="user_id" type="INT"/>
+            <column name="event_time" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ip_address" type="VARCHAR(50)"/>
+            <column name="user_agent" type="VARCHAR(500)"/>
+            <column name="session_id" type="VARCHAR(100)"/>
+            <column name="details" type="TEXT"/>
+        </createTable>
+    </changeSet>
 
 </databaseChangeLog>
