@@ -461,7 +461,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
     }
 
     public AuditEntityTypesResponseDto getAuditedEntitiesNames() {
-        List<String> entityType= UtilClass.findClassesWithAnnotation().stream()
+        List<String> entityTypes = UtilClass.findClassesWithAnnotation().stream()
                 .map((entity) ->  entity.substring(entity.lastIndexOf(".") + 1))
                 .collect(Collectors.toList());
         return new AuditEntityTypesResponseDto(entityType);
