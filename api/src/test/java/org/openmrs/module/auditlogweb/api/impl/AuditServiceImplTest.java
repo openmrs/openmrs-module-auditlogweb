@@ -318,6 +318,7 @@ class AuditServiceImplTest {
         Date afterCall = new Date();
         ArgumentCaptor<AuditSecurityEvent> eventCaptor = ArgumentCaptor.forClass(AuditSecurityEvent.class);
         verify(auditDao).saveSecurityEvent(eventCaptor.capture());
+        verify(auditDao).flush();
 
         AuditSecurityEvent event = eventCaptor.getValue();
         assertEquals(AuditSecurityEventType.LOGIN_SUCCESS, event.getEventType());
@@ -330,6 +331,33 @@ class AuditServiceImplTest {
         assertNotNull(event.getEventTime());
         assertTrue(!event.getEventTime().before(beforeCall));
         assertTrue(!event.getEventTime().after(afterCall));
+    }
+
+    @Test
+    void shouldTrimOversizedFields_WhenLogSecurityEventIsCalled() {
+        String longUsername = String.join("", Collections.nCopies(60, "u"));
+        String longIpAddress = String.join("", Collections.nCopies(110, "i"));
+        String longUserAgent = String.join("", Collections.nCopies(1050, "a"));
+        String longSessionId = String.join("", Collections.nCopies(260, "s"));
+
+        auditService.logSecurityEvent(
+                AuditSecurityEventType.LOGIN_SUCCESS,
+                longUsername,
+                1,
+                longIpAddress,
+                longUserAgent,
+                longSessionId,
+                "details");
+
+        ArgumentCaptor<AuditSecurityEvent> eventCaptor = ArgumentCaptor.forClass(AuditSecurityEvent.class);
+        verify(auditDao).saveSecurityEvent(eventCaptor.capture());
+        verify(auditDao).flush();
+
+        AuditSecurityEvent event = eventCaptor.getValue();
+        assertEquals(50, event.getUsername().length());
+        assertEquals(100, event.getIpAddress().length());
+        assertEquals(1000, event.getUserAgent().length());
+        assertEquals(256, event.getSessionId().length());
     }
 
     @Test

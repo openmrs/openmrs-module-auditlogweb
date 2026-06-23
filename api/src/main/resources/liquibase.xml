@@ -27,9 +27,9 @@
             <column name="event_time" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
-            <column name="ip_address" type="VARCHAR(50)"/>
-            <column name="user_agent" type="VARCHAR(500)"/>
-            <column name="session_id" type="VARCHAR(100)"/>
+            <column name="ip_address" type="VARCHAR(100)"/>
+            <column name="user_agent" type="VARCHAR(1000)"/>
+            <column name="session_id" type="VARCHAR(256)"/>
             <column name="details" type="TEXT"/>
         </createTable>
     </changeSet>

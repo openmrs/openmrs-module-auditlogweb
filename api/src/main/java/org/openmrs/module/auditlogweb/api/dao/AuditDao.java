@@ -595,6 +595,13 @@ public class AuditDao {
     }
 
     /**
+     * Flushes the current Hibernate session.
+     */
+    public void flush() {
+        sessionFactory.getCurrentSession().flush();
+    }
+
+    /**
      * Retrieves paginated security events using optional filter criteria.
      *
      * @param eventType     the security event type (for example, LOGIN_SUCCESS)

@@ -55,13 +55,13 @@ public class AuditSecurityEvent extends BaseOpenmrsObject {
     @Column(name = "event_time", nullable = false)
     private Date eventTime;
 
-    @Column(name = "ip_address", length = 50)
+    @Column(name = "ip_address", length = 100)
     private String ipAddress;
 
-    @Column(name = "user_agent", length = 500)
+    @Column(name = "user_agent", length = 1000)
     private String userAgent;
 
-    @Column(name = "session_id", length = 100)
+    @Column(name = "session_id", length = 256)
     private String sessionId;
 
     @Column(name = "details", columnDefinition = "TEXT")

@@ -334,14 +334,15 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
         AuditSecurityEvent event = new AuditSecurityEvent();
         event.setEventType(eventType);
-        event.setUsername(username);
+        event.setUsername(StringUtils.substring(username, 0, 50));
         event.setUserId(userId);
         event.setEventTime(new Date());
-        event.setIpAddress(ipAddress);
-        event.setUserAgent(userAgent);
-        event.setSessionId(sessionId);
+        event.setIpAddress(StringUtils.substring(ipAddress, 0, 100));
+        event.setUserAgent(StringUtils.substring(userAgent, 0, 1000));
+        event.setSessionId(StringUtils.substring(sessionId, 0, 256));
         event.setDetails(detailsJson);
         auditDao.saveSecurityEvent(event);
+        auditDao.flush();
     }
 
     @Override
