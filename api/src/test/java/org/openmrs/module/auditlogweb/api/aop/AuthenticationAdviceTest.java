@@ -134,6 +134,7 @@ class AuthenticationAdviceTest {
     void shouldSkipSuccessfulLoginAuditDuringPendingPasswordReset() throws Throwable {
         setRequestContext();
         PasswordResetFlowContext.markResetRequest(SESSION_ID);
+        PasswordResetFlowContext.setSecretAnswerVerified(SESSION_ID, true);
         when(joinPoint.proceed()).thenReturn(user);
 
         Object result = advice.authenticate(joinPoint);

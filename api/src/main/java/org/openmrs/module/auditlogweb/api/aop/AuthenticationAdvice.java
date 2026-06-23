@@ -55,7 +55,8 @@ public class AuthenticationAdvice {
             log.debug("Authentication event : LOGIN_SUCCESS");
 
             // Skipping the audit, because this might be done by system to authenticate user after password reset request verification
-            if (PasswordResetFlowContext.hasPendingResetRequest(sessionId)) return result;
+            if (PasswordResetFlowContext.hasPendingResetRequest(sessionId) &&
+                    PasswordResetFlowContext.isSecretAnswerVerified(sessionId)) return result;
 
             if (auditService == null) {
                 log.warn("AuditService is not registered, skipping login audit event");

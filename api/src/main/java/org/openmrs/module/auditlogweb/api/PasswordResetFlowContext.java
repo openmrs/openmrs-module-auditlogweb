@@ -123,10 +123,38 @@ public final class PasswordResetFlowContext {
         }
     }
 
+    public static boolean isSecretAnswerVerified(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return false;
+        }
+
+        PasswordResetFlowState state = STATES.get(sessionId);
+        if (state == null) {
+            return false;
+        }
+        synchronized (state) {
+            return state.isSecretAnswerVerified;
+        }
+    }
+
+    public static void setSecretAnswerVerified(String sessionId, boolean secretAnswerVerified) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return;
+        }
+        PasswordResetFlowState state = STATES.get(sessionId);
+        if (state == null) {
+            return;
+        }
+        synchronized (state) {
+            state.isSecretAnswerVerified = secretAnswerVerified;
+        }
+    }
+
 
     private static final class PasswordResetFlowState {
 
         private boolean resetCompleted;
         private boolean isPasswordChangedBySystem;
+        private boolean isSecretAnswerVerified;
     }
 }

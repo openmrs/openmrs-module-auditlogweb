@@ -97,6 +97,7 @@ public class PasswordAuditAdvice  {
             if ("isSecretAnswer".equals(methodName)) {
                 if (Boolean.TRUE.equals(returnValue)) {
                     isPasswordResetRequestSuccess = true;
+                    PasswordResetFlowContext.setSecretAnswerVerified(sessionId,true);
                 } else {
                     success = false;
                 }

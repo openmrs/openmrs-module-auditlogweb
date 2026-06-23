@@ -134,6 +134,7 @@ class PasswordAuditAdviceTest {
                 SESSION_ID,
                 "{\"requestType\":\"secret_question_answer\", \"isRequestSuccess\": true}");
         assertTrue(PasswordResetFlowContext.hasPendingResetRequest(SESSION_ID));
+        assertTrue(PasswordResetFlowContext.isSecretAnswerVerified(SESSION_ID));
     }
 
     @Test
@@ -152,6 +153,7 @@ class PasswordAuditAdviceTest {
                 USER_AGENT,
                 SESSION_ID,
                 "{\"requestType\":\"secret_question_answer\", \"isRequestSuccess\": false}");
+        assertFalse(PasswordResetFlowContext.isSecretAnswerVerified(SESSION_ID));
     }
 
     @Test
