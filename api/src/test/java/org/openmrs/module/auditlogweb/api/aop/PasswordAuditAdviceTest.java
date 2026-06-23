@@ -302,6 +302,86 @@ class PasswordAuditAdviceTest {
                 "{\"requestType\":\"secret_question_answer\", \"isRequestSuccess\": false}");
     }
 
+    @Test
+    void shouldLogPasswordResetSuccessForChangePasswordUsingSecretAnswer() throws Throwable {
+        setRequestContext();
+        mockInvocation("changePasswordUsingSecretAnswer", "correct-answer", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
+
+        advice.auditPasswordActivity(joinPoint);
+
+        verify(auditService).logSecurityEvent(
+                AuditSecurityEventType.PASSWORD_RESET_SUCCESS,
+                null,
+                null,
+                IP_ADDRESS,
+                USER_AGENT,
+                SESSION_ID,
+                "{\"method\":\"changePasswordUsingSecretAnswer\"}");
+    }
+
+    @Test
+    void shouldLogPasswordResetFailureForChangePasswordUsingSecretAnswerWhenExceptionThrown() throws Throwable {
+        setRequestContext();
+        mockInvocation("changePasswordUsingSecretAnswer", "correct-answer", "new-password");
+        RuntimeException testEx = new RuntimeException("Incorrect secret answer");
+        when(joinPoint.proceed()).thenThrow(testEx);
+
+        Exception thrown = assertThrows(
+                RuntimeException.class,
+                () -> advice.auditPasswordActivity(joinPoint));
+
+        assertSame(testEx, thrown);
+        verify(auditService).logSecurityEvent(
+                AuditSecurityEventType.PASSWORD_RESET_FAILURE,
+                null,
+                null,
+                IP_ADDRESS,
+                USER_AGENT,
+                SESSION_ID,
+                "{\"method\":\"changePasswordUsingSecretAnswer\"}");
+    }
+
+    @Test
+    void shouldLogPasswordResetSuccessForChangePasswordUsingActivationKey() throws Throwable {
+        setRequestContext();
+        mockInvocation("changePasswordUsingActivationKey", "activation-key", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
+
+        advice.auditPasswordActivity(joinPoint);
+
+        verify(auditService).logSecurityEvent(
+                AuditSecurityEventType.PASSWORD_RESET_SUCCESS,
+                null,
+                null,
+                IP_ADDRESS,
+                USER_AGENT,
+                SESSION_ID,
+                "{\"method\":\"changePasswordUsingActivationKey\"}");
+    }
+
+    @Test
+    void shouldLogPasswordResetFailureForChangePasswordUsingActivationKeyWhenExceptionThrown() throws Throwable {
+        setRequestContext();
+        mockInvocation("changePasswordUsingActivationKey", "activation-key", "new-password");
+        RuntimeException testEx = new RuntimeException("Invalid key");
+        when(joinPoint.proceed()).thenThrow(testEx);
+
+        Exception thrown = assertThrows(
+                RuntimeException.class,
+                () -> advice.auditPasswordActivity(joinPoint));
+
+        assertSame(testEx, thrown);
+        verify(auditService).logSecurityEvent(
+                AuditSecurityEventType.PASSWORD_RESET_FAILURE,
+                null,
+                null,
+                IP_ADDRESS,
+                USER_AGENT,
+                SESSION_ID,
+                "{\"method\":\"changePasswordUsingActivationKey\"}");
+    }
+
     private void setRequestContext() {
         SecurityAuditContext context = new SecurityAuditContext();
         context.setIpAddress(IP_ADDRESS);
@@ -311,18 +391,19 @@ class PasswordAuditAdviceTest {
     }
 
     private void mockInvocation(String methodName, Object... args) throws Exception {
-        Method method = UserServiceMethods.class.getMethod(methodName, getParameterTypes(args.length));
+        Method method = UserServiceMethods.class.getMethod(methodName, getParameterTypes(args));
         when(methodSignature.getMethod()).thenReturn(method);
         when(joinPoint.getArgs()).thenReturn(args);
     }
 
-    private Class<?>[] getParameterTypes(int argumentCount) {
-        Class<?>[] parameterTypes = new Class<?>[argumentCount];
-        if (argumentCount > 0) {
-            parameterTypes[0] = User.class;
-        }
-        for (int i = 1; i < argumentCount; i++) {
-            parameterTypes[i] = String.class;
+    private Class<?>[] getParameterTypes(Object[] args) {
+        Class<?>[] parameterTypes = new Class<?>[args.length];
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof User) {
+                parameterTypes[i] = User.class;
+            } else {
+                parameterTypes[i] = String.class;
+            }
         }
         return parameterTypes;
     }
@@ -332,5 +413,9 @@ class PasswordAuditAdviceTest {
         boolean isSecretAnswer(User user, String secretAnswer);
 
         void changePassword(User user, String oldPassword, String newPassword);
+
+        void changePasswordUsingSecretAnswer(String secretAnswer, String pw);
+
+        void changePasswordUsingActivationKey(String activationKey, String newPassword);
     }
 }

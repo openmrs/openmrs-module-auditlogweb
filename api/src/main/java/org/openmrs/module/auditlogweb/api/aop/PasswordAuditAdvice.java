@@ -40,7 +40,9 @@ public class PasswordAuditAdvice  {
     private final AuditService auditService;
 
     @Around("execution(* org.openmrs.api.UserService.isSecretAnswer(..))"
-            + " || execution(* org.openmrs.api.UserService.changePassword(..))")
+            + " || execution(* org.openmrs.api.UserService.changePassword(..))"
+            + " || execution(* org.openmrs.api.UserService.changePasswordUsingSecretAnswer(..))"
+            + " || execution(* org.openmrs.api.UserService.changePasswordUsingActivationKey(..))")
     public Object auditPasswordActivity(ProceedingJoinPoint joinPoint) throws Throwable {
 
         if (AopUtils.isAopProxy(joinPoint.getTarget())) return joinPoint.proceed();
@@ -142,6 +144,10 @@ public class PasswordAuditAdvice  {
      * @return the matching AuditSecurityEventType
      */
     private AuditSecurityEventType resolveEventType(String methodName, String sessionId, boolean success) {
+
+        if ("changePasswordUsingSecretAnswer".equals(methodName) || "changePasswordUsingActivationKey".equals(methodName)) {
+            return success ? AuditSecurityEventType.PASSWORD_RESET_SUCCESS : AuditSecurityEventType.PASSWORD_RESET_FAILURE;
+        }
 
         if ("changePassword".equals(methodName)) {
             if (PasswordResetFlowContext.hasPendingResetRequest(sessionId)) {
