@@ -8,7 +8,7 @@
  */
 package org.openmrs.module.auditlogweb.api.aop;
 
-import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +26,8 @@ import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -44,7 +46,7 @@ class PasswordAuditAdviceTest {
     private AuditService auditService;
 
     @Mock
-    private JoinPoint joinPoint;
+    private ProceedingJoinPoint joinPoint;
 
     @Mock
     private MethodSignature methodSignature;
@@ -76,14 +78,15 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldLogPasswordChangedForManualPasswordChange() throws Exception {
+    void shouldLogPasswordChangedForManualPasswordChange() throws Throwable {
         setRequestContext();
         mockInvocation("changePassword", user, "old-password", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
 
-        advice.afterReturning(joinPoint, null);
+        advice.auditPasswordActivity(joinPoint);
 
         verify(auditService).logSecurityEvent(
-                AuditSecurityEventType.PASSWORD_CHANGED,
+                AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS,
                 USERNAME,
                 1,
                 IP_ADDRESS,
@@ -93,15 +96,16 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldNotIncludeRawPasswordValuesInManualPasswordChangeDetails() throws Exception {
+    void shouldNotIncludeRawPasswordValuesInManualPasswordChangeDetails() throws Throwable {
         setRequestContext();
         mockInvocation("changePassword", user, "old-secret", "new-secret");
+        when(joinPoint.proceed()).thenReturn(null);
 
-        advice.afterReturning(joinPoint, null);
+        advice.auditPasswordActivity(joinPoint);
 
         ArgumentCaptor<String> detailsCaptor = ArgumentCaptor.forClass(String.class);
         verify(auditService).logSecurityEvent(
-                eq(AuditSecurityEventType.PASSWORD_CHANGED),
+                eq(AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS),
                 eq(USERNAME),
                 eq(1),
                 any(),
@@ -114,14 +118,15 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldLogSuccessfulPasswordResetRequestAndMarkResetPending() throws Exception {
+    void shouldLogSuccessfulPasswordResetRequestAndMarkResetPending() throws Throwable {
         setRequestContext();
         mockInvocation("isSecretAnswer", user, "correct-answer");
+        when(joinPoint.proceed()).thenReturn(Boolean.TRUE);
 
-        advice.afterReturning(joinPoint, Boolean.TRUE);
+        advice.auditPasswordActivity(joinPoint);
 
         verify(auditService).logSecurityEvent(
-                AuditSecurityEventType.PASSWORD_RESET_REQUEST,
+                AuditSecurityEventType.PASSWORD_RESET_REQUEST_SUCCESS,
                 USERNAME,
                 1,
                 IP_ADDRESS,
@@ -132,14 +137,15 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldLogFailedPasswordResetRequestWithFailureDetails() throws Exception {
+    void shouldLogFailedPasswordResetRequestWithFailureDetails() throws Throwable {
         setRequestContext();
         mockInvocation("isSecretAnswer", user, "wrong-answer");
+        when(joinPoint.proceed()).thenReturn(Boolean.FALSE);
 
-        advice.afterReturning(joinPoint, Boolean.FALSE);
+        advice.auditPasswordActivity(joinPoint);
 
         verify(auditService).logSecurityEvent(
-                AuditSecurityEventType.PASSWORD_RESET_REQUEST,
+                AuditSecurityEventType.PASSWORD_RESET_REQUEST_FAILURE,
                 USERNAME,
                 1,
                 IP_ADDRESS,
@@ -149,12 +155,13 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldSkipSystemGeneratedTemporaryPasswordChangeAfterResetRequest() throws Exception {
+    void shouldSkipSystemGeneratedTemporaryPasswordChangeAfterResetRequest() throws Throwable {
         setRequestContext();
         PasswordResetFlowContext.markResetRequest(SESSION_ID);
         mockInvocation("changePassword", user, "temporary-password", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
 
-        advice.afterReturning(joinPoint, null);
+        advice.auditPasswordActivity(joinPoint);
 
         verifyNoInteractions(auditService);
         assertTrue(PasswordResetFlowContext.hasPendingResetRequest(SESSION_ID));
@@ -162,16 +169,17 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldLogPasswordResetAndCompleteFlowAfterSystemPasswordChangeWasSkipped() throws Exception {
+    void shouldLogPasswordResetAndCompleteFlowAfterSystemPasswordChangeWasSkipped() throws Throwable {
         setRequestContext();
         PasswordResetFlowContext.markResetRequest(SESSION_ID);
         PasswordResetFlowContext.setPasswordChangedBySystem(SESSION_ID, true);
         mockInvocation("changePassword", user, "temporary-password", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
 
-        advice.afterReturning(joinPoint, null);
+        advice.auditPasswordActivity(joinPoint);
 
         verify(auditService).logSecurityEvent(
-                AuditSecurityEventType.PASSWORD_RESET,
+                AuditSecurityEventType.PASSWORD_RESET_SUCCESS,
                 USERNAME,
                 1,
                 IP_ADDRESS,
@@ -182,13 +190,14 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldLogPasswordChangeWithoutRequestContext() throws Exception {
+    void shouldLogPasswordChangeWithoutRequestContext() throws Throwable {
         mockInvocation("changePassword", user, "old-password", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
 
-        advice.afterReturning(joinPoint, null);
+        advice.auditPasswordActivity(joinPoint);
 
         verify(auditService).logSecurityEvent(
-                AuditSecurityEventType.PASSWORD_CHANGED,
+                AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS,
                 USERNAME,
                 1,
                 null,
@@ -198,29 +207,99 @@ class PasswordAuditAdviceTest {
     }
 
     @Test
-    void shouldSkipLoggingWhenAuditServiceIsNotAvailable() throws Exception {
+    void shouldSkipLoggingWhenAuditServiceIsNotAvailable() throws Throwable {
         PasswordAuditAdvice adviceWithoutAuditService = new PasswordAuditAdvice(null);
         setRequestContext();
         mockInvocation("changePassword", user, "old-password", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
 
-        adviceWithoutAuditService.afterReturning(joinPoint, null);
+        adviceWithoutAuditService.auditPasswordActivity(joinPoint);
 
         verify(auditService, never()).logSecurityEvent(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    void shouldCompleteResetFlowEvenIfAuditServiceThrowsException() throws Exception {
+    void shouldCompleteResetFlowEvenIfAuditServiceThrowsException() throws Throwable {
         setRequestContext();
         PasswordResetFlowContext.markResetRequest(SESSION_ID);
         PasswordResetFlowContext.setPasswordChangedBySystem(SESSION_ID, true);
         mockInvocation("changePassword", user, "temporary-password", "new-password");
+        when(joinPoint.proceed()).thenReturn(null);
 
         org.mockito.Mockito.doThrow(new RuntimeException("Database error"))
                 .when(auditService).logSecurityEvent(any(), any(), any(), any(), any(), any(), any());
 
-        advice.afterReturning(joinPoint, null);
+        advice.auditPasswordActivity(joinPoint);
 
         assertFalse(PasswordResetFlowContext.hasPendingResetRequest(SESSION_ID));
+    }
+
+    @Test
+    void shouldLogPasswordChangedFailureForManualPasswordChangeWhenExceptionThrown() throws Throwable {
+        setRequestContext();
+        mockInvocation("changePassword", user, "old-password", "new-password");
+        RuntimeException testEx = new RuntimeException("Validation error");
+        when(joinPoint.proceed()).thenThrow(testEx);
+
+        Exception thrown = assertThrows(
+                RuntimeException.class,
+                () -> advice.auditPasswordActivity(joinPoint));
+
+        assertSame(testEx, thrown);
+        verify(auditService).logSecurityEvent(
+                AuditSecurityEventType.PASSWORD_CHANGED_FAILURE,
+                USERNAME,
+                1,
+                IP_ADDRESS,
+                USER_AGENT,
+                SESSION_ID,
+                "{\"method\":\"changePassword\"}");
+    }
+
+    @Test
+    void shouldLogPasswordResetFailureAfterResetRequestWhenExceptionThrown() throws Throwable {
+        setRequestContext();
+        PasswordResetFlowContext.markResetRequest(SESSION_ID);
+        PasswordResetFlowContext.setPasswordChangedBySystem(SESSION_ID, true);
+        mockInvocation("changePassword", user, "temporary-password", "new-password");
+        RuntimeException testEx = new RuntimeException("Verification error");
+        when(joinPoint.proceed()).thenThrow(testEx);
+
+        Exception thrown = assertThrows(
+                RuntimeException.class,
+                () -> advice.auditPasswordActivity(joinPoint));
+
+        assertSame(testEx, thrown);
+        verify(auditService).logSecurityEvent(
+                AuditSecurityEventType.PASSWORD_RESET_FAILURE,
+                USERNAME,
+                1,
+                IP_ADDRESS,
+                USER_AGENT,
+                SESSION_ID,
+                "{\"method\":\"changePassword\"}");
+    }
+
+    @Test
+    void shouldLogPasswordResetRequestFailureWhenExceptionThrown() throws Throwable {
+        setRequestContext();
+        mockInvocation("isSecretAnswer", user, "some-answer");
+        RuntimeException testEx = new RuntimeException("DB offline");
+        when(joinPoint.proceed()).thenThrow(testEx);
+
+        Exception thrown = assertThrows(
+                RuntimeException.class,
+                () -> advice.auditPasswordActivity(joinPoint));
+
+        assertSame(testEx, thrown);
+        verify(auditService).logSecurityEvent(
+                AuditSecurityEventType.PASSWORD_RESET_REQUEST_FAILURE,
+                USERNAME,
+                1,
+                IP_ADDRESS,
+                USER_AGENT,
+                SESSION_ID,
+                "{\"requestType\":\"secret_question_answer\", \"isRequestSuccess\": false}");
     }
 
     private void setRequestContext() {

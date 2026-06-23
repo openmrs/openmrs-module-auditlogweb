@@ -87,17 +87,17 @@
                         <td><c:out value="${event.eventTime}"/></td>
                         <td>
                             <c:choose>
-                                <c:when test="${fn:contains(event.eventType,'LOGIN_SUCCESS')}">
-                                     <span class="badge badge-login-success"><c:out value="${event.eventType}"/></span>
+                                <c:when test="${fn:contains(event.eventType, 'SUCCESS')}">
+                                     <span class="badge badge-success"><c:out value="${event.eventType}"/></span>
                                 </c:when>
-                                <c:when test="${fn:contains(event.eventType, 'PASSWORD') || fn:contains(event.eventType, 'LOGOUT')}">
-                                    <span class="badge badge-logout"><c:out value="${event.eventType}"/></span>
+                                <c:when test="${fn:contains(event.eventType, 'FAILURE') || fn:contains(event.eventType, 'ACCOUNT')}">
+                                     <span class="badge badge-failure"><c:out value="${event.eventType}"/></span>
                                 </c:when>
-                                <c:when test="${fn:contains(event.eventType, 'LOGIN_FAILURE') ||  fn:contains(event.eventType, 'ACCOUNT')}">
-                                    <span class="badge badge-security"><c:out value="${event.eventType}"/></span>
+                                <c:when test="${fn:contains(event.eventType, 'SESSION') || fn:contains(event.eventType, 'LOGOUT')}">
+                                     <span class="badge badge-logout"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:otherwise>
-                                    <span class="badge badge-password"><c:out value="${event.eventType}"/></span>
+                                     <span class="badge badge-password"><c:out value="${event.eventType}"/></span>
                                 </c:otherwise>
                             </c:choose>
                         </td>

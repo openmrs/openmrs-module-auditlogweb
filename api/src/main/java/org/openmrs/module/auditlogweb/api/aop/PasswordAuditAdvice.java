@@ -11,8 +11,8 @@ package org.openmrs.module.auditlogweb.api.aop;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.openmrs.User;
@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * It listens for activity or specifically the password related functions like #isSecretAnswer & #changePassword from the OpenMRS core,
- * and stamps the event like : PASSWORD_CHANGED, PASSWORD_RESET_REQUEST, PASSWORD_RESET
+ * and stamps the event like : PASSWORD_CHANGED_SUCCESS, PASSWORD_CHANGED_FAILURE, PASSWORD_RESET_REQUEST_SUCCESS, PASSWORD_RESET_REQUEST_FAILURE, PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILURE
  *
  */
 @Aspect
@@ -39,24 +39,29 @@ public class PasswordAuditAdvice  {
     private static final Logger log = LoggerFactory.getLogger(PasswordAuditAdvice.class);
     private final AuditService auditService;
 
-    @AfterReturning(
-            pointcut = "execution(* org.openmrs.api.UserService.isSecretAnswer(..))"
-                    + " || execution(* org.openmrs.api.UserService.changePassword(..))",
-            returning = "returnValue")
-    public void afterReturning(JoinPoint joinPoint, Object returnValue) {
+    @Around("execution(* org.openmrs.api.UserService.isSecretAnswer(..))"
+            + " || execution(* org.openmrs.api.UserService.changePassword(..))")
+    public Object auditPasswordActivity(ProceedingJoinPoint joinPoint) throws Throwable {
 
-        if (AopUtils.isAopProxy(joinPoint.getTarget())) return;
+        if (AopUtils.isAopProxy(joinPoint.getTarget())) return joinPoint.proceed();
 
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        String methodName = signature.getMethod().getName();
-        Object[] args = joinPoint.getArgs();
+        String methodName = null;
+        Object[] args = null;
+        String sessionId = null;
+        String ipAddress = null;
+        String userAgent = null;
         boolean isPasswordResetRequestSuccess = false;
+        boolean bypassLogging = false;
 
         try {
+            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+            methodName = signature.getMethod().getName();
+            args = joinPoint.getArgs();
+
             SecurityAuditContext ctx = SecurityAuditContext.get();
-            String sessionId = ctx != null ? ctx.getSessionId() : null;
-            String ipAddress = ctx != null ? ctx.getIpAddress() : null;
-            String userAgent = ctx != null ? ctx.getUserAgent() : null;
+            sessionId = ctx != null ? ctx.getSessionId() : null;
+            ipAddress = ctx != null ? ctx.getIpAddress() : null;
+            userAgent = ctx != null ? ctx.getUserAgent() : null;
 
             /* It ignores the #changePassword request triggered automatically by the system after
                #isSecretAnswer successfully verifies the secret answer and it sets a temporary password.
@@ -66,37 +71,53 @@ public class PasswordAuditAdvice  {
             if("changePassword".equals(methodName) && PasswordResetFlowContext.hasPendingResetRequest(sessionId)
             && !PasswordResetFlowContext.isPasswordChangedBySystem(sessionId)) {
                 PasswordResetFlowContext.setPasswordChangedBySystem(sessionId,true);
-                return;
+                bypassLogging = true;
             }
 
             // Reached here means the request is only for verifying the secret answer before allowing the password reset.
-            if ("isSecretAnswer".equals(methodName)) {
+            if (!bypassLogging && "isSecretAnswer".equals(methodName)) {
                 PasswordResetFlowContext.markResetRequest(sessionId);
-                if(Boolean.TRUE.equals(returnValue)){
+            }
+        } catch (Exception e) {
+            log.error("Failed to setup password audit context, proceeding with original invocation", e);
+            return joinPoint.proceed();
+        }
+
+        if (bypassLogging) {
+            return joinPoint.proceed();
+        }
+
+        Object returnValue = null;
+        boolean success = false;
+        try {
+            returnValue = joinPoint.proceed();
+            success = true;
+            if ("isSecretAnswer".equals(methodName)) {
+                if (Boolean.TRUE.equals(returnValue)) {
                     isPasswordResetRequestSuccess = true;
+                } else {
+                    success = false;
                 }
             }
-
-            /* Reached here means the request is one of the following:
-                 1. Secret answer verification succeeded, resulting in PASSWORD_RESET_REQUEST.
-                 2. Password reset succeeded after secret answer verification, resulting in PASSWORD_RESET.
-                 3. Password has changed manually, resulting in PASSWORD_CHANGED.
-             */
-
-            AuditSecurityEventType eventType = resolveEventType(methodName, sessionId);
+            return returnValue;
+        } catch (Throwable t) {
+            success = false;
+            throw t;
+        } finally {
+            AuditSecurityEventType eventType = resolveEventType(methodName, sessionId, success);
             String username = getUsername(args);
             Integer userId = getUserId(args);
-            String details = buildDetails(methodName,isPasswordResetRequestSuccess);
+            String details = buildDetails(methodName, isPasswordResetRequestSuccess);
 
             try {
-                if (auditService == null) {
+                if (auditService != null) {
+                    auditService.logSecurityEvent(eventType, username, userId, ipAddress, userAgent, sessionId, details);
+                } else {
                     log.warn("Audit service is not registered, skipping password audit event for method [{}]", methodName);
-                    return;
                 }
-
-                auditService.logSecurityEvent(eventType, username, userId, ipAddress, userAgent, sessionId, details);
-            }
-            finally {
+            } catch (Exception e) {
+                log.error("Failed to log password audit event for method [{}]", methodName, e);
+            } finally {
                 /* Checking whether this #changePassword call was triggered as part of a password reset
                   flow after successful secret answer verification. If so, then mark the reset request as completed and remove it.
                   This check is performed at the end because we first need to know whether
@@ -108,30 +129,28 @@ public class PasswordAuditAdvice  {
                     PasswordResetFlowContext.markResetCompleted(sessionId);
                 }
             }
-
-        } catch (Exception e) {
-            log.error("Failed to log password audit event for method [{}]", methodName, e);
         }
     }
 
     /**
-     * Resolve the audit event type to log based on the invoked method and
-     * the current password reset flow state for the session.
+     * Resolve the audit event type to log based on the invoked method,
+     * the current password reset flow state for the session, and whether it succeeded.
      *
      * @param methodName the invoked method name
      * @param sessionId the session identifier used to check reset state
+     * @param success whether the execution succeeded
      * @return the matching AuditSecurityEventType
      */
-    private AuditSecurityEventType resolveEventType(String methodName, String sessionId) {
+    private AuditSecurityEventType resolveEventType(String methodName, String sessionId, boolean success) {
 
         if ("changePassword".equals(methodName)) {
             if (PasswordResetFlowContext.hasPendingResetRequest(sessionId)) {
-                return AuditSecurityEventType.PASSWORD_RESET;
+                return success ? AuditSecurityEventType.PASSWORD_RESET_SUCCESS : AuditSecurityEventType.PASSWORD_RESET_FAILURE;
             }
-            return AuditSecurityEventType.PASSWORD_CHANGED;
+            return success ? AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS : AuditSecurityEventType.PASSWORD_CHANGED_FAILURE;
         }
 
-        return AuditSecurityEventType.PASSWORD_RESET_REQUEST;
+        return success ? AuditSecurityEventType.PASSWORD_RESET_REQUEST_SUCCESS : AuditSecurityEventType.PASSWORD_RESET_REQUEST_FAILURE;
     }
 
     private String getUsername(Object[] args) {

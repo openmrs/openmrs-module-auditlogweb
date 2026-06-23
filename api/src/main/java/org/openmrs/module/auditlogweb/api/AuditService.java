@@ -305,7 +305,9 @@ public interface AuditService {
      * Persists a security audit event to the  audit_security_event table.
      *
      * @param eventType   one of LOGIN_SUCCESS, LOGIN_FAILURE, ACCOUNT_LOCKED, LOGOUT,
-     *                    SESSION_TIMEOUT, PASSWORD_CHANGED, PASSWORD_RESET
+     *                    SESSION_TIMEOUT, PASSWORD_RESET_REQUEST_SUCCESS, PASSWORD_RESET_REQUEST_FAILURE,
+     *                    PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILURE, PASSWORD_CHANGED_SUCCESS,
+     *                    PASSWORD_CHANGED_FAILURE
      * @param username    the username involved in the event (may be null for anonymous sessions)
      * @param userId      the OpenMRS user_id (nullable when the user doesn't exist in the DB)
      * @param ipAddress   the client IP address extracted from the request (nullable)

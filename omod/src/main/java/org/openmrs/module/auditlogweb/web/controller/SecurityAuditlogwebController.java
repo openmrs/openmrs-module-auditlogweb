@@ -98,9 +98,12 @@ public class SecurityAuditlogwebController {
                 "ACCOUNT_LOCKED",
                 "LOGOUT",
                 "SESSION_TIMEOUT",
-                "PASSWORD_RESET_REQUEST",
-                "PASSWORD_RESET",
-                "PASSWORD_CHANGED");
+                "PASSWORD_RESET_REQUEST_SUCCESS",
+                "PASSWORD_RESET_REQUEST_FAILURE",
+                "PASSWORD_RESET_SUCCESS",
+                "PASSWORD_RESET_FAILURE",
+                "PASSWORD_CHANGED_SUCCESS",
+                "PASSWORD_CHANGED_FAILURE");
     }
 
     private Date parseStartDate(String startDate) {

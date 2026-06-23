@@ -38,7 +38,9 @@ public class AuditSecurityEvent extends BaseOpenmrsObject {
 
     /**
      * One of: LOGIN_SUCCESS, LOGIN_FAILURE, ACCOUNT_LOCKED, LOGOUT,
-     * SESSION_TIMEOUT, PASSWORD_CHANGED, PASSWORD_RESET.
+     * SESSION_TIMEOUT, PASSWORD_RESET_REQUEST_SUCCESS, PASSWORD_RESET_REQUEST_FAILURE,
+     * PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILURE, PASSWORD_CHANGED_SUCCESS,
+     * PASSWORD_CHANGED_FAILURE.
      */
     @Column(name = "event_type", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)

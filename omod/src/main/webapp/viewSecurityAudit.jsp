@@ -38,14 +38,14 @@
                         <td class="label-cell">Event Type</td>
                         <td>
                             <c:choose>
-                                <c:when test="${fn:contains(event.eventType,'LOGIN_SUCCESS')}">
-                                     <span class="badge badge-login-success"><c:out value="${event.eventType}"/></span>
+                                <c:when test="${fn:contains(event.eventType, 'SUCCESS')}">
+                                     <span class="badge badge-success"><c:out value="${event.eventType}"/></span>
                                 </c:when>
-                                <c:when test="${fn:contains(event.eventType, 'PASSWORD') || fn:contains(event.eventType, 'LOGOUT')}">
+                                <c:when test="${fn:contains(event.eventType, 'FAILURE') || fn:contains(event.eventType, 'ACCOUNT')}">
+                                     <span class="badge badge-failure"><c:out value="${event.eventType}"/></span>
+                                </c:when>
+                                <c:when test="${fn:contains(event.eventType, 'SESSION') || fn:contains(event.eventType, 'LOGOUT')}">
                                     <span class="badge badge-logout"><c:out value="${event.eventType}"/></span>
-                                </c:when>
-                                <c:when test="${fn:contains(event.eventType, 'LOGIN_FAILURE') ||  fn:contains(event.eventType, 'ACCOUNT')}">
-                                    <span class="badge badge-security"><c:out value="${event.eventType}"/></span>
                                 </c:when>
                                 <c:otherwise>
                                     <span class="badge badge-password"><c:out value="${event.eventType}"/></span>
@@ -141,17 +141,17 @@
                                 <td><fmt:formatDate value="${relEvent.eventTime}" pattern="HH:mm:ss" /></td>
                                 <td>
                                     <c:choose>
-                                        <c:when test="${fn:contains(relEvent.eventType,'LOGIN_SUCCESS')}">
-                                             <span class="badge badge-login-success"><c:out value="${relEvent.eventType}"/></span>
+                                        <c:when test="${fn:contains(relEvent.eventType, 'SUCCESS')}">
+                                             <span class="badge badge-success"><c:out value="${relEvent.eventType}"/></span>
+                                        </c:when>
+                                        <c:when test="${fn:contains(relEvent.eventType, 'FAILURE') || fn:contains(relEvent.eventType, 'ACCOUNT')}">
+                                             <span class="badge badge-failure"><c:out value="${relEvent.eventType}"/></span>
                                         </c:when>
                                         <c:when test="${fn:contains(relEvent.eventType, 'PASSWORD') || fn:contains(relEvent.eventType, 'LOGOUT')}">
-                                            <span class="badge badge-logout"><c:out value="${relEvent.eventType}"/></span>
-                                        </c:when>
-                                        <c:when test="${fn:contains(relEvent.eventType, 'LOGIN_FAILURE') ||  fn:contains(relEvent.eventType, 'ACCOUNT')}">
-                                            <span class="badge badge-security"><c:out value="${relEvent.eventType}"/></span>
+                                             <span class="badge badge-logout"><c:out value="${relEvent.eventType}"/></span>
                                         </c:when>
                                         <c:otherwise>
-                                            <span class="badge badge-password"><c:out value="${relEvent.eventType}"/></span>
+                                             <span class="badge badge-password"><c:out value="${relEvent.eventType}"/></span>
                                         </c:otherwise>
                                     </c:choose>
                                 </td>

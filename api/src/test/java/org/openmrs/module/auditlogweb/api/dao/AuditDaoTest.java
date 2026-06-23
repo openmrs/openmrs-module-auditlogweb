@@ -558,14 +558,14 @@ class AuditDaoTest {
     void shouldReturnSecurityEventCount_WhenEventTypeFilterProvided() {
         when(session.createQuery(anyString(), eq(Long.class)))
                 .thenReturn(countQuery);
-        when(countQuery.setParameter(eq("eventType"), eq(AuditSecurityEventType.PASSWORD_CHANGED)))
+        when(countQuery.setParameter(eq("eventType"), eq(AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS)))
                 .thenReturn(countQuery);
         when(countQuery.getSingleResult()).thenReturn(3L);
 
-        long count = auditDao.countSecurityEvents("PASSWORD_CHANGED", null, null, null);
+        long count = auditDao.countSecurityEvents("PASSWORD_CHANGED_SUCCESS", null, null, null);
 
         assertThat(count, is(3L));
-        verify(countQuery).setParameter("eventType", AuditSecurityEventType.PASSWORD_CHANGED);
+        verify(countQuery).setParameter("eventType", AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS);
     }
 
     @Test

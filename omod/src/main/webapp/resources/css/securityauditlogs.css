@@ -159,9 +159,9 @@
 }
 
 .badge-logout { background: #d0e1ff; color: #0043ce; }
-.badge-security { background: #fff1f1; color: #750e13; }
+.badge-failure { background: #fff1f1; color: #750e13; }
 .badge-password { background: #e0f2f1; color: #004d40; }
-.badge-login-success{ background: #1bac9a21; color: #1bac9a;}
+.badge-success{ background: #1bac9a21; color: #1bac9a;}
 
 .security-meta {
     color: #6f6f6f;
