@@ -15,8 +15,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.context.UserContext;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.listener.ExplicitLogoutSessionTracker;
@@ -27,6 +29,7 @@ import org.openmrs.web.WebConstants;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class SessionTimeoutListenerTest {
@@ -54,7 +57,9 @@ class SessionTimeoutListenerTest {
     void shouldAuditActualSessionTimeout(){
         HttpSession newSession = session(SESSION_ID, "admin");
 
-        listener.sessionDestroyed(new HttpSessionEvent(newSession));
+        try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
+            listener.sessionDestroyed(new HttpSessionEvent(newSession));
+        }
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.SESSION_TIMEOUT,
                 "admin",

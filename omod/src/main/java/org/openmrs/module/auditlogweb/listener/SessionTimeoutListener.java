@@ -14,6 +14,7 @@ import javax.servlet.http.HttpSessionListener;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.context.UserContext;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
@@ -52,6 +53,7 @@ public class SessionTimeoutListener implements HttpSessionListener {
         if (StringUtils.isBlank(username)) return;
 
         try {
+            Context.openSession();
             auditService.logSecurityEvent(
                     AuditSecurityEventType.SESSION_TIMEOUT,
                     username,
@@ -62,6 +64,8 @@ public class SessionTimeoutListener implements HttpSessionListener {
                     null);
         } catch (Exception e) {
             log.error("Failed to log SESSION_TIMEOUT for user [{}]", username, e);
+        } finally {
+            Context.closeSession();
         }
     }
 
