@@ -570,8 +570,14 @@ class AuditDaoTest {
 
     @Test
     void shouldReturnSecurityEvent_WhenFoundById() {
-        AuditSecurityEvent expected = buildSecurityEvent(AuditSecurityEventType.SESSION_TIMEOUT, "user1");
-        expected.setId(99);
+        AuditSecurityEvent expected = AuditSecurityEvent.builder()
+                .eventType(AuditSecurityEventType.SESSION_TIMEOUT)
+                .username("user1")
+                .eventTime(new Date())
+                .ipAddress("127.0.0.1")
+                .sessionId("test-session-id")
+                .id(99)
+                .build();
 
         when(session.createQuery(anyString(), eq(AuditSecurityEvent.class)))
                 .thenReturn(securityEventQuery);
@@ -650,12 +656,12 @@ class AuditDaoTest {
 
     /** Helper function to build AuditSecurityEvent for use in tests. */
     private AuditSecurityEvent buildSecurityEvent(AuditSecurityEventType type, String username) {
-        AuditSecurityEvent event = new AuditSecurityEvent();
-        event.setEventType(type);
-        event.setUsername(username);
-        event.setEventTime(new Date());
-        event.setIpAddress("127.0.0.1");
-        event.setSessionId("test-session-id");
-        return event;
+        return AuditSecurityEvent.builder()
+                .eventType(type)
+                .username(username)
+                .eventTime(new Date())
+                .ipAddress("127.0.0.1")
+                .sessionId("test-session-id")
+                .build();
     }
 }

@@ -364,9 +364,11 @@ class AuditServiceImplTest {
     void shouldReturnSecurityEventsGivenFiltersAndPagination() {
         Date startDate = new Date(1000L);
         Date endDate = new Date(2000L);
-        AuditSecurityEvent securityEvent = new AuditSecurityEvent();
-        securityEvent.setEventType(AuditSecurityEventType.LOGIN_FAILURE);
-        securityEvent.setUsername("admin");
+        AuditSecurityEvent securityEvent = AuditSecurityEvent.builder()
+                .eventType(AuditSecurityEventType.LOGIN_FAILURE)
+                .username("admin")
+                .eventTime(new Date())
+                .build();
 
         when(auditDao.getSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate, 0, 10))
                 .thenReturn(Collections.singletonList(securityEvent));
@@ -384,10 +386,6 @@ class AuditServiceImplTest {
     void shouldReturnCountOfSecurityEventsWithGivenFilers(){
         Date startDate = new Date(1000L);
         Date endDate = new Date(2000L);
-        AuditSecurityEvent securityEvent = new AuditSecurityEvent();
-        securityEvent.setEventType(AuditSecurityEventType.LOGIN_FAILURE);
-        securityEvent.setUsername("admin");
-
         when(auditDao.countSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate))
                 .thenReturn(10L);
 
@@ -398,7 +396,10 @@ class AuditServiceImplTest {
 
     @Test
     void shouldReturnSecurityEventById(){
-        AuditSecurityEvent securityEvent = new AuditSecurityEvent();
+        AuditSecurityEvent securityEvent = AuditSecurityEvent.builder()
+                .eventType(AuditSecurityEventType.LOGIN_SUCCESS)
+                .eventTime(new Date())
+                .build();
         when(auditDao.getSecurityEventById(12)).thenReturn(securityEvent);
         AuditSecurityEvent result = auditService.getSecurityEventById(12);
 
@@ -408,11 +409,17 @@ class AuditServiceImplTest {
 
     @Test
     void shouldReturnRelatedSecurityEvents(){
-        AuditSecurityEvent relatedSecurityEvent1 = new AuditSecurityEvent();
-        relatedSecurityEvent1.setSessionId("session-123");
+        AuditSecurityEvent relatedSecurityEvent1 = AuditSecurityEvent.builder()
+                .eventType(AuditSecurityEventType.LOGIN_SUCCESS)
+                .eventTime(new Date())
+                .sessionId("session-123")
+                .build();
 
-        AuditSecurityEvent relatedSecurityEvent2 = new AuditSecurityEvent();
-        relatedSecurityEvent2.setSessionId("session-123");
+        AuditSecurityEvent relatedSecurityEvent2 = AuditSecurityEvent.builder()
+                .eventType(AuditSecurityEventType.LOGIN_SUCCESS)
+                .eventTime(new Date())
+                .sessionId("session-123")
+                .build();
 
         when(auditDao.getRelatedSecurityEvents("session-123",2)).thenReturn(Arrays.asList(relatedSecurityEvent1, relatedSecurityEvent2));
 

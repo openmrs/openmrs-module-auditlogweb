@@ -8,8 +8,12 @@
  */
 package org.openmrs.module.auditlogweb;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import org.openmrs.BaseOpenmrsObject;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
@@ -29,7 +33,9 @@ import java.util.Date;
 @Entity
 @Table(name = "audit_security_event")
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AuditSecurityEvent extends BaseOpenmrsObject {
 
     @Id
@@ -44,6 +50,7 @@ public class AuditSecurityEvent extends BaseOpenmrsObject {
      */
     @Column(name = "event_type", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
+    @NonNull
     private AuditSecurityEventType eventType;
 
     @Column(name = "username", length = 50)
@@ -53,6 +60,7 @@ public class AuditSecurityEvent extends BaseOpenmrsObject {
     private Integer userId;
 
     @Column(name = "event_time", nullable = false)
+    @NonNull
     private Date eventTime;
 
     @Column(name = "ip_address", length = 100)
@@ -66,5 +74,13 @@ public class AuditSecurityEvent extends BaseOpenmrsObject {
 
     @Column(name = "details", columnDefinition = "TEXT")
     private String details;
+
+    @Override
+    public void setId(Integer id) {
+        if (this.id != null && !this.id.equals(id)) {
+            throw new UnsupportedOperationException("Id cannot be mutated once set");
+        }
+        this.id = id;
+    }
 
 }
