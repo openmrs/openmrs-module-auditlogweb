@@ -20,7 +20,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
@@ -60,7 +60,7 @@ public class PasswordAuditAdvice  {
             methodName = signature.getMethod().getName();
             args = joinPoint.getArgs();
 
-            SecurityAuditContext ctx = SecurityAuditContext.get();
+            AuditLogContext ctx = AuditLogContext.get();
             sessionId = ctx != null ? ctx.getSessionId() : null;
             ipAddress = ctx != null ? ctx.getIpAddress() : null;
             userAgent = ctx != null ? ctx.getUserAgent() : null;

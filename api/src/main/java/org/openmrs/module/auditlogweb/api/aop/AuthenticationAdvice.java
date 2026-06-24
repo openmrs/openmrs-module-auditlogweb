@@ -22,7 +22,7 @@ import org.openmrs.util.OpenmrsConstants;
 import java.util.concurrent.TimeUnit;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.openmrs.module.auditlogweb.api.listener.LoginFixationSessionTracker;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ public class AuthenticationAdvice {
     @Around("execution(* org.openmrs.api.db.hibernate.HibernateContextDAO.authenticate(..))")
     public Object authenticate(ProceedingJoinPoint joinPoint) throws Throwable {
 
-        SecurityAuditContext ctx = SecurityAuditContext.get();
+        AuditLogContext ctx = AuditLogContext.get();
         String sessionId = ctx != null ? ctx.getSessionId() : null;
         String ipAddress = ctx != null ? ctx.getIpAddress() : null;
         String userAgent = ctx != null ? ctx.getUserAgent() : null;
@@ -194,7 +194,7 @@ public class AuthenticationAdvice {
     }
 
     private void markSessionAsLoginFixation() {
-        SecurityAuditContext ctx = SecurityAuditContext.get();
+        AuditLogContext ctx = AuditLogContext.get();
         String sessionId = ctx != null ? ctx.getSessionId() : null;
         if (sessionId == null) return;
         LoginFixationSessionTracker.mark(sessionId);

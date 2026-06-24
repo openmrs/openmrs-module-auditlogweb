@@ -39,9 +39,9 @@ class PasswordAuditAdviceIntegrationTest extends BaseContextSensitiveTest {
     public void shouldLogPasswordResetRequestSuccessAndPasswordResetSuccessInRealFlow() throws Exception {
         int initialCount = auditService.getSecurityEvents(null, null, null, null, 0, 100).size();
 
-        SecurityAuditContext ctx = new SecurityAuditContext();
+        AuditLogContext ctx = new AuditLogContext();
         ctx.setSessionId("test-session-1");
-        SecurityAuditContext.set(ctx);
+        AuditLogContext.set(ctx);
 
         boolean answerMatches = userService.isSecretAnswer(testUser, "blue");
         assertTrue(answerMatches);
@@ -67,16 +67,16 @@ class PasswordAuditAdviceIntegrationTest extends BaseContextSensitiveTest {
         assertTrue(foundRequestSuccess);
         assertTrue(foundResetSuccess);
 
-        SecurityAuditContext.clear();
+        AuditLogContext.clear();
     }
 
     @Test
     public void shouldLogPasswordResetRequestFailureInRealFlow() throws Exception {
         int initialCount = auditService.getSecurityEvents(null, null, null, null, 0, 100).size();
 
-        SecurityAuditContext ctx = new SecurityAuditContext();
+        AuditLogContext ctx = new AuditLogContext();
         ctx.setSessionId("test-session-2");
-        SecurityAuditContext.set(ctx);
+        AuditLogContext.set(ctx);
 
         boolean answerMatches = userService.isSecretAnswer(testUser, "wrong-answer");
         assertFalse(answerMatches);
@@ -94,16 +94,16 @@ class PasswordAuditAdviceIntegrationTest extends BaseContextSensitiveTest {
         }
 
         assertTrue(foundRequestFailure);
-        SecurityAuditContext.clear();
+        AuditLogContext.clear();
     }
 
     @Test
     public void shouldLogPasswordResetFailureWhenActivationKeyIsInvalid() throws Exception {
         int initialCount = auditService.getSecurityEvents(null, null, null, null, 0, 100).size();
 
-        SecurityAuditContext ctx = new SecurityAuditContext();
+        AuditLogContext ctx = new AuditLogContext();
         ctx.setSessionId("test-session-3");
-        SecurityAuditContext.set(ctx);
+        AuditLogContext.set(ctx);
 
         try {
             userService.changePasswordUsingActivationKey("invalid-key", "NewPassword123!");
@@ -124,6 +124,6 @@ class PasswordAuditAdviceIntegrationTest extends BaseContextSensitiveTest {
         }
 
         assertTrue(foundResetFailure);
-        SecurityAuditContext.clear();
+        AuditLogContext.clear();
     }
 }

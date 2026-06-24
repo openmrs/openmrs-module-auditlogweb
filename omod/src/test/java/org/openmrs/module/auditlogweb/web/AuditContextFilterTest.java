@@ -20,7 +20,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -53,7 +53,7 @@ class AuditContextFilterTest {
 
     @AfterEach
     void cleanUp() throws Exception {
-        SecurityAuditContext.clear();
+        AuditLogContext.clear();
         if (mocks != null) {
             mocks.close();
         }
@@ -69,7 +69,7 @@ class AuditContextFilterTest {
             contextMock.when(Context::isAuthenticated).thenReturn(false);
 
             doAnswer(invocation -> {
-                SecurityAuditContext ctx = SecurityAuditContext.get();
+                AuditLogContext ctx = AuditLogContext.get();
                 assertNotNull(ctx);
                 assertEquals("192.168.1.1", ctx.getIpAddress());
                 assertEquals("Mozilla/5.0", ctx.getUserAgent());
@@ -81,7 +81,7 @@ class AuditContextFilterTest {
             filter.doFilter(request, response, filterChain);
 
             verify(filterChain).doFilter(request, response);
-            assertNull(SecurityAuditContext.get());
+            assertNull(AuditLogContext.get());
         }
     }
 
@@ -100,7 +100,7 @@ class AuditContextFilterTest {
             contextMock.when(Context::getAuthenticatedUser).thenReturn(user);
 
             doAnswer(invocation -> {
-                SecurityAuditContext ctx = SecurityAuditContext.get();
+                AuditLogContext ctx = AuditLogContext.get();
                 assertNotNull(ctx);
                 assertEquals("203.0.113.195", ctx.getIpAddress());
                 assertEquals("Mozilla/5.0", ctx.getUserAgent());
@@ -112,7 +112,7 @@ class AuditContextFilterTest {
             filter.doFilter(request, response, filterChain);
 
             verify(filterChain).doFilter(request, response);
-            assertNull(SecurityAuditContext.get());
+            assertNull(AuditLogContext.get());
         }
     }
 
@@ -125,7 +125,7 @@ class AuditContextFilterTest {
         doThrow(new ServletException("Filter chain exception")).when(filterChain).doFilter(request, response);
 
         assertThrows(ServletException.class, () -> filter.doFilter(request, response, filterChain));
-        assertNull(SecurityAuditContext.get());
+        assertNull(AuditLogContext.get());
     }
 
     @Test
@@ -133,13 +133,13 @@ class AuditContextFilterTest {
         when(request.getSession(false)).thenThrow(new RuntimeException("Session retrieval error"));
 
         doAnswer(invocation -> {
-            assertNull(SecurityAuditContext.get());
+            assertNull(AuditLogContext.get());
             return null;
         }).when(filterChain).doFilter(request, response);
 
         filter.doFilter(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
-        assertNull(SecurityAuditContext.get());
+        assertNull(AuditLogContext.get());
     }
 }

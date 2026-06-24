@@ -19,7 +19,7 @@ import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
 import java.lang.reflect.Method;
@@ -70,7 +70,7 @@ class PasswordAuditAdviceTest {
 
     @AfterEach
     void cleanUp() throws Exception {
-        SecurityAuditContext.clear();
+        AuditLogContext.clear();
         PasswordResetFlowContext.markResetCompleted(SESSION_ID);
         if (mocks != null) {
             mocks.close();
@@ -385,11 +385,11 @@ class PasswordAuditAdviceTest {
     }
 
     private void setRequestContext() {
-        SecurityAuditContext context = new SecurityAuditContext();
+        AuditLogContext context = new AuditLogContext();
         context.setIpAddress(IP_ADDRESS);
         context.setUserAgent(USER_AGENT);
         context.setSessionId(SESSION_ID);
-        SecurityAuditContext.set(context);
+        AuditLogContext.set(context);
     }
 
     private void mockInvocation(String methodName, Object... args) throws Exception {

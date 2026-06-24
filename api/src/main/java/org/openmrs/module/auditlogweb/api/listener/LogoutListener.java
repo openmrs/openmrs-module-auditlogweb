@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.openmrs.User;
 import org.openmrs.UserSessionListener;
 import org.openmrs.module.auditlogweb.api.AuditService;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ public class LogoutListener implements UserSessionListener {
 
             if(event != Event.LOGOUT) return;
 
-            SecurityAuditContext ctx = SecurityAuditContext.get();
+            AuditLogContext ctx = AuditLogContext.get();
             String ipAddress = ctx != null ? ctx.getIpAddress() : null;
             String userAgent = ctx != null ? ctx.getUserAgent() : null;
             String sessionId = ctx != null ? ctx.getSessionId() : null;
@@ -67,7 +67,7 @@ public class LogoutListener implements UserSessionListener {
      *
      * @param ctx   the security audit context
      */
-    private void markSessionAsExplicitLogout(SecurityAuditContext ctx) {
+    private void markSessionAsExplicitLogout(AuditLogContext ctx) {
         String sessionId = ctx != null ? ctx.getSessionId() : null;
         if (sessionId == null) {
             return;

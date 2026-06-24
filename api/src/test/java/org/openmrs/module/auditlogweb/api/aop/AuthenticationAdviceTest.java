@@ -24,7 +24,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.PasswordResetFlowContext;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.openmrs.module.auditlogweb.api.listener.LoginFixationSessionTracker;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.util.OpenmrsConstants;
@@ -82,7 +82,7 @@ class AuthenticationAdviceTest {
 
     @AfterEach
     void cleanUp() throws Exception {
-        SecurityAuditContext.clear();
+        AuditLogContext.clear();
         PasswordResetFlowContext.markResetCompleted(SESSION_ID);
         LoginFixationSessionTracker.consume(SESSION_ID);
         if (mocks != null) {
@@ -334,10 +334,10 @@ class AuthenticationAdviceTest {
     }
 
     private void setRequestContext() {
-        SecurityAuditContext context = new SecurityAuditContext();
+        AuditLogContext context = new AuditLogContext();
         context.setIpAddress(IP_ADDRESS);
         context.setUserAgent(USER_AGENT);
         context.setSessionId(SESSION_ID);
-        SecurityAuditContext.set(context);
+        AuditLogContext.set(context);
     }
 }

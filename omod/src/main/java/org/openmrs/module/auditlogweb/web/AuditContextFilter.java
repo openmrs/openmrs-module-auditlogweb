@@ -17,16 +17,14 @@ import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.Context;
-import org.openmrs.api.context.UserContext;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
-import org.openmrs.web.WebConstants;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Captures request context for security auditing.
- * And stores IP/User-Agent/session info in {@link SecurityAuditContext}, and clears the context after the request.
+ * And stores IP/User-Agent/session info in {@link AuditLogContext}, and clears the context after the request.
  */
 public class AuditContextFilter extends OncePerRequestFilter {
 
@@ -39,8 +37,8 @@ public class AuditContextFilter extends OncePerRequestFilter {
         try {
             HttpSession session = request.getSession(false); 
 
-            SecurityAuditContext ctx = buildContext(request, session);
-            SecurityAuditContext.set(ctx);
+            AuditLogContext ctx = buildContext(request, session);
+            AuditLogContext.set(ctx);
         } catch (Exception e) {
             log.warn("AuditContextFilter: failed to populate SecurityAuditContext", e);
         }
@@ -48,12 +46,12 @@ public class AuditContextFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
-            SecurityAuditContext.clear();
+            AuditLogContext.clear();
         }
     }
 
-    private SecurityAuditContext buildContext(HttpServletRequest request, HttpSession session) {
-        SecurityAuditContext ctx = new SecurityAuditContext();
+    private AuditLogContext buildContext(HttpServletRequest request, HttpSession session) {
+        AuditLogContext ctx = new AuditLogContext();
         ctx.setIpAddress(resolveClientIp(request));
         ctx.setUserAgent(request.getHeader("User-Agent"));
         if (session != null) {

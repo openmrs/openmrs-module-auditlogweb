@@ -16,7 +16,7 @@ import org.mockito.MockitoAnnotations;
 import org.openmrs.User;
 import org.openmrs.UserSessionListener.Event;
 import org.openmrs.module.auditlogweb.api.AuditService;
-import org.openmrs.module.auditlogweb.api.SecurityAuditContext;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -45,17 +45,17 @@ class LogoutListenerTest {
 
     @AfterEach
     void cleanUp() {
-        SecurityAuditContext.clear();
+        AuditLogContext.clear();
         ExplicitLogoutSessionTracker.consume(SESSION_ID);
     }
 
     @Test
     void shouldLogLogoutEventWithRequestContext() {
-        SecurityAuditContext context = new SecurityAuditContext();
+        AuditLogContext context = new AuditLogContext();
         context.setIpAddress("127.0.0.1");
         context.setUserAgent("Mozilla");
         context.setSessionId(SESSION_ID);
-        SecurityAuditContext.set(context);
+        AuditLogContext.set(context);
 
         when(user.getUsername()).thenReturn("admin");
         when(user.getUserId()).thenReturn(1);
@@ -74,9 +74,9 @@ class LogoutListenerTest {
 
     @Test
     void shouldMarkSessionAsExplicitLogout() {
-        SecurityAuditContext context = new SecurityAuditContext();
+        AuditLogContext context = new AuditLogContext();
         context.setSessionId(SESSION_ID);
-        SecurityAuditContext.set(context);
+        AuditLogContext.set(context);
 
         listener.loggedInOrOut(user, Event.LOGOUT, null);
 

@@ -15,20 +15,20 @@ import lombok.Setter;
 @Getter
 @Setter
 // Thread-scoped holder for HTTP request metadata captured by AuditContextFilter.
-public class SecurityAuditContext {
+public class AuditLogContext {
 
-    private static final ThreadLocal<SecurityAuditContext> HOLDER = new ThreadLocal<>();
+    private static final ThreadLocal<AuditLogContext> HOLDER = new ThreadLocal<>();
 
     private String ipAddress;
     private String userAgent;
     private String sessionId;
     private String loggedInUsername;
 
-    public static void set(SecurityAuditContext ctx) {
+    public static void set(AuditLogContext ctx) {
         HOLDER.set(ctx);
     }
    
-    public static SecurityAuditContext get() {
+    public static AuditLogContext get() {
         return HOLDER.get();
     }
 
