@@ -6,9 +6,11 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.openmrs.OpenmrsObject;
+import org.openmrs.module.auditlogweb.AppCacheManager;
 import org.openmrs.module.auditlogweb.ReadAuditLog;
 import org.openmrs.module.auditlogweb.ReadAuditEntityMetadata;
-import org.openmrs.module.auditlogweb.api.ReadAuditService;
+import org.openmrs.module.auditlogweb.ReadAuditWorker;
+import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
@@ -28,7 +30,8 @@ import java.util.List;
 public class PatientDataReadAOP {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    private final ReadAuditService readAuditService;
+    private final ReadAuditWorker readAuditWorker;
+    private final AppCacheManager appCacheManager;
 
     @Around("execution(* org.openmrs.api.PatientService.getPatient*(..)) || "
             + "execution(* org.openmrs.api.PatientService.getAllPatient*(..)) || "
@@ -36,46 +39,80 @@ public class PatientDataReadAOP {
             + "execution(* org.openmrs.api.PatientService.getAllerg*(..)) ")
     public Object auditPatientDataRead(ProceedingJoinPoint joinPoint) throws Throwable {
 
-        if (AopUtils.isAopProxy(joinPoint.getTarget())){
-            return joinPoint.proceed();
-        };
+        if (AopUtils.isAopProxy(joinPoint.getTarget())) return joinPoint.proceed();
 
         ReadAuditLog auditData = new ReadAuditLog();
 
-        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Method method = signature.getMethod();
-        log.info("Read patient AOP called for {}", method.getName());
+        String returnDataType = null;
+        Method method = null;
+        String username = null;
+        String userUUID = null;
+        String ipAddress = null;
+        String userAgent = null;
+        String sessionId = null;
+        try{
+            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+            method = signature.getMethod();
+            returnDataType = getMethodReturnDataType(method);
 
-        String returnDataType = getMethodReturnDataType(method);
-        auditData.setEntityName(returnDataType);
-        auditData.setEventTime(new Date());
-        auditData.setUsername("admin");
-        auditData.setIpAddress("127.0.0.1");
+            AuditLogContext ctx = AuditLogContext.get();
+            if(ctx!=null) {
+                username = ctx.getLoggedInUsername() != null ? ctx.getLoggedInUsername() : null;
+                userUUID = ctx.getLoggedInUserUUID() != null ? ctx.getLoggedInUserUUID() : null;
+                ipAddress = ctx.getIpAddress() != null ? ctx.getIpAddress() : null;
+                userAgent = ctx.getUserAgent() != null ? ctx.getUserAgent() : null;
+                sessionId = ctx.getSessionId() != null ? ctx.getSessionId() : null;
+            }
+        } catch(Exception e){
+            log.warn("Error while getting  data from audit context", e);
+        } finally{
+            auditData.setEntityName(returnDataType);
+            auditData.setEventTime(new Date());
+            auditData.setUsername(username);
+            auditData.setUserUUID(userUUID);
+            auditData.setUserAgent(userAgent);
+            auditData.setSessionId(sessionId);
+            auditData.setIpAddress(ipAddress);
+        }
 
         Object result = null;
+        List<ReadAuditEntityMetadata> newTargetEntities = new ArrayList<>();
         try {
             result = joinPoint.proceed();
             try {
                 auditData.setReadSuccess(true);
-                List<ReadAuditEntityMetadata> targets = getEntityMetadata(result);
-                for (ReadAuditEntityMetadata target : targets) {
-                    target.setReadAuditLog(auditData);
+                List<ReadAuditEntityMetadata> targetEntities = getEntityMetadata(result);
+                for (ReadAuditEntityMetadata targetEntity : targetEntities) {
+                    if (targetEntity.getEntityUuid() != null) {
+                        String userKey = username != null ? username : (userUUID != null ? userUUID : "anonymous");
+                        String safeIp = ipAddress != null ? ipAddress : "unknown";
+                        String key = userKey + ":" + safeIp + ":" + targetEntity.getEntityUuid();
+                        if (appCacheManager.get(key) == null) {
+                            appCacheManager.set(key, true);
+                            targetEntity.setReadAuditLog(auditData);
+                            newTargetEntities.add(targetEntity);
+                        }
+                    }
                 }
-                auditData.setTargets(targets);
+                auditData.setTargets(newTargetEntities);
             }catch(Exception e) {
                 log.error("Error while getting read audit",e);
             }
-            log.info("Read patient AOP completed");
             return result;
         } catch (Throwable e) {
             auditData.setReadSuccess(false);
             throw e;
         } finally{
-            log.info("Saved the Read Audit log");
-            try {
-                readAuditService.logReadAudit(auditData);
-            }catch(Exception e) {
-                log.error("Error while saving read audit ",e);
+            log.debug("Read patient AOP completed");
+            if(!auditData.isReadSuccess() || !newTargetEntities.isEmpty()){
+                try {
+                    readAuditWorker.submitTask(auditData);
+                    log.debug("Submitted the Read Audit log to worker");
+                }catch(Exception e) {
+                    log.error("Error while submitting read audit to worker ",e);
+                }
+            }else{
+                log.debug("Skipping the read audit log save");
             }
         }
 

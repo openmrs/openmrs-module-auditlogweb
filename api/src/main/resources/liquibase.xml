@@ -24,8 +24,8 @@
             <column name="username" type="varchar(50)">
                 <constraints nullable="true"/>
             </column>
-            <column name="user_id" type="int">
-                <constraints nullable="true"/>
+            <column name="user_uuid" type="varchar(38)">
+                <constraints nullable="false"/>
             </column>
             <column name="event_time" type="datetime">
                 <constraints nullable="false"/>

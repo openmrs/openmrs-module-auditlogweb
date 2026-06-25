@@ -39,8 +39,8 @@ public class ReadAuditLog extends BaseOpenmrsObject {
     @Column(name = "username", length = 50)
     private String username;
 
-    @Column(name = "user_id")
-    private Integer userId;
+    @Column(name = "user_uuid", length = 38, nullable = false)
+    private String userUUID;
 
     @Column(name = "event_time", nullable = false)
     private Date eventTime;
