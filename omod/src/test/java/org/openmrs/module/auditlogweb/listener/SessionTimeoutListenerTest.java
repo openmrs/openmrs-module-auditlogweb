@@ -39,6 +39,9 @@ class SessionTimeoutListenerTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    User user;
+
     private SessionTimeoutListener listener;
 
     @BeforeEach
@@ -55,7 +58,7 @@ class SessionTimeoutListenerTest {
 
     @Test
     void shouldAuditActualSessionTimeout(){
-        HttpSession newSession = session(SESSION_ID, "admin");
+        HttpSession newSession = session(SESSION_ID,user);
 
         try (MockedStatic<Context> contextMock = mockStatic(Context.class)) {
             listener.sessionDestroyed(new HttpSessionEvent(newSession));
@@ -63,7 +66,7 @@ class SessionTimeoutListenerTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.SESSION_TIMEOUT,
                 "admin",
-                null,
+                "test-user-uuid",
                 null,
                 null,
                 SESSION_ID,
@@ -81,19 +84,19 @@ class SessionTimeoutListenerTest {
 
     @Test
     void shouldSkipExplicitLogoutSessionTimeout(){
-        HttpSession oldSession = session(SESSION_ID, "admin");
+        HttpSession oldSession = session(SESSION_ID, user);
         ExplicitLogoutSessionTracker.mark(SESSION_ID);
 
         listener.sessionDestroyed(new HttpSessionEvent(oldSession));
         verifyNoInteractions(auditService);
     }
 
-    private HttpSession session(String sessionId, String username) {
+    private HttpSession session(String sessionId, User user) {
         HttpSession session = mock(HttpSession.class);
         when(session.getId()).thenReturn(sessionId);
-        if (username != null) {
-            User user = mock(User.class);
-            when(user.getUsername()).thenReturn(username);
+        if (user != null) {
+            when(user.getUsername()).thenReturn("admin");
+            when(user.getUuid()).thenReturn("test-user-uuid");
 
             UserContext userContext = mock(UserContext.class);
             when(userContext.getAuthenticatedUser()).thenReturn(user);

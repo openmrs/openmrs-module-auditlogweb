@@ -14,6 +14,7 @@ import javax.servlet.http.HttpSessionListener;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.UserContext;
 import org.openmrs.module.auditlogweb.api.AuditService;
@@ -49,38 +50,34 @@ public class SessionTimeoutListener implements HttpSessionListener {
         // Skip the pre-login session destroyed by login session fixation protection.
         if (LoginFixationSessionTracker.consume(session.getId())) return;
 
-        String username = resolveUsername(session);
-        if (StringUtils.isBlank(username)) return;
+        User user = resolveUser(session);
+        if (user==null) return;
 
         try {
             Context.openSession();
             auditService.logSecurityEvent(
                     AuditSecurityEventType.SESSION_TIMEOUT,
-                    username,
-                    null,
+                    user.getUsername(),
+                    user.getUuid(),
                     null,
                     null,
                     session.getId(),
                     null);
         } catch (Exception e) {
-            log.error("Failed to log SESSION_TIMEOUT for user [{}]", username, e);
+            log.error("Failed to log SESSION_TIMEOUT for user [{}]", user.getUuid(), e);
         } finally {
             Context.closeSession();
         }
     }
 
     // Fetch the username the user context.
-    private String resolveUsername(HttpSession session) {
+    private User resolveUser(HttpSession session) {
         try {
             Object raw = session.getAttribute(WebConstants.OPENMRS_USER_CONTEXT_HTTPSESSION_ATTR);
             if (raw instanceof UserContext) {
                 UserContext userContext = (UserContext) raw;
                 if (userContext.getAuthenticatedUser() != null) {
-                    String username = userContext.getAuthenticatedUser().getUsername();
-                    if (username == null || username.isEmpty()) {
-                        username = userContext.getAuthenticatedUser().getSystemId();
-                    }
-                    return username;
+                   return userContext.getAuthenticatedUser();
                 }
             }
         } catch (Exception e) {
