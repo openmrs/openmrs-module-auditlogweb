@@ -64,9 +64,13 @@ public class AuthenticationAdvice {
             }
 
             User user = (User) result;
+            String userName = user.getUsername();
+            if (StringUtils.isBlank(userName)) {
+                userName = user.getSystemId();
+            }
             safelyLogSecurityEvent(
                     AuditSecurityEventType.LOGIN_SUCCESS,
-                    user.getUsername(),
+                    userName,
                     user.getUuid(),
                     ipAddress,
                     userAgent,
@@ -118,9 +122,13 @@ public class AuthenticationAdvice {
                 eventType = AuditSecurityEventType.LOGIN_FAILURE;
                 reason = "Invalid credential";
             }
+            String userName = user.getUsername();
+            if (StringUtils.isBlank(userName)) {
+                userName = user.getSystemId();
+            }
             safelyLogSecurityEvent(
                     eventType,
-                    user.getUsername(),
+                    userName,
                     user.getUuid(),
                     ipAddress,
                     userAgent,

@@ -164,12 +164,16 @@ public class PasswordAuditAdvice  {
         String username = null;
 
         if (args != null && args.length > 0 && args[0] instanceof User) {
-            username = ((User) args[0]).getUsername();
+            User user = (User) args[0];
+           username = user.getUsername();
+           if(StringUtils.isBlank(username)) username = user.getSystemId();
         }
 
         try {
             if (StringUtils.isBlank(username) && Context.isAuthenticated()) {
-                username = Context.getAuthenticatedUser().getUsername();
+                User user = Context.getAuthenticatedUser();
+                username = user.getUsername();
+                if(StringUtils.isBlank(username)) username = user.getSystemId();
             }
         } catch (Exception e) {
             log.warn("Could not resolve authenticated username for password audit", e);

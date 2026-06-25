@@ -16,6 +16,7 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.AuditLogContext;
 import org.slf4j.Logger;
@@ -72,9 +73,11 @@ public class AuditContextFilter extends OncePerRequestFilter {
     private String resolveLoggedInUsername() {
 
         if (Context.isAuthenticated() && Context.getAuthenticatedUser() != null) {
-            String username = Context.getAuthenticatedUser().getUsername();
-            if (!StringUtils.isBlank(username)) {
-                return username;
+            User user = Context.getAuthenticatedUser();
+            if (StringUtils.isNotBlank(user.getUsername())) {
+                return user.getUsername();
+            } else{
+                return user.getSystemId();
             }
         }
         return null;

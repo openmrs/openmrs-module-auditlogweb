@@ -9,6 +9,7 @@
 package org.openmrs.module.auditlogweb.api.listener;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang.StringUtils;
 import org.openmrs.User;
 import org.openmrs.UserSessionListener;
 import org.openmrs.module.auditlogweb.api.AuditService;
@@ -35,7 +36,10 @@ public class LogoutListener implements UserSessionListener {
             String ipAddress = ctx != null ? ctx.getIpAddress() : null;
             String userAgent = ctx != null ? ctx.getUserAgent() : null;
             String sessionId = ctx != null ? ctx.getSessionId() : null;
-            String username = user != null ? user.getUsername() : null;
+            String username = ctx != null ? ctx.getLoggedInUsername() : null;
+            if (StringUtils.isBlank(username) && user!=null) {
+                username = user.getUsername()!=null ? user.getUsername() : user.getSystemId();
+            }
 
             log.debug("LogoutListener: logging LOGOUT for user [{}]", username);
 

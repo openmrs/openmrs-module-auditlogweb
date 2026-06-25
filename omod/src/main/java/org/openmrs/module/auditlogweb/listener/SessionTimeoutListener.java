@@ -55,9 +55,11 @@ public class SessionTimeoutListener implements HttpSessionListener {
 
         try {
             Context.openSession();
+            String username = user.getUsername();
+            if (StringUtils.isBlank(username)) username = user.getSystemId();
             auditService.logSecurityEvent(
                     AuditSecurityEventType.SESSION_TIMEOUT,
-                    user.getUsername(),
+                    username,
                     user.getUuid(),
                     null,
                     null,

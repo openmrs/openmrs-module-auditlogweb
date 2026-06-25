@@ -106,7 +106,7 @@
                                 <c:when test="${not empty event.username}">
                                     <c:out value="${event.username}" />
                                 </c:when>
-                                <c:otherwise>system</c:otherwise>
+                                <c:otherwise>-</c:otherwise>
                             </c:choose>
                         </td>
                         <td><c:out value="${event.sessionId}" default="-"/></td>
