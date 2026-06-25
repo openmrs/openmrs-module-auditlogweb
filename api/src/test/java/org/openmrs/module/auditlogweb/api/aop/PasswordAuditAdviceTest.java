@@ -65,7 +65,7 @@ class PasswordAuditAdviceTest {
         when(joinPoint.getTarget()).thenReturn(new Object());
         when(joinPoint.getSignature()).thenReturn(methodSignature);
         when(user.getUsername()).thenReturn(USERNAME);
-        when(user.getUserId()).thenReturn(1);
+        when(user.getUuid()).thenReturn("user-uuid-123");
     }
 
     @AfterEach
@@ -88,7 +88,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -107,7 +107,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 eq(AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS),
                 eq(USERNAME),
-                eq(1),
+                eq("user-uuid-123"),
                 any(),
                 any(),
                 eq(SESSION_ID),
@@ -128,7 +128,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_RESET_REQUEST_SUCCESS,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -148,7 +148,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_RESET_REQUEST_FAILURE,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -183,7 +183,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_RESET_SUCCESS,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -201,7 +201,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 null,
                 null,
                 null,
@@ -251,7 +251,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_CHANGED_FAILURE,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -275,7 +275,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_RESET_FAILURE,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -297,7 +297,7 @@ class PasswordAuditAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.PASSWORD_RESET_REQUEST_FAILURE,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,

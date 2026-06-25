@@ -47,7 +47,7 @@ public class LogoutListener implements UserSessionListener {
             auditService.logSecurityEvent(
                     AuditSecurityEventType.LOGOUT,
                     username,
-                    user != null ? user.getUserId() : null,
+                    user != null ? user.getUuid() : null,
                     ipAddress,
                     userAgent,
                     sessionId,

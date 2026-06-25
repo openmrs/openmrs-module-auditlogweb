@@ -56,8 +56,8 @@ public class AuditSecurityEvent extends BaseOpenmrsObject {
     @Column(name = "username", length = 50)
     private String username;
 
-    @Column(name = "user_id")
-    private Integer userId;
+    @Column(name = "user_uuid", length = 38)
+    private String userUuid;
 
     @Column(name = "event_time", nullable = false)
     @NonNull

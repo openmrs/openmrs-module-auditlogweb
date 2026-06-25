@@ -329,13 +329,13 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void logSecurityEvent(AuditSecurityEventType eventType, String username, Integer userId,
+    public void logSecurityEvent(AuditSecurityEventType eventType, String username, String userUuid,
             String ipAddress, String userAgent, String sessionId, String detailsJson) {
 
         AuditSecurityEvent event = AuditSecurityEvent.builder()
                 .eventType(eventType)
                 .username(StringUtils.substring(username, 0, 50))
-                .userId(userId)
+                .userUuid(userUuid)
                 .eventTime(new Date())
                 .ipAddress(StringUtils.substring(ipAddress, 0, 100))
                 .userAgent(StringUtils.substring(userAgent, 0, 1000))

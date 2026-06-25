@@ -67,7 +67,7 @@ public class AuthenticationAdvice {
             safelyLogSecurityEvent(
                     AuditSecurityEventType.LOGIN_SUCCESS,
                     user.getUsername(),
-                    user.getUserId(),
+                    user.getUuid(),
                     ipAddress,
                     userAgent,
                     sessionId,
@@ -121,7 +121,7 @@ public class AuthenticationAdvice {
             safelyLogSecurityEvent(
                     eventType,
                     user.getUsername(),
-                    user.getUserId(),
+                    user.getUuid(),
                     ipAddress,
                     userAgent,
                     sessionId,
@@ -159,10 +159,10 @@ public class AuthenticationAdvice {
         return false;
     }
 
-    private void safelyLogSecurityEvent(AuditSecurityEventType eventType, String username, Integer userId,
+    private void safelyLogSecurityEvent(AuditSecurityEventType eventType, String username, String userUuid,
                                         String ipAddress, String userAgent, String sessionId, String detailsJson) {
         try {
-            auditService.logSecurityEvent(eventType, username, userId, ipAddress, userAgent, sessionId, detailsJson);
+            auditService.logSecurityEvent(eventType, username, userUuid, ipAddress, userAgent, sessionId, detailsJson);
         } catch (Exception e) {
             log.error("Failed to log authentication security event [{}] for user [{}]", eventType, username, e);
         }

@@ -63,10 +63,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <td class="label-cell">User ID</td>
+                        <td class="label-cell">User UUID</td>
                         <td>
                             <c:choose>
-                                <c:when test="${not empty event.userId}"><c:out value="${event.userId}"/></c:when>
+                                <c:when test="${not empty event.userUuid}"><c:out value="${event.userUuid}"/></c:when>
                                 <c:otherwise><span class="null-value">-</span></c:otherwise>
                             </c:choose>
                         </td>

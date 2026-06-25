@@ -77,7 +77,7 @@ class AuthenticationAdviceTest {
         advice = new AuthenticationAdvice(auditService, sessionFactory);
 
         when(user.getUsername()).thenReturn(USERNAME);
-        when(user.getUserId()).thenReturn(1);
+        when(user.getUuid()).thenReturn("user-uuid-123");
     }
 
     @AfterEach
@@ -101,7 +101,7 @@ class AuthenticationAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.LOGIN_SUCCESS,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -118,7 +118,7 @@ class AuthenticationAdviceTest {
                 .when(auditService).logSecurityEvent(
                         AuditSecurityEventType.LOGIN_SUCCESS,
                         USERNAME,
-                        1,
+                        "user-uuid-123",
                         IP_ADDRESS,
                         USER_AGENT,
                         SESSION_ID,
@@ -214,7 +214,7 @@ class AuthenticationAdviceTest {
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.LOGIN_FAILURE,
                 USERNAME,
-                1,
+                "user-uuid-123",
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
@@ -243,7 +243,7 @@ class AuthenticationAdviceTest {
             verify(auditService).logSecurityEvent(
                     AuditSecurityEventType.ACCOUNT_LOCKED,
                     USERNAME,
-                    1,
+                    "user-uuid-123",
                     IP_ADDRESS,
                     USER_AGENT,
                     SESSION_ID,
@@ -274,7 +274,7 @@ class AuthenticationAdviceTest {
             verify(auditService).logSecurityEvent(
                     AuditSecurityEventType.LOGIN_FAILURE,
                     USERNAME,
-                    1,
+                    "user-uuid-123",
                     IP_ADDRESS,
                     USER_AGENT,
                     SESSION_ID,

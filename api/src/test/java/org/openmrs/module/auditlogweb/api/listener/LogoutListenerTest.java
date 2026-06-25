@@ -58,14 +58,14 @@ class LogoutListenerTest {
         AuditLogContext.set(context);
 
         when(user.getUsername()).thenReturn("admin");
-        when(user.getUserId()).thenReturn(1);
+        when(user.getUuid()).thenReturn("user-uuid-123");
 
         listener.loggedInOrOut(user, Event.LOGOUT, null);
 
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.LOGOUT,
                 "admin",
-                1,
+                "user-uuid-123",
                 "127.0.0.1",
                 "Mozilla",
                 SESSION_ID,

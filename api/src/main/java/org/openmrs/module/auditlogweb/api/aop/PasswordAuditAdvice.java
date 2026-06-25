@@ -108,13 +108,13 @@ public class PasswordAuditAdvice  {
             throw t;
         } finally {
             AuditSecurityEventType eventType = resolveEventType(methodName, sessionId, success);
-            String username = getUsername(args);
-            Integer userId = getUserId(args);
-            String details = buildDetails(methodName, isPasswordResetRequestSuccess);
-
-            try {
-                if (auditService != null) {
-                    auditService.logSecurityEvent(eventType, username, userId, ipAddress, userAgent, sessionId, details);
+             String username = getUsername(args);
+             String userUuid = getUserUuid(args);
+             String details = buildDetails(methodName, isPasswordResetRequestSuccess);
+ 
+             try {
+                 if (auditService != null) {
+                     auditService.logSecurityEvent(eventType, username, userUuid, ipAddress, userAgent, sessionId, details);
                 } else {
                     log.warn("Audit service is not registered, skipping password audit event for method [{}]", methodName);
                 }
@@ -178,22 +178,22 @@ public class PasswordAuditAdvice  {
         return username;
     }
 
-    private Integer getUserId(Object[] args) {
-        Integer userId = null;
-
+    private String getUserUuid(Object[] args) {
+        String userUuid = null;
+ 
         if (args != null && args.length > 0 && args[0] instanceof User) {
-            userId = ((User) args[0]).getUserId();
+            userUuid = ((User) args[0]).getUuid();
         }
-
+ 
         try {
-            if (userId == null && Context.isAuthenticated()) {
-                userId = Context.getAuthenticatedUser().getUserId();
+            if (userUuid == null && Context.isAuthenticated()) {
+                userUuid = Context.getAuthenticatedUser().getUuid();
             }
         } catch (Exception e) {
-            log.warn("Could not resolve authenticated user ID for password audit", e);
+            log.warn("Could not resolve authenticated user UUID for password audit", e);
         }
-
-        return userId;
+ 
+        return userUuid;
     }
 
     /**

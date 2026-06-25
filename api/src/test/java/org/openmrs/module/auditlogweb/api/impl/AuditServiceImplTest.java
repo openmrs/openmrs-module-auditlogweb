@@ -309,7 +309,7 @@ class AuditServiceImplTest {
         auditService.logSecurityEvent(
                 AuditSecurityEventType.LOGIN_SUCCESS,
                 "admin",
-                1,
+                "test-user-uuid",
                 "127.0.0.1",
                 "Mozilla",
                 "session-123",
@@ -323,7 +323,7 @@ class AuditServiceImplTest {
         AuditSecurityEvent event = eventCaptor.getValue();
         assertEquals(AuditSecurityEventType.LOGIN_SUCCESS, event.getEventType());
         assertEquals("admin", event.getUsername());
-        assertEquals(1, event.getUserId());
+        assertEquals("test-user-uuid", event.getUserUuid());
         assertEquals("127.0.0.1", event.getIpAddress());
         assertEquals("Mozilla", event.getUserAgent());
         assertEquals("session-123", event.getSessionId());
@@ -343,7 +343,7 @@ class AuditServiceImplTest {
         auditService.logSecurityEvent(
                 AuditSecurityEventType.LOGIN_SUCCESS,
                 longUsername,
-                1,
+                "test-user-uuid",
                 longIpAddress,
                 longUserAgent,
                 longSessionId,

@@ -309,13 +309,13 @@ public interface AuditService {
      *                    PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILURE, PASSWORD_CHANGED_SUCCESS,
      *                    PASSWORD_CHANGED_FAILURE
      * @param username    the username involved in the event (may be null for anonymous sessions)
-     * @param userId      the OpenMRS user_id (nullable when the user doesn't exist in the DB)
+     * @param userUuid    the OpenMRS user UUID (nullable when the user doesn't exist in the DB)
      * @param ipAddress   the client IP address extracted from the request (nullable)
      * @param userAgent   the HTTP User-Agent header value (nullable)
      * @param sessionId   the HTTP session ID (nullable)
      * @param detailsJson optional JSON string with additional context (nullable)
      */
-    void logSecurityEvent(AuditSecurityEventType eventType, String username, Integer userId,
+    void logSecurityEvent(AuditSecurityEventType eventType, String username, String userUuid,
             String ipAddress, String userAgent, String sessionId, String detailsJson);
 
     /**

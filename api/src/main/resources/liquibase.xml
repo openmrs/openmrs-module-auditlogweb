@@ -23,7 +23,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="username" type="VARCHAR(50)"/>
-            <column name="user_id" type="INT"/>
+            <column name="user_uuid" type="VARCHAR(38)"/>
             <column name="event_time" type="DATETIME">
                 <constraints nullable="false"/>
             </column>
