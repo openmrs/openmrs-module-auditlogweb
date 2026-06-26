@@ -12,8 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.openmrs.api.APIAuthenticationException;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
 import org.openmrs.module.auditlogweb.api.AuditService;
-import org.openmrs.api.context.Context;
-import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
+import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -22,9 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -56,8 +52,8 @@ public class SecurityAuditlogwebController {
             @RequestParam(value = "size", defaultValue = "15") int size,
             Model model) {
 
-        Date start = parseStartDate(startDate);
-        Date end = parseEndDate(endDate);
+        Date start = UtilClass.parseDate(startDate, false);
+        Date end = UtilClass.parseDate(endDate, true);
 
         try {
 
@@ -104,25 +100,5 @@ public class SecurityAuditlogwebController {
                 "PASSWORD_RESET_FAILURE",
                 "PASSWORD_CHANGED_SUCCESS",
                 "PASSWORD_CHANGED_FAILURE");
-    }
-
-    private Date parseStartDate(String startDate) {
-        if (startDate == null || startDate.trim().isEmpty()) {
-            return null;
-        }
-
-        LocalDate localDate = LocalDate.parse(startDate);
-        LocalDateTime startOfDay = localDate.atStartOfDay();
-        return Date.from(startOfDay.atZone(ZoneId.systemDefault()).toInstant());
-    }
-
-    private Date parseEndDate(String endDate) {
-        if (endDate == null || endDate.trim().isEmpty()) {
-            return null;
-        }
-
-        LocalDate localDate = LocalDate.parse(endDate);
-        LocalDateTime endOfDay = localDate.atTime(23, 59, 59);
-        return Date.from(endOfDay.atZone(ZoneId.systemDefault()).toInstant());
     }
 }
