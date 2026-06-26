@@ -11,17 +11,17 @@
 <%@ include file="localHeader.jsp"%>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600&display=swap">
-<link rel="stylesheet" type="text/css" href="<openmrs:contextPath/>/moduleResources/auditlogweb/css/securityauditlogs.css" />
+<link rel="stylesheet" type="text/css" href="<openmrs:contextPath/>/moduleResources/auditlogweb/css/auditLogsExplorer.css" />
 
 
-<div class="security-page">
-    <h1 class="security-title">Security Audit Logs Explorer</h1>
-    <p class="security-subtitle">Review and filter the security audit records for compliance and monitoring.</p>
+<div class="audit-page">
+    <h1 class="audit-title">Security Audit Logs Explorer</h1>
+    <p class="audit-subtitle">Review and filter the security audit records for compliance and monitoring.</p>
 
-    <form id="securityAuditForm" action="securityauditlogs.form" method="get" autocomplete="off">
+    <form id="auditForm" action="securityauditlogs.form" method="get" autocomplete="off">
         <input type="hidden" id="pageInput" name="page" value="<c:out value='${currentPage != null ? currentPage : 0}'/>"/>
 
-        <div class="security-filter-panel">
+        <div class="filter-panel">
             <div>
                 <label for="eventType">LOG TYPE</label>
                 <select id="eventType" name="eventType">
@@ -67,7 +67,7 @@
         <div class="error-box"><c:out value="${errorMessage}"/></div>
     </c:if>
 
-    <table class="security-table">
+    <table class="audit-table">
         <thead>
         <tr>
             <th>Timestamp</th>
@@ -83,7 +83,7 @@
                 <c:forEach var="event" items="${events}">
                     <c:set var="detailUrl"
                            value="${pageContext.request.contextPath}/module/auditlogweb/viewSecurityAudit.form?eventId=${event.id}" />
-                    <tr class="security-row" onclick="window.location.href='<c:out value="${detailUrl}"/>'">
+                    <tr class="audit-row" onclick="window.location.href='<c:out value="${detailUrl}"/>'">
                         <td><c:out value="${event.eventTime}"/></td>
                         <td>
                             <c:choose>
@@ -139,7 +139,7 @@
         </tbody>
     </table>
 
-    <div class="security-pagination">
+    <div class="audit-pagination">
         <div>Showing page <c:out value="${currentPage + 1}"/> of <c:out value="${totalPages > 0 ? totalPages : 1}"/> | Total records: <c:out value="${totalCount}"/></div>
         <div>
             <button type="button" class="pager-btn" onclick="goToPage(<c:out value='${currentPage - 1}'/>)" <c:if test="${!hasPreviousPage}">disabled</c:if>>Previous</button>
@@ -156,6 +156,6 @@
             return;
         }
         document.getElementById('pageInput').value = page;
-        document.getElementById('securityAuditForm').submit();
+        document.getElementById('auditForm').submit();
     }
 </script>
