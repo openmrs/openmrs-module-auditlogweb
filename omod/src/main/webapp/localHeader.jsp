@@ -13,5 +13,8 @@
     <li <c:if test='${page eq "auditlogs"}'>class="active"</c:if>>
         <a href="${pageContext.request.contextPath}/module/auditlogweb/auditlogs.form">Audit Logs</a>
     </li>
+    <li <c:if test='${page eq "readauditlogs"}'>class="active"</c:if>>
+        <a href="${pageContext.request.contextPath}/module/auditlogweb/readauditlogs.form">Read Audit Logs</a>
+    </li>
     <!-- Add more tabs as needed -->
 </ul>
