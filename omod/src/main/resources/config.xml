@@ -31,6 +31,10 @@
 			<name>View Audit Logs</name>
 			<description>Allows viewing audit logs in the system</description>
 		</privilege>
+		<privilege>
+			<name>View Read Audit Logs</name>
+			<description>Allows viewing read audit logs in the system</description>
+		</privilege>
 	</privileges>
 
 	<messages>
