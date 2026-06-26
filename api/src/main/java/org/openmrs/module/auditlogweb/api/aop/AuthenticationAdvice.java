@@ -100,7 +100,14 @@ public class AuthenticationAdvice {
                 login = (String) args[0];
             }
 
-            User user = resolveUser(login);
+            User user;
+            try {
+                user = resolveUser(login);
+            } catch (Exception e) {
+                log.error("Error while resolving user for audit, skipping login failure event logging", e);
+                throw ex;
+            }
+
             if (user == null) {
                 safelyLogSecurityEvent(
                         AuditSecurityEventType.LOGIN_FAILURE,
@@ -185,22 +192,15 @@ public class AuthenticationAdvice {
             return null;
         }
 
-        User loginUser = null;
         String loginWithDash = login;
         if (login.matches("\\d{2,}")) {
             loginWithDash = login.substring(0, login.length() - 1) + "-" + login.charAt(login.length() - 1);
         }
 
-        try {
-            loginUser = sessionFactory.getCurrentSession().createQuery(
-                            "from User u where (u.username = ?1 or u.systemId = ?2 or u.systemId = ?3) and u.retired = false",
-                            User.class)
-                    .setParameter(1, login).setParameter(2, login).setParameter(3, loginWithDash).uniqueResult();
-        }
-        catch (Exception e) {
-            log.error("Error while resolving user for audit");
-        }
-        return loginUser;
+        return sessionFactory.getCurrentSession().createQuery(
+                        "from User u where (u.username = ?1 or u.systemId = ?2 or u.systemId = ?3) and u.retired = false",
+                        User.class)
+                .setParameter(1, login).setParameter(2, login).setParameter(3, loginWithDash).uniqueResult();
     }
 
     private String buildLoginDetails(String reason, boolean isAccountLocked) {

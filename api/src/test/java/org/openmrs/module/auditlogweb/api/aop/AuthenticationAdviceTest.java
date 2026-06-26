@@ -226,7 +226,7 @@ class AuthenticationAdviceTest {
         setRequestContext();
         ContextAuthenticationException exception = authenticationFailure(USERNAME, "Login failed");
         mockUserLookup(USERNAME, USERNAME, user);
-        
+
         when(user.getUserProperty(OpenmrsConstants.USER_PROPERTY_LOCKOUT_TIMESTAMP))
                 .thenReturn(String.valueOf(System.currentTimeMillis()));
 
@@ -256,7 +256,7 @@ class AuthenticationAdviceTest {
         setRequestContext();
         ContextAuthenticationException exception = authenticationFailure(USERNAME, "Login failed");
         mockUserLookup(USERNAME, USERNAME, user);
-        
+
         long expiredTime = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(6);
         when(user.getUserProperty(OpenmrsConstants.USER_PROPERTY_LOCKOUT_TIMESTAMP))
                 .thenReturn(String.valueOf(expiredTime));
@@ -300,21 +300,38 @@ class AuthenticationAdviceTest {
     }
 
     @Test
-    void shouldLogInvalidUsernameWhenUserLookupFails() throws Throwable {
+    void shouldLogInvalidUsernameIfUsernameIsWrong() throws Throwable {
         setRequestContext();
-        authenticationFailure(USERNAME, "Login failed");
-        when(sessionFactory.getCurrentSession()).thenThrow(new IllegalStateException("No session"));
+        ContextAuthenticationException exception = authenticationFailure("Invalid Username", "Invalid username Exception");
+        mockUserLookup("Invalid Username", "Invalid Username" , null);
 
-        assertThrows(ContextAuthenticationException.class, () -> advice.authenticate(joinPoint));
+        ContextAuthenticationException thrown = assertThrows(
+                ContextAuthenticationException.class,
+                () -> advice.authenticate(joinPoint));
 
+        assertSame(exception, thrown);
         verify(auditService).logSecurityEvent(
                 AuditSecurityEventType.LOGIN_FAILURE,
-                USERNAME,
+                "Invalid Username",
                 null,
                 IP_ADDRESS,
                 USER_AGENT,
                 SESSION_ID,
                 "{\"failureReason\":\"INVALID_USERNAME\",\"accountLocked\":false}");
+    }
+
+    @Test
+    void shouldSkipLoginFailureAuditWhenUserLookupFails() throws Throwable {
+        setRequestContext();
+        ContextAuthenticationException exception = authenticationFailure(USERNAME, "Login failed");
+        when(sessionFactory.getCurrentSession()).thenThrow(new IllegalStateException("No session"));
+
+        ContextAuthenticationException thrown = assertThrows(
+                ContextAuthenticationException.class,
+                () -> advice.authenticate(joinPoint));
+
+        assertSame(exception, thrown);
+        verifyNoInteractions(auditService);
     }
 
     private ContextAuthenticationException authenticationFailure(String login, String message) throws Throwable {
