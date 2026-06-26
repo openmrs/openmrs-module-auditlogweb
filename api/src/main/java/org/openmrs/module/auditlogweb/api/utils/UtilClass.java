@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.MappedSuperclass;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -163,11 +162,15 @@ public class UtilClass {
      */
     public static List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
         List<AuditFieldDiff> diffs = new ArrayList<>();
-        if (currentEntity == null) return diffs;
+        if (currentEntity == null) {
+            return diffs;
+        }
 
         Field[] fields = getAllFields(clazz);
         for (Field field : fields) {
-            if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) continue;
+            if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
+                continue;
+            }
 
             field.setAccessible(true);
 
@@ -223,7 +226,9 @@ public class UtilClass {
      * @return the parsed {@link LocalDate}, or {@code null} if parsing fails
      */
     public static LocalDate parse(String dateStr) {
-        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
 
         try {
             return LocalDate.parse(dateStr.trim());
@@ -266,7 +271,9 @@ public class UtilClass {
      * @throws IllegalArgumentException if the date string cannot be parsed
      */
     public static Date parseDate(String dateStr, boolean isEndDay) {
-        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uuuu")
                     .withResolverStyle(ResolverStyle.STRICT);

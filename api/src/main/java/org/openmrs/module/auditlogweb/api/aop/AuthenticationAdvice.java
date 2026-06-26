@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AuthenticationAdvice {
 
-    private final static Logger log = LoggerFactory.getLogger(AuthenticationAdvice.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationAdvice.class);
     private final AuditService auditService;
     private final SessionFactory sessionFactory;
 
@@ -48,15 +48,19 @@ public class AuthenticationAdvice {
         String ipAddress = ctx != null ? ctx.getIpAddress() : null;
         String userAgent = ctx != null ? ctx.getUserAgent() : null;
 
-        try{
+        try {
             Object result = joinPoint.proceed();
-            if(!(result instanceof User)) return result;
+            if (!(result instanceof User)) {
+                return result;
+            }
 
             log.debug("Authentication event : LOGIN_SUCCESS");
 
             // Skipping the audit, because this might be done by system to authenticate user after password reset request verification
             if (PasswordResetFlowContext.hasPendingResetRequest(sessionId) &&
-                    PasswordResetFlowContext.isSecretAnswerVerified(sessionId)) return result;
+                    PasswordResetFlowContext.isSecretAnswerVerified(sessionId)) {
+                return result;
+            }
 
             if (auditService == null) {
                 log.warn("AuditService is not registered, skipping login audit event");
@@ -82,7 +86,7 @@ public class AuthenticationAdvice {
             markSessionAsLoginFixation();
 
             return result;
-        } catch(ContextAuthenticationException ex){
+        } catch(ContextAuthenticationException ex) {
 
             if (auditService == null) {
                 log.warn("AuditService is not registered, skipping login audit event");
@@ -97,7 +101,7 @@ public class AuthenticationAdvice {
             }
 
             User user = resolveUser(login);
-            if(user == null){
+            if (user == null) {
                 safelyLogSecurityEvent(
                         AuditSecurityEventType.LOGIN_FAILURE,
                         login,
@@ -105,7 +109,7 @@ public class AuthenticationAdvice {
                         ipAddress,
                         userAgent,
                         sessionId,
-                        buildLoginDetails("INVALID_USERNAME",false));
+                        buildLoginDetails("INVALID_USERNAME", false));
                 throw ex;
             }
 
@@ -117,7 +121,7 @@ public class AuthenticationAdvice {
                 eventType = AuditSecurityEventType.ACCOUNT_LOCKED;
                 isAccountLocked = true;
                 reason = "Too many attempts";
-            }else{
+            } else {
                 log.debug("Authentication event : LOGIN_FAILURE");
                 eventType = AuditSecurityEventType.LOGIN_FAILURE;
                 reason = "Invalid credential";
@@ -133,7 +137,7 @@ public class AuthenticationAdvice {
                     ipAddress,
                     userAgent,
                     sessionId,
-                    buildLoginDetails(reason,isAccountLocked));
+                    buildLoginDetails(reason, isAccountLocked));
 
             throw ex;
         }
@@ -176,8 +180,10 @@ public class AuthenticationAdvice {
         }
     }
 
-    private User resolveUser(String login){
-        if(StringUtils.isBlank(login)) return null;
+    private User resolveUser(String login) {
+        if (StringUtils.isBlank(login)) {
+            return null;
+        }
 
         User loginUser = null;
         String loginWithDash = login;
@@ -197,14 +203,16 @@ public class AuthenticationAdvice {
         return loginUser;
     }
 
-    private String buildLoginDetails(String reason,boolean isAccountLocked) {
-        return "{\"failureReason\":\"" + reason + "\",\"accountLocked\":" + isAccountLocked+"}";
+    private String buildLoginDetails(String reason, boolean isAccountLocked) {
+        return "{\"failureReason\":\"" + reason + "\",\"accountLocked\":" + isAccountLocked + "}";
     }
 
     private void markSessionAsLoginFixation() {
         AuditLogContext ctx = AuditLogContext.get();
         String sessionId = ctx != null ? ctx.getSessionId() : null;
-        if (sessionId == null) return;
+        if (sessionId == null) {
+            return;
+        }
         LoginFixationSessionTracker.mark(sessionId);
     }
 }

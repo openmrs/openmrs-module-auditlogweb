@@ -548,10 +548,10 @@ public class AuditDao {
         } catch (Exception ex) {
             if (isMissingAuditTableException(ex)) {
                 log.warn("Audit history is unavailable for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
-                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing",ex);
+                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing", ex);
             } else {
                 log.error("Unexpected error while fetching revisions for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
-                throw new AuditLogUnavailableException("Audit history could not be fetched, try again later",ex);
+                throw new AuditLogUnavailableException("Audit history could not be fetched, try again later" ,ex);
             }
         }
     }
@@ -576,10 +576,10 @@ public class AuditDao {
         } catch (Exception ex) {
             if (isMissingAuditTableException(ex)) {
                 log.warn("Audit history count is unavailable for class {} due to missing audit table: {}", entityClass.getName(), ex.getMessage());
-                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing",ex);
+                throw new AuditLogUnavailableException("Audit history is unavailable because its audit table is missing", ex);
             } else {
                 log.error("Unexpected error while fetching revision counts for class {}: {}", entityClass.getName(), ex.getMessage(), ex);
-                throw new AuditLogUnavailableException("Audit history count could not be fetched, try again later",ex);
+                throw new AuditLogUnavailableException("Audit history count could not be fetched, try again later", ex);
 
             }
         }

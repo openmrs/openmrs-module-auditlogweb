@@ -45,7 +45,9 @@ public class PasswordAuditAdvice  {
             + " || execution(* org.openmrs.api.UserService.changePasswordUsingActivationKey(..))")
     public Object auditPasswordActivity(ProceedingJoinPoint joinPoint) throws Throwable {
 
-        if (AopUtils.isAopProxy(joinPoint.getTarget())) return joinPoint.proceed();
+        if (AopUtils.isAopProxy(joinPoint.getTarget())) {
+            return joinPoint.proceed();
+        }
 
         String methodName = null;
         Object[] args = null;
@@ -70,9 +72,9 @@ public class PasswordAuditAdvice  {
                And then we check if we  already put the reset request on PasswordResetFlowContext during the #isSecretAnswer call which
                confirms that user has requested for password reset request and just few milliseconds later system has reset with temporary pass.
              */
-            if("changePassword".equals(methodName) && PasswordResetFlowContext.hasPendingResetRequest(sessionId)
+            if ("changePassword".equals(methodName) && PasswordResetFlowContext.hasPendingResetRequest(sessionId)
             && !PasswordResetFlowContext.isPasswordChangedBySystem(sessionId)) {
-                PasswordResetFlowContext.setPasswordChangedBySystem(sessionId,true);
+                PasswordResetFlowContext.setPasswordChangedBySystem(sessionId, true);
                 bypassLogging = true;
             }
 
@@ -97,7 +99,7 @@ public class PasswordAuditAdvice  {
             if ("isSecretAnswer".equals(methodName)) {
                 if (Boolean.TRUE.equals(returnValue)) {
                     isPasswordResetRequestSuccess = true;
-                    PasswordResetFlowContext.setSecretAnswerVerified(sessionId,true);
+                    PasswordResetFlowContext.setSecretAnswerVerified(sessionId, true);
                 } else {
                     success = false;
                 }
@@ -166,14 +168,18 @@ public class PasswordAuditAdvice  {
         if (args != null && args.length > 0 && args[0] instanceof User) {
             User user = (User) args[0];
            username = user.getUsername();
-           if(StringUtils.isBlank(username)) username = user.getSystemId();
+           if (StringUtils.isBlank(username)) {
+               username = user.getSystemId();
+           }
         }
 
         try {
             if (StringUtils.isBlank(username) && Context.isAuthenticated()) {
                 User user = Context.getAuthenticatedUser();
                 username = user.getUsername();
-                if(StringUtils.isBlank(username)) username = user.getSystemId();
+                if (StringUtils.isBlank(username)) {
+                    username = user.getSystemId();
+                }
             }
         } catch (Exception e) {
             log.warn("Could not resolve authenticated username for password audit", e);
@@ -207,12 +213,12 @@ public class PasswordAuditAdvice  {
      * @param isPasswordResetRequestSuccess whether the reset request succeeded
      * @return a details string suitable for storage in the audit record
      */
-    private String buildDetails(String methodName,boolean isPasswordResetRequestSuccess) {
+    private String buildDetails(String methodName, boolean isPasswordResetRequestSuccess) {
         if ("setUserActivationKey".equals(methodName)) {
             return "{\"method\":\"setUserActivationKey\",\"requestType\":\"activation_key\"}";
         }
         if ("isSecretAnswer".equals(methodName)) {
-            return "{\"requestType\":\"secret_question_answer\", \"isRequestSuccess\": "+isPasswordResetRequestSuccess+"}";
+            return "{\"requestType\":\"secret_question_answer\", \"isRequestSuccess\": "+isPasswordResetRequestSuccess + "}";
         }
         return "{\"method\":\"" + methodName + "\"}";
     }

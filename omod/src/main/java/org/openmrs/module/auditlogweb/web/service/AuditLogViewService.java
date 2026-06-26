@@ -16,7 +16,6 @@ import org.openmrs.module.auditlogweb.web.dto.AuditFilter;
 import org.openmrs.module.auditlogweb.web.dto.PaginatedAuditResult;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 

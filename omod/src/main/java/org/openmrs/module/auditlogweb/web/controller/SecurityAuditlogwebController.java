@@ -74,7 +74,7 @@ public class SecurityAuditlogwebController {
             model.addAttribute("endDate", endDate);
             model.addAttribute("page", "securityauditlogs");
             model.addAttribute("eventTypes", getEventTypes());
-        } catch(APIAuthenticationException e){
+        } catch(APIAuthenticationException e) {
             return ACCESS_DENIED_VIEW;
         } catch (Exception e) {
             log.error("Failed to load security audit logs", e);

@@ -389,11 +389,11 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
         Object entityId = UtilClass.getEntityIdAsString(currentEntity);
 
-        if (! (Role.class.isAssignableFrom(currentEntity.getClass()) || GlobalProperty.class.isAssignableFrom(currentEntity.getClass()))) {
-            try{
+        if (!(Role.class.isAssignableFrom(currentEntity.getClass()) || GlobalProperty.class.isAssignableFrom(currentEntity.getClass()))) {
+            try {
                 //Here if this condition becomes true then most probably, this is id or uuid
                 entityId = Integer.parseInt(entityId.toString());
-            } catch (NumberFormatException e){
+            } catch (NumberFormatException e) {
                 //If this exception occurred then it may be the uuid, which we're trying to convert to int, so leave it as string
             }
         }
@@ -447,7 +447,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 
     private AuditLogDetailDTO buildEntityAuditDetailsDTO(
             AuditEntity<?> entity, Object currentEntity, List<AuditFieldDiff> changedFields, List<RelatedEntityDto> relatedEntities
-    ){
+    ) {
         String username = resolveUsername(entity.getChangedBy());
 
         AuditLogDetailDTO dto = new AuditLogDetailDTO();

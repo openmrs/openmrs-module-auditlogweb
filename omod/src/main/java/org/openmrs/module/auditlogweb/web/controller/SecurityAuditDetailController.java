@@ -88,9 +88,9 @@ public class SecurityAuditDetailController {
 
             return new ModelAndView(VIEW, model);
 
-        }catch(APIAuthenticationException e) {
+        } catch(APIAuthenticationException e) {
             return new ModelAndView(ACCESS_DENIED_VIEW, model);
-        }catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error loading security audit detail: ", e);
             model.addAttribute("errorMessage", "Error loading audit data: " + e.getMessage());
             return new ModelAndView(VIEW, model);

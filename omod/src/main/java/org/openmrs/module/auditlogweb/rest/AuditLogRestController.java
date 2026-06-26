@@ -31,10 +31,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.persistence.NoResultException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -119,7 +115,7 @@ public class AuditLogRestController {
             @PathVariable Integer revisionId,
             @RequestParam() String entityName,
             @RequestParam() String entityId
-    ){
+    ) {
         if (entityName.trim().isEmpty() || entityId.trim().isEmpty()) {
             throw new IllegalArgumentException("One or more required parameters are empty");
         }

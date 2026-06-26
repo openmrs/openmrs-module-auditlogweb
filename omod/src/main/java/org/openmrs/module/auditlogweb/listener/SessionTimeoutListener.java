@@ -45,18 +45,26 @@ public class SessionTimeoutListener implements HttpSessionListener {
 
         PasswordResetFlowContext.clear(session.getId());
 
-        if (ExplicitLogoutSessionTracker.consume(session.getId())) return;
+        if (ExplicitLogoutSessionTracker.consume(session.getId())) {
+            return;
+        }
 
         // Skip the pre-login session destroyed by login session fixation protection.
-        if (LoginFixationSessionTracker.consume(session.getId())) return;
+        if (LoginFixationSessionTracker.consume(session.getId())) {
+            return;
+        }
 
         User user = resolveUser(session);
-        if (user==null) return;
+        if (user == null) {
+            return;
+        }
 
         try {
             Context.openSession();
             String username = user.getUsername();
-            if (StringUtils.isBlank(username)) username = user.getSystemId();
+            if (StringUtils.isBlank(username)) {
+                username = user.getSystemId();
+            }
             auditService.logSecurityEvent(
                     AuditSecurityEventType.SESSION_TIMEOUT,
                     username,

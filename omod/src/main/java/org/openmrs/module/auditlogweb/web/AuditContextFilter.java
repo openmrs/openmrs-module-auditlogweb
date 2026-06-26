@@ -32,7 +32,7 @@ public class AuditContextFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(AuditContextFilter.class);
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         try {
@@ -76,7 +76,7 @@ public class AuditContextFilter extends OncePerRequestFilter {
             User user = Context.getAuthenticatedUser();
             if (StringUtils.isNotBlank(user.getUsername())) {
                 return user.getUsername();
-            } else{
+            } else {
                 return user.getSystemId();
             }
         }

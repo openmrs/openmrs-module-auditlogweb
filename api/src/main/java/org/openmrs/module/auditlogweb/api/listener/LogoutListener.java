@@ -28,17 +28,19 @@ public class LogoutListener implements UserSessionListener {
 
     @Override
     public void loggedInOrOut(User user, Event event, Status status) {
-        try{
+        try {
 
-            if(event != Event.LOGOUT) return;
+            if (event != Event.LOGOUT) {
+                return;
+            }
 
             AuditLogContext ctx = AuditLogContext.get();
             String ipAddress = ctx != null ? ctx.getIpAddress() : null;
             String userAgent = ctx != null ? ctx.getUserAgent() : null;
             String sessionId = ctx != null ? ctx.getSessionId() : null;
             String username = ctx != null ? ctx.getLoggedInUsername() : null;
-            if (StringUtils.isBlank(username) && user!=null) {
-                username = user.getUsername()!=null ? user.getUsername() : user.getSystemId();
+            if (StringUtils.isBlank(username) && user != null) {
+                username = user.getUsername() != null ? user.getUsername() : user.getSystemId();
             }
 
             log.debug("LogoutListener: logging LOGOUT for user [{}]", username);
