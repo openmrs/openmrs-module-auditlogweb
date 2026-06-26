@@ -52,8 +52,8 @@ public class SecurityAuditlogwebController {
             @RequestParam(value = "size", defaultValue = "15") int size,
             Model model) {
 
-        Date start = UtilClass.parseDate(startDate, false);
-        Date end = UtilClass.parseDate(endDate, true);
+        Date start = UtilClass.toStartDate(UtilClass.parse(startDate));
+        Date end = UtilClass.toEndDate(UtilClass.parse(endDate));
 
         try {
 
