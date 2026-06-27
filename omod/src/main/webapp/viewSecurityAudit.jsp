@@ -12,9 +12,9 @@
 <%@ include file="localHeader.jsp"%>
 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600&display=swap">
-<link rel="stylesheet" type="text/css" href="<openmrs:contextPath/>/moduleResources/auditlogweb/css/viewSecurityAudit.css" />
+<link rel="stylesheet" type="text/css" href="<openmrs:contextPath/>/moduleResources/auditlogweb/css/viewAuditLogDetail.css" />
 
-<div class="security-audit-detail-container">
+<div class="audit-detail-container">
 
     <div class="title-section">
         <h1 class="detail-title">Security Audit Event Detail</h1>

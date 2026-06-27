@@ -18,7 +18,7 @@ body {
     padding: 0;
 }
 
-.security-audit-detail-container {
+.audit-detail-container {
     max-width: 1000px;
     margin: 0 auto;
     padding: 24px;
@@ -271,7 +271,7 @@ body {
 }
 
 @media (max-width: 768px) {
-    .security-audit-detail-container {
+    .audit-detail-container {
         padding: 12px;
     }
 
