@@ -80,33 +80,33 @@
         <tbody>
         <c:choose>
             <c:when test="${not empty readAuditLogs}">
-                <c:forEach var="logs" items="${readAuditLogs}">
+                <c:forEach var="log" items="${readAuditLogs}">
                     <c:set var="detailUrl"
-                           value="${pageContext.request.contextPath}/module/auditlogweb/viewSecurityAudit.form?eventId=${logs.id}" />
+                           value="${pageContext.request.contextPath}/module/auditlogweb/viewReadAudit.form?logId=${log.id}" />
                     <tr class="audit-row" onclick="window.location.href='<c:out value="${detailUrl}"/>'">
-                        <td><c:out value="${logs.eventTime}"/></td>
+                        <td><c:out value="${log.eventTime}"/></td>
                         <td>
                             <c:choose>
-                                <c:when test="${logs.readSuccess}">
-                                    <span class="badge badge-success"><c:out value="${logs.entityName}"/></span>
+                                <c:when test="${log.readSuccess}">
+                                    <span class="badge badge-success"><c:out value="${log.entityName}"/></span>
                                 </c:when>
                                 <c:otherwise>
-                                    <span class="badge badge-failure"><c:out value="${logs.entityName}"/></span>
+                                    <span class="badge badge-failure"><c:out value="${log.entityName}"/></span>
                                 </c:otherwise>
                             </c:choose>
                         </td>
                         <td>
                             <c:choose>
-                                <c:when test="${not empty logs.username}">
-                                    <c:out value="${logs.username}" />
+                                <c:when test="${not empty log.username}">
+                                    <c:out value="${log.username}" />
                                 </c:when>
                                 <c:otherwise>-</c:otherwise>
                             </c:choose>
                         </td>
-                        <td><c:out value="${logs.sessionId}" default="-"/></td>
+                        <td><c:out value="${log.sessionId}" default="-"/></td>
                         <td class="details-cell details-col">
-                            <c:set var="ipText" value="${empty logs.ipAddress ? '-' : logs.ipAddress}"/>
-                            <c:set var="userAgentText" value="${empty logs.userAgent ? '-' : logs.userAgent}"/>
+                            <c:set var="ipText" value="${empty log.ipAddress ? '-' : log.ipAddress}"/>
+                            <c:set var="userAgentText" value="${empty log.userAgent ? '-' : log.userAgent}"/>
                             <c:set var="detailsText" value="IP: ${ipText} | UA: ${userAgentText}"/>
                             <span class="details-preview">
                                 <c:choose>
