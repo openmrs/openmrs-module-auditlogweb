@@ -1,8 +1,9 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
@@ -18,258 +19,260 @@ import java.util.List;
 import java.util.Date;
 
 /**
- * AuditService provides methods to retrieve audit logs for entities
- * tracked by Hibernate Envers. It allows querying historical changes,
- * revisions, and associated metadata for persisted OpenMRS domain objects.
- *
- * <p>This service is intended for use by other modules that need to access
- * audit trail data for entities annotated with {@code @Audited}.
+ * AuditService provides methods to retrieve audit logs for entities tracked by Hibernate Envers. It
+ * allows querying historical changes, revisions, and associated metadata for persisted OpenMRS
+ * domain objects.
+ * <p>
+ * This service is intended for use by other modules that need to access audit trail data for
+ * entities annotated with {@code @Audited}.
  *
  * @see org.openmrs.module.auditlogweb.api.impl.AuditServiceImpl
  */
 public interface AuditService {
-
-    /**
-     * Retrieves a paginated list of all revisions for the specified audited entity class.
-     *
-     * @param entityClass the class type of the audited entity
-     * @param page        the page number (zero-based)
-     * @param size        the number of results per page
-     * @param <T>         the type of the audited entity
-     * @return a list of {@link AuditEntity} representing revisions of the entity
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    <T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size, String sortOrder);
-
-    /**
-     * Retrieves a paginated list of all revisions for the specified audited entity class
-     * using its fully qualified class name.
-     *
-     * @param entityClassName the fully qualified name of the audited entity class
-     * @param page            the page number (zero-based)
-     * @param size            the number of results per page
-     * @param <T>             the type of the audited entity
-     * @return a list of {@link AuditEntity} representing revisions of the entity,
-     *         or an empty list if the class is not found
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    <T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size, String sortOrder);
-
-    /**
-     * Retrieves a specific revision of an entity by its ID and revision number.
-     *
-     * @param clazz the class type of the audited entity
-     * @param entityId    the unique identifier of the entity
-     * @param auditId  the revision number to retrieve
-     * @param <T>         the type of the audited entity
-     * @return the entity instance at the specified revision, or {@code null} if not found
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    <T> T getRevisionById(Class<T> clazz, Object entityId, int auditId);
-
-    /**
-     * Retrieves the full audit metadata and revision state for a specific entity revision.
-     *
-     * @param entityClass the class type of the audited entity
-     * @param id          the unique identifier of the entity (Integer or String)
-     * @param revisionId  the revision number to retrieve
-     * @param <T>         the type of the audited entity
-     * @return an {@link AuditEntity} containing the entity, revision info, and audit metadata
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    <T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object id, int revisionId);
-
-    /**
-     * Counts the total number of revisions available for a given audited entity class.
-     *
-     * @param entityClass the class type of the audited entity
-     * @param <T>         the type of the audited entity
-     * @return the total number of revisions recorded
-     */
-    <T> long countAllRevisions(Class<T> entityClass);
-
-    /**
-     * Retrieves a paginated list of revisions for a given entity class,
-     * filtered by user ID and/or a date range.
-     *
-     * @param entityClass      the audited entity class
-     * @param page       the page number (zero-based)
-     * @param size       the number of records per page
-     * @param userId     optional user ID to filter by who made the change (can be {@code null})
-     * @param startDate  optional start date for the revision's timestamp (can be {@code null})
-     * @param endDate    optional end date for the revision's timestamp (can be {@code null})
-     * @param <T>        the type of the audited entity
-     * @return a filtered, paginated list of {@link AuditEntity} records
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    <T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> entityClass, int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder);
-
-    /**
-     * Counts the number of revisions for a given entity class,
-     * filtered by user ID and/or date range.
-     *
-     * @param clazz      the audited entity class
-     * @param userId     optional user ID to filter by who made the change (can be {@code null})
-     * @param startDate  optional start date for the revision's timestamp (can be {@code null})
-     * @param endDate    optional end date for the revision's timestamp (can be {@code null})
-     * @param <T>        the type of the audited entity
-     * @return the number of revisions matching the filter criteria
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    <T> long countRevisionsWithFilters(Class<T> clazz, Integer userId, Date startDate, Date endDate);
-
-    /**
-     * Resolves the username associated with a given user ID.
-     *
-     * <p>If the user is not found, returns "Unknown".
-     * If the username is blank or not set, falls back to returning the system ID.
-     *
-     * @param userId the ID of the user to resolve
-     * @return the resolved username, system ID, or "Unknown" if none are available
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    String resolveUsername(Integer userId);
-
-    /**
-     * Resolves the numeric user ID associated with a given username.
-     *
-     * @param username the username to resolve
-     * @return the corresponding user ID, or {@code null} if not found
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    Integer resolveUserId(String username);
-    /**
-     * Retrieves a paginated list of audit revisions across all audited entity types,
-     * optionally filtered by user ID and/or date range.
-     *
-     * @param page       the page number (zero-based)
-     * @param size       the number of records per page
-     * @param userId     optional user ID to filter revisions by (can be {@code null})
-     * @param startDate  optional start date to filter revisions by (can be {@code null})
-     * @param endDate    optional end date to filter revisions by (can be {@code null})
-     * @return a list of {@link AuditEntity} revisions from multiple entity types
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate, String sortOrder);
-
-
-    /**
-     * Counts the total number of audit revisions across all entity types,
-     * optionally filtered by user ID and/or date range.
-     *
-     * @param userId     optional user ID to filter revisions by (can be {@code null})
-     * @param startDate  optional start date to filter revisions by (can be {@code null})
-     * @param endDate    optional end date to filter revisions by (can be {@code null})
-     * @return the count of matching revisions across all entities
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
-
-    /**
-     * Returns the total count of audit log entries across all entities.
-     *
-     * @return the total number of audit log records
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    long getAuditLogsCount();
-
-    /**
-     * Counts the total number of audit log entries matching the given filters.
-     *
-     * @param userId     optional filter for the user ID who made the changes; can be null
-     * @param startDate  optional filter for the start of the date range; can be null
-     * @param endDate    optional filter for the end of the date range; can be null
-     * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
-     * @return the total count of audit log entries matching the filters
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
-
-    /**
-     * Maps a list of {@link AuditEntity} objects to a list of {@link AuditLogDetailDTO} objects.
-     *
-     * @param auditEntities the list of audit entities to be mapped
-     * @return a list of audit log detail DTOs containing structured information from the audit entities
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities);
-
-    /**
-     * Retrieves a paginated list of audit logs filtered by user, date range, and entity type.
-     *
-     * @param page        zero-based page index
-     * @param size        number of records per page
-     * @param userId      optional user ID filter; can be null
-     * @param startDate   optional start date filter; can be null
-     * @param endDate     optional end date filter; can be null
-     * @param entityType  optional entity type filter (e.g., "Patient"); can be null
-     * @param sortOrder   optional sort order ("asc" or "desc"); can be null
-     * @return list of matching {@link AuditEntity} entries
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId,
-                                                                     Date startDate, Date endDate, String entityType, String sortOrder);
-
-    /**
-     * Counts audit logs filtered by user, date range, and entity type.
-     *
-     * @param userId     optional user ID filter; can be null
-     * @param startDate  optional start date filter; can be null
-     * @param endDate    optional end date filter; can be null
-     * @param entityType optional entity type filter; can be null
-     * @return count of matching audit log entries
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType);
-
-    /**
-     * Finds all entities modified in the same revision as the given entity.
-     * This method retrieves all entities changed in the same revision and filters them
-     * to only include those whose types match the field types of the main entity.
-     *
-     * @param entityClass the main entity class
-     * @param entityId the entity ID
-     * @param revisionId the revision number
-     * @return list of related AuditEntity objects modified in the same revision
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<AuditEntity<?>> getRelatedEntitiesInRevision(Class<?> entityClass, Object entityId, int revisionId);
-
-    /**
-     * It retrieves a paginated list of audit revisions for a specific Patient,
-     * identified by their OpenMRS patient integer ID.
-     *
-     * @param entityId   the integer primary key of the Entity
-     * @param entityClass  the entity class for which we want to get the revisions for
-     * @param page        the page number (zero-based)
-     * @param size        the number of records per page
-     * @param sortOrder   "asc" or "desc" by revision timestamp
-     * @return a list of {@link AuditEntity} records for this patient
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<AuditEntity<?>> getEntityAuditRevisionsById(Integer entityId, Class<?> entityClass, int page, int size, String sortOrder);
-
-    /**
-     * It retrieves the detailed audit view of an entity class, where we can also see
-     * the related events got audited on same revision.
-     *
-     * @param auditEntities    list of fetched hibernate audited entities
-     * @param entityClass       primary/main entity to get detailed audit on
-     * @return a list of {@link AuditLogDetailDTO}   view for detailed auditing of entity
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    List<AuditLogDetailDTO> getEntityDetailedAudit(List<AuditEntity<?>> auditEntities, Class<?> entityClass);
-
-    /**
-     * Counts the total number of audit revisions recorded for a specific Patient.
-     *
-     * @param patientId     the integer primary key of the Patient
-     * @param entityClass   entity to count the revisions for
-     * @return the total revision count
-     */
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass);
-
-    @Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
-    AuditEntityTypesResponseDto getAuditedEntitiesNames();
+	
+	/**
+	 * Retrieves a paginated list of all revisions for the specified audited entity class.
+	 *
+	 * @param entityClass the class type of the audited entity
+	 * @param page the page number (zero-based)
+	 * @param size the number of results per page
+	 * @param <T> the type of the audited entity
+	 * @return a list of {@link AuditEntity} representing revisions of the entity
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	<T> List<AuditEntity<T>> getAllRevisions(Class<T> entityClass, int page, int size, String sortOrder);
+	
+	/**
+	 * Retrieves a paginated list of all revisions for the specified audited entity class using its
+	 * fully qualified class name.
+	 *
+	 * @param entityClassName the fully qualified name of the audited entity class
+	 * @param page the page number (zero-based)
+	 * @param size the number of results per page
+	 * @param <T> the type of the audited entity
+	 * @return a list of {@link AuditEntity} representing revisions of the entity, or an empty list if
+	 *         the class is not found
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	<T> List<AuditEntity<T>> getAllRevisions(String entityClassName, int page, int size, String sortOrder);
+	
+	/**
+	 * Retrieves a specific revision of an entity by its ID and revision number.
+	 *
+	 * @param clazz the class type of the audited entity
+	 * @param entityId the unique identifier of the entity
+	 * @param auditId the revision number to retrieve
+	 * @param <T> the type of the audited entity
+	 * @return the entity instance at the specified revision, or {@code null} if not found
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	<T> T getRevisionById(Class<T> clazz, Object entityId, int auditId);
+	
+	/**
+	 * Retrieves the full audit metadata and revision state for a specific entity revision.
+	 *
+	 * @param entityClass the class type of the audited entity
+	 * @param id the unique identifier of the entity (Integer or String)
+	 * @param revisionId the revision number to retrieve
+	 * @param <T> the type of the audited entity
+	 * @return an {@link AuditEntity} containing the entity, revision info, and audit metadata
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	<T> AuditEntity<T> getAuditEntityRevisionById(Class<T> entityClass, Object id, int revisionId);
+	
+	/**
+	 * Counts the total number of revisions available for a given audited entity class.
+	 *
+	 * @param entityClass the class type of the audited entity
+	 * @param <T> the type of the audited entity
+	 * @return the total number of revisions recorded
+	 */
+	<T> long countAllRevisions(Class<T> entityClass);
+	
+	/**
+	 * Retrieves a paginated list of revisions for a given entity class, filtered by user ID and/or a
+	 * date range.
+	 *
+	 * @param entityClass the audited entity class
+	 * @param page the page number (zero-based)
+	 * @param size the number of records per page
+	 * @param userId optional user ID to filter by who made the change (can be {@code null})
+	 * @param startDate optional start date for the revision's timestamp (can be {@code null})
+	 * @param endDate optional end date for the revision's timestamp (can be {@code null})
+	 * @param <T> the type of the audited entity
+	 * @return a filtered, paginated list of {@link AuditEntity} records
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	<T> List<AuditEntity<T>> getRevisionsWithFilters(Class<T> entityClass, int page, int size, Integer userId,
+	        Date startDate, Date endDate, String sortOrder);
+	
+	/**
+	 * Counts the number of revisions for a given entity class, filtered by user ID and/or date range.
+	 *
+	 * @param clazz the audited entity class
+	 * @param userId optional user ID to filter by who made the change (can be {@code null})
+	 * @param startDate optional start date for the revision's timestamp (can be {@code null})
+	 * @param endDate optional end date for the revision's timestamp (can be {@code null})
+	 * @param <T> the type of the audited entity
+	 * @return the number of revisions matching the filter criteria
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	<T> long countRevisionsWithFilters(Class<T> clazz, Integer userId, Date startDate, Date endDate);
+	
+	/**
+	 * Resolves the username associated with a given user ID.
+	 * <p>
+	 * If the user is not found, returns "Unknown". If the username is blank or not set, falls back to
+	 * returning the system ID.
+	 *
+	 * @param userId the ID of the user to resolve
+	 * @return the resolved username, system ID, or "Unknown" if none are available
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	String resolveUsername(Integer userId);
+	
+	/**
+	 * Resolves the numeric user ID associated with a given username.
+	 *
+	 * @param username the username to resolve
+	 * @return the corresponding user ID, or {@code null} if not found
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	Integer resolveUserId(String username);
+	
+	/**
+	 * Retrieves a paginated list of audit revisions across all audited entity types, optionally
+	 * filtered by user ID and/or date range.
+	 *
+	 * @param page the page number (zero-based)
+	 * @param size the number of records per page
+	 * @param userId optional user ID to filter revisions by (can be {@code null})
+	 * @param startDate optional start date to filter revisions by (can be {@code null})
+	 * @param endDate optional end date to filter revisions by (can be {@code null})
+	 * @return a list of {@link AuditEntity} revisions from multiple entity types
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	List<AuditEntity<?>> getAllRevisionsAcrossEntities(int page, int size, Integer userId, Date startDate, Date endDate,
+	        String sortOrder);
+	
+	/**
+	 * Counts the total number of audit revisions across all entity types, optionally filtered by user
+	 * ID and/or date range.
+	 *
+	 * @param userId optional user ID to filter revisions by (can be {@code null})
+	 * @param startDate optional start date to filter revisions by (can be {@code null})
+	 * @param endDate optional end date to filter revisions by (can be {@code null})
+	 * @return the count of matching revisions across all entities
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	long countRevisionsAcrossEntities(Integer userId, Date startDate, Date endDate);
+	
+	/**
+	 * Returns the total count of audit log entries across all entities.
+	 *
+	 * @return the total number of audit log records
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	long getAuditLogsCount();
+	
+	/**
+	 * Counts the total number of audit log entries matching the given filters.
+	 *
+	 * @param userId optional filter for the user ID who made the changes; can be null
+	 * @param startDate optional filter for the start of the date range; can be null
+	 * @param endDate optional filter for the end of the date range; can be null
+	 * @param entityType optional filter for the type of entity (e.g., "Patient", "Order"); can be null
+	 * @return the total count of audit log entries matching the filters
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	long getAuditLogsCount(Integer userId, Date startDate, Date endDate, String entityType);
+	
+	/**
+	 * Maps a list of {@link AuditEntity} objects to a list of {@link AuditLogDetailDTO} objects.
+	 *
+	 * @param auditEntities the list of audit entities to be mapped
+	 * @return a list of audit log detail DTOs containing structured information from the audit entities
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	List<AuditLogDetailDTO> mapAuditEntitiesToDetails(List<AuditEntity<?>> auditEntities);
+	
+	/**
+	 * Retrieves a paginated list of audit logs filtered by user, date range, and entity type.
+	 *
+	 * @param page zero-based page index
+	 * @param size number of records per page
+	 * @param userId optional user ID filter; can be null
+	 * @param startDate optional start date filter; can be null
+	 * @param endDate optional end date filter; can be null
+	 * @param entityType optional entity type filter (e.g., "Patient"); can be null
+	 * @param sortOrder optional sort order ("asc" or "desc"); can be null
+	 * @return list of matching {@link AuditEntity} entries
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	List<AuditEntity<?>> getAllRevisionsAcrossEntitiesWithEntityType(int page, int size, Integer userId, Date startDate,
+	        Date endDate, String entityType, String sortOrder);
+	
+	/**
+	 * Counts audit logs filtered by user, date range, and entity type.
+	 *
+	 * @param userId optional user ID filter; can be null
+	 * @param startDate optional start date filter; can be null
+	 * @param endDate optional end date filter; can be null
+	 * @param entityType optional entity type filter; can be null
+	 * @return count of matching audit log entries
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType);
+	
+	/**
+	 * Finds all entities modified in the same revision as the given entity. This method retrieves all
+	 * entities changed in the same revision and filters them to only include those whose types match
+	 * the field types of the main entity.
+	 *
+	 * @param entityClass the main entity class
+	 * @param entityId the entity ID
+	 * @param revisionId the revision number
+	 * @return list of related AuditEntity objects modified in the same revision
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	List<AuditEntity<?>> getRelatedEntitiesInRevision(Class<?> entityClass, Object entityId, int revisionId);
+	
+	/**
+	 * It retrieves a paginated list of audit revisions for a specific Patient, identified by their
+	 * OpenMRS patient integer ID.
+	 *
+	 * @param entityId the integer primary key of the Entity
+	 * @param entityClass the entity class for which we want to get the revisions for
+	 * @param page the page number (zero-based)
+	 * @param size the number of records per page
+	 * @param sortOrder "asc" or "desc" by revision timestamp
+	 * @return a list of {@link AuditEntity} records for this patient
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	List<AuditEntity<?>> getEntityAuditRevisionsById(Integer entityId, Class<?> entityClass, int page, int size,
+	        String sortOrder);
+	
+	/**
+	 * It retrieves the detailed audit view of an entity class, where we can also see the related events
+	 * got audited on same revision.
+	 *
+	 * @param auditEntities list of fetched hibernate audited entities
+	 * @param entityClass primary/main entity to get detailed audit on
+	 * @return a list of {@link AuditLogDetailDTO} view for detailed auditing of entity
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	List<AuditLogDetailDTO> getEntityDetailedAudit(List<AuditEntity<?>> auditEntities, Class<?> entityClass);
+	
+	/**
+	 * Counts the total number of audit revisions recorded for a specific Patient.
+	 *
+	 * @param patientId the integer primary key of the Patient
+	 * @param entityClass entity to count the revisions for
+	 * @return the total revision count
+	 */
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	long countEntityAuditRevisionsById(Integer patientId, Class<?> entityClass);
+	
+	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
+	AuditEntityTypesResponseDto getAuditedEntitiesNames();
 }
