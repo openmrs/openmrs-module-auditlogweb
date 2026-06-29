@@ -1,3 +1,12 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
 package org.openmrs.module.auditlogweb;
 
 import lombok.Getter;
@@ -22,45 +31,45 @@ import java.util.List;
 @Getter
 @Setter
 public class ReadAuditLog extends BaseOpenmrsObject {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
-    @Column(name = "entity_name", nullable = false)
-    private String entityName;
-
-    @OneToMany(mappedBy = "readAuditLog", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ReadAuditEntityMetadata> targets = new ArrayList<>();
-
-    @Column(name = "read_success")
-    private boolean isReadSuccess;
-
-    @Column(name = "username", length = 50)
-    private String username;
-
-    @Column(name = "user_uuid", length = 38, nullable = false)
-    private String userUUID;
-
-    @Column(name = "event_time", nullable = false)
-    private Date eventTime;
-
-    @Column(name = "ip_address", length = 50)
-    private String ipAddress;
-
-    @Column(name = "user_agent", length = 500)
-    private String userAgent;
-
-    @Column(name = "session_id", length = 100)
-    private String sessionId;
-
-    public void addTarget(ReadAuditEntityMetadata target) {
-        targets.add(target);
-        target.setReadAuditLog(this);
-    }
-
-    public void removeTarget(ReadAuditEntityMetadata target) {
-        targets.remove(target);
-        target.setReadAuditLog(null);
-    }
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
+	
+	@Column(name = "entity_name", nullable = false)
+	private String entityName;
+	
+	@OneToMany(mappedBy = "readAuditLog", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ReadAuditEntityMetadata> targets = new ArrayList<>();
+	
+	@Column(name = "read_success")
+	private boolean isReadSuccess;
+	
+	@Column(name = "username", length = 50)
+	private String username;
+	
+	@Column(name = "user_uuid", length = 38, nullable = false)
+	private String userUUID;
+	
+	@Column(name = "event_time", nullable = false)
+	private Date eventTime;
+	
+	@Column(name = "ip_address", length = 50)
+	private String ipAddress;
+	
+	@Column(name = "user_agent", length = 500)
+	private String userAgent;
+	
+	@Column(name = "session_id", length = 100)
+	private String sessionId;
+	
+	public void addTarget(ReadAuditEntityMetadata target) {
+		targets.add(target);
+		target.setReadAuditLog(this);
+	}
+	
+	public void removeTarget(ReadAuditEntityMetadata target) {
+		targets.remove(target);
+		target.setReadAuditLog(null);
+	}
 }

@@ -10,8 +10,9 @@
 package org.openmrs.module.auditlogweb.api.utils;
 
 public final class AuditLogConstants {
-
+	
 	/* MODULE PRIVILEGES */
 	public static final String VIEW_AUDIT_LOGS = "View Audit Logs";
-    public static final String VIEW_READ_AUDIT_LOGS = "View Read Audit Logs";
+	
+	public static final String VIEW_READ_AUDIT_LOGS = "View Read Audit Logs";
 }
