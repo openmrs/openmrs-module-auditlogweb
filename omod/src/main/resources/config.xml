@@ -12,7 +12,7 @@
 -->
 
 <module configVersion="1.2">
-	
+
 	<!-- Base Module Properties -->
 	<id>${project.parent.artifactId}</id>
 	<name>${project.parent.name}</name>
@@ -26,7 +26,7 @@
 	<activator>org.openmrs.module.auditlogweb.AuditlogwebActivator</activator>
 
 	<require_version>2.7.0</require_version>
-	
+
 	<!-- Extensions -->
 	<extension>
 		<point>org.openmrs.admin.list</point>
@@ -41,6 +41,10 @@
 		<privilege>
 			<name>View Audit Logs</name>
 			<description>Allows viewing audit logs in the system</description>
+		</privilege>
+		<privilege>
+			<name>View Security Audit Logs</name>
+			<description>Allows viewing security audit logs</description>
 		</privilege>
 		<privilege>
 			<name>View Read Audit Logs</name>
@@ -61,6 +65,7 @@
 		<file>messages_es.properties</file>
 	</messages>
 	<!-- /Internationalization -->
+	<!-- Servlet filter: captures IP, User-Agent, session into ThreadLocal on every request -->
 	<filter>
 		<filter-name>auditContextFilter</filter-name>
 		<filter-class>org.openmrs.module.auditlogweb.web.AuditContextFilter</filter-class>

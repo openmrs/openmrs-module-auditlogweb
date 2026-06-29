@@ -26,10 +26,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 
 import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
@@ -111,6 +108,7 @@ public class AuditlogwebController {
 			model.addAttribute("currentPage", page);
 			model.addAttribute("pageSize", size);
 			model.addAttribute("sortOrder", sortOrder);
+			model.addAttribute("page", "auditlogs");
 			
 		}
 		catch (Exception e) {
@@ -189,6 +187,7 @@ public class AuditlogwebController {
 			model.addAttribute("currentPage", page);
 			model.addAttribute("pageSize", size);
 			model.addAttribute("sortOrder", sortOrder);
+			model.addAttribute("page", "auditlogs");
 			
 			if (domainName != null && !domainName.isEmpty()) {
 				model.addAttribute("currentClass", domainName);

@@ -11,6 +11,7 @@ package org.openmrs.module.auditlogweb.api.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -20,10 +21,12 @@ import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.AuditSecurityEvent;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -36,10 +39,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 class AuditServiceImplTest {
 	
@@ -290,6 +293,112 @@ class AuditServiceImplTest {
 		long count = auditService.countRevisionsAcrossEntitiesWithEntityType(1, null, null, "Patient");
 		
 		assertEquals(55L, count);
+	}
+	
+	@Test
+	void shouldBuildAndSaveSecurityEvent_WhenLogSecurityEventIsCalled() {
+		Date beforeCall = new Date();
+		
+		auditService.logSecurityEvent(AuditSecurityEventType.LOGIN_SUCCESS, "admin", "test-user-uuid", "127.0.0.1",
+		    "Mozilla", "session-123", "{\"method\":\"password\"}");
+		
+		Date afterCall = new Date();
+		ArgumentCaptor<AuditSecurityEvent> eventCaptor = ArgumentCaptor.forClass(AuditSecurityEvent.class);
+		verify(auditDao).saveSecurityEvent(eventCaptor.capture());
+		verify(auditDao).flush();
+		
+		AuditSecurityEvent event = eventCaptor.getValue();
+		assertEquals(AuditSecurityEventType.LOGIN_SUCCESS, event.getEventType());
+		assertEquals("admin", event.getUsername());
+		assertEquals("test-user-uuid", event.getUserUuid());
+		assertEquals("127.0.0.1", event.getIpAddress());
+		assertEquals("Mozilla", event.getUserAgent());
+		assertEquals("session-123", event.getSessionId());
+		assertEquals("{\"method\":\"password\"}", event.getDetails());
+		assertNotNull(event.getEventTime());
+		assertTrue(!event.getEventTime().before(beforeCall));
+		assertTrue(!event.getEventTime().after(afterCall));
+	}
+	
+	@Test
+	void shouldTrimOversizedFields_WhenLogSecurityEventIsCalled() {
+		String longUsername = String.join("", Collections.nCopies(60, "u"));
+		String longIpAddress = String.join("", Collections.nCopies(110, "i"));
+		String longUserAgent = String.join("", Collections.nCopies(1050, "a"));
+		String longSessionId = String.join("", Collections.nCopies(260, "s"));
+		
+		auditService.logSecurityEvent(AuditSecurityEventType.LOGIN_SUCCESS, longUsername, "test-user-uuid", longIpAddress,
+		    longUserAgent, longSessionId, "details");
+		
+		ArgumentCaptor<AuditSecurityEvent> eventCaptor = ArgumentCaptor.forClass(AuditSecurityEvent.class);
+		verify(auditDao).saveSecurityEvent(eventCaptor.capture());
+		verify(auditDao).flush();
+		
+		AuditSecurityEvent event = eventCaptor.getValue();
+		assertEquals(50, event.getUsername().length());
+		assertEquals(100, event.getIpAddress().length());
+		assertEquals(1000, event.getUserAgent().length());
+		assertEquals(256, event.getSessionId().length());
+	}
+	
+	@Test
+	void shouldReturnSecurityEventsGivenFiltersAndPagination() {
+		Date startDate = new Date(1000L);
+		Date endDate = new Date(2000L);
+		AuditSecurityEvent securityEvent = AuditSecurityEvent.builder().eventType(AuditSecurityEventType.LOGIN_FAILURE)
+		        .username("admin").eventTime(new Date()).build();
+		
+		when(auditDao.getSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate, 0, 10))
+		        .thenReturn(Collections.singletonList(securityEvent));
+		
+		List<AuditSecurityEvent> result = auditService.getSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate, 0,
+		    10);
+		
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		assertSame(securityEvent, result.get(0));
+		verify(auditDao).getSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate, 0, 10);
+	}
+	
+	@Test
+	void shouldReturnCountOfSecurityEventsWithGivenFilers() {
+		Date startDate = new Date(1000L);
+		Date endDate = new Date(2000L);
+		when(auditDao.countSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate)).thenReturn(10L);
+		
+		long count = auditService.countSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate);
+		assertEquals(10L, count);
+		verify(auditDao).countSecurityEvents("LOGIN_FAILURE", "admin", startDate, endDate);
+	}
+	
+	@Test
+	void shouldReturnSecurityEventById() {
+		AuditSecurityEvent securityEvent = AuditSecurityEvent.builder().eventType(AuditSecurityEventType.LOGIN_SUCCESS)
+		        .eventTime(new Date()).build();
+		when(auditDao.getSecurityEventById(12)).thenReturn(securityEvent);
+		AuditSecurityEvent result = auditService.getSecurityEventById(12);
+		
+		assertNotNull(result);
+		assertEquals(securityEvent, result);
+	}
+	
+	@Test
+	void shouldReturnRelatedSecurityEvents() {
+		AuditSecurityEvent relatedSecurityEvent1 = AuditSecurityEvent.builder()
+		        .eventType(AuditSecurityEventType.LOGIN_SUCCESS).eventTime(new Date()).sessionId("session-123").build();
+		
+		AuditSecurityEvent relatedSecurityEvent2 = AuditSecurityEvent.builder()
+		        .eventType(AuditSecurityEventType.LOGIN_SUCCESS).eventTime(new Date()).sessionId("session-123").build();
+		
+		when(auditDao.getRelatedSecurityEvents("session-123", 2))
+		        .thenReturn(Arrays.asList(relatedSecurityEvent1, relatedSecurityEvent2));
+		
+		List<AuditSecurityEvent> result = auditService.getRelatedSecurityEvents("session-123", 2);
+		
+		assertNotNull(result);
+		assertEquals(2, result.size());
+		assertEquals(relatedSecurityEvent1, result.get(0));
+		assertEquals(relatedSecurityEvent2, result.get(1));
 	}
 	
 	public static class TestEntity {

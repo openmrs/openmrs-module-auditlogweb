@@ -11,6 +11,8 @@ package org.openmrs.module.auditlogweb.api;
 
 import org.openmrs.annotation.Authorized;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.AuditSecurityEvent;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
@@ -137,7 +139,6 @@ public interface AuditService {
 	 * @param username the username to resolve
 	 * @return the corresponding user ID, or {@code null} if not found
 	 */
-	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
 	Integer resolveUserId(String username);
 	
 	/**
@@ -275,4 +276,68 @@ public interface AuditService {
 	
 	@Authorized(AuditLogConstants.VIEW_AUDIT_LOGS)
 	AuditEntityTypesResponseDto getAuditedEntitiesNames();
+	
+	/**
+	 * Retrieves paginated security audit events from {@code audit_security_event} table.
+	 *
+	 * @param eventType optional event type filter
+	 * @param username optional username filter (partial, case-insensitive)
+	 * @param startDate optional inclusive start time filter
+	 * @param endDate optional inclusive end time filter
+	 * @param page zero-based page index
+	 * @param size page size
+	 * @return paginated list of matching security events
+	 */
+	@Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
+	List<AuditSecurityEvent> getSecurityEvents(String eventType, String username, Date startDate, Date endDate, int page,
+	        int size);
+	
+	/**
+	 * Counts security audit events with optional filters.
+	 *
+	 * @param eventType optional event type filter
+	 * @param username optional username filter (partial, case-insensitive)
+	 * @param startDate optional inclusive start time filter
+	 * @param endDate optional inclusive end time filter
+	 * @return number of matching security events
+	 */
+	@Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
+	long countSecurityEvents(String eventType, String username, Date startDate, Date endDate);
+	
+	/**
+	 * Persists a security audit event to the audit_security_event table.
+	 *
+	 * @param eventType one of LOGIN_SUCCESS, LOGIN_FAILURE, ACCOUNT_LOCKED, LOGOUT, SESSION_TIMEOUT,
+	 *            PASSWORD_RESET_REQUEST_SUCCESS, PASSWORD_RESET_REQUEST_FAILURE,
+	 *            PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILURE, PASSWORD_CHANGED_SUCCESS,
+	 *            PASSWORD_CHANGED_FAILURE
+	 * @param username the username involved in the event (may be null for anonymous sessions)
+	 * @param userUuid the OpenMRS user UUID (nullable when the user doesn't exist in the DB)
+	 * @param ipAddress the client IP address extracted from the request (nullable)
+	 * @param userAgent the HTTP User-Agent header value (nullable)
+	 * @param sessionId the HTTP session ID (nullable)
+	 * @param detailsJson optional JSON string with additional context (nullable)
+	 */
+	void logSecurityEvent(AuditSecurityEventType eventType, String username, String userUuid, String ipAddress,
+	        String userAgent, String sessionId, String detailsJson);
+	
+	/**
+	 * Retrieves a single security event by its primary key.
+	 *
+	 * @param eventId the primary key ID of the security event
+	 * @return the {@link AuditSecurityEvent}, or null if not found
+	 */
+	@Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
+	AuditSecurityEvent getSecurityEventById(Integer eventId);
+	
+	/**
+	 * Retrieves the most recent N security events from the same session (for related activity).
+	 *
+	 * @param sessionId the session ID to filter by
+	 * @param limit the maximum number of events to return
+	 * @return a list of {@link AuditSecurityEvent} ordered by eventTime descending
+	 */
+	@Authorized(AuditLogConstants.VIEW_SECURITY_AUDIT_LOGS)
+	List<AuditSecurityEvent> getRelatedSecurityEvents(String sessionId, int limit);
+	
 }
