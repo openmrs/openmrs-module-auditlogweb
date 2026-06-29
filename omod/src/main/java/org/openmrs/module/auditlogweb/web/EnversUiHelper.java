@@ -10,7 +10,6 @@
 package org.openmrs.module.auditlogweb.web;
 
 import lombok.RequiredArgsConstructor;
-import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;

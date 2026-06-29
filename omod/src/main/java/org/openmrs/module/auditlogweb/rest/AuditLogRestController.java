@@ -32,10 +32,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.persistence.NoResultException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -85,8 +81,8 @@ public class AuditLogRestController {
 		if (size <= 0)
 			size = 20;
 		
-		Date start = parseDate(startDate, false);
-		Date end = parseDate(endDate, true);
+		Date start = UtilClass.parseDate(startDate, false);
+		Date end = UtilClass.parseDate(endDate, true);
 		
 		Integer effectiveUserId = userId;
 		if (effectiveUserId == null && username != null && !username.isEmpty()) {
@@ -141,28 +137,6 @@ public class AuditLogRestController {
 		}
 		
 		return auditService.mapAuditEntitiesToDetails(Collections.singletonList(auditEntity)).get(0);
-	}
-	
-	/**
-	 * Parses a date string in "dd/MM/yyyy" format.
-	 *
-	 * @param dateStr the date string to parse
-	 * @param isEndDay if the date is end date
-	 * @return the parsed {@link Date} object, or null if the input is null or empty
-	 * @throws RuntimeException if the date string cannot be parsed
-	 */
-	private Date parseDate(String dateStr, boolean isEndDay) {
-		if (dateStr == null || dateStr.isEmpty())
-			return null;
-		try {
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
-			LocalDate parsedDate = LocalDate.parse(dateStr.trim(), formatter);
-			return isEndDay ? UtilClass.toEndDate(parsedDate) : UtilClass.toStartDate(parsedDate);
-		}
-		catch (DateTimeParseException e) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-			        "Invalid month date or date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
-		}
 	}
 	
 	@GetMapping("/entityTypes")

@@ -10,6 +10,7 @@
 package org.openmrs.module.auditlogweb.api.dao;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.query.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
@@ -19,7 +20,9 @@ import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.exception.SQLGrammarException;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.AuditSecurityEvent;
 import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
@@ -580,5 +583,145 @@ public class AuditDao {
 				
 			}
 		}
+	}
+	
+	/**
+	 * Persists a {@link AuditSecurityEvent} record to the {@code audit_security_event} table.
+	 *
+	 * @param event the fully populated security event to save
+	 */
+	public void saveSecurityEvent(AuditSecurityEvent event) {
+		sessionFactory.getCurrentSession().save(event);
+	}
+	
+	/**
+	 * Flushes the current Hibernate session.
+	 */
+	public void flush() {
+		sessionFactory.getCurrentSession().flush();
+	}
+	
+	/**
+	 * Retrieves paginated security events using optional filter criteria.
+	 *
+	 * @param eventType the security event type (for example, LOGIN_SUCCESS)
+	 * @param username the username linked with the events
+	 * @param startDate the start date for filtering events
+	 * @param endDate the end date for filtering events
+	 * @param page the zero based page index
+	 * @param size the number of records per page
+	 * @return a list of matching {@link AuditSecurityEvent} records
+	 */
+	public List<AuditSecurityEvent> getSecurityEvents(String eventType, String username, Date startDate, Date endDate,
+	        int page, int size) {
+		StringBuilder hql = new StringBuilder("from AuditSecurityEvent e where 1=1");
+		AuditSecurityEventType eventTypeEnum = AuditSecurityEventType.fromName(eventType);
+		
+		if (eventTypeEnum != null) {
+			hql.append(" and e.eventType = :eventType");
+		}
+		if (username != null && !username.trim().isEmpty()) {
+			hql.append(" and lower(e.username) like :username");
+		}
+		if (startDate != null) {
+			hql.append(" and e.eventTime >= :startDate");
+		}
+		if (endDate != null) {
+			hql.append(" and e.eventTime <= :endDate");
+		}
+		
+		hql.append(" order by e.eventTime desc");
+		
+		Query<AuditSecurityEvent> query = sessionFactory.getCurrentSession().createQuery(hql.toString(),
+		    AuditSecurityEvent.class);
+		bindSecurityEventFilters(query, eventTypeEnum, username, startDate, endDate);
+		
+		return query.setFirstResult(page * size).setMaxResults(size).getResultList();
+	}
+	
+	/**
+	 * Counts security events with optional filters.
+	 *
+	 * @param eventType the security event type (for example, LOGIN_SUCCESS)
+	 * @param username the username linked with the events
+	 * @param startDate the start date for filtering events
+	 * @param endDate the end date for filtering events
+	 * @return the count of security events from the given filters
+	 */
+	public long countSecurityEvents(String eventType, String username, Date startDate, Date endDate) {
+		StringBuilder hql = new StringBuilder("select count(e.id) from AuditSecurityEvent e where 1=1");
+		AuditSecurityEventType eventTypeEnum = AuditSecurityEventType.fromName(eventType);
+		
+		if (eventTypeEnum != null) {
+			hql.append(" and e.eventType = :eventType");
+		}
+		if (username != null && !username.trim().isEmpty()) {
+			hql.append(" and lower(e.username) like :username");
+		}
+		if (startDate != null) {
+			hql.append(" and e.eventTime >= :startDate");
+		}
+		if (endDate != null) {
+			hql.append(" and e.eventTime <= :endDate");
+		}
+		
+		Query<Long> query = sessionFactory.getCurrentSession().createQuery(hql.toString(), Long.class);
+		bindSecurityEventFilters(query, eventTypeEnum, username, startDate, endDate);
+		
+		Long count = query.getSingleResult();
+		return count != null ? count : 0L;
+	}
+	
+	/**
+	 * Helper method to bind the parameters to the query
+	 *
+	 * @param query original query for adding the params
+	 * @param eventType filter by audit event type
+	 * @param username filter by username
+	 * @param startDate filter by the start date of audits
+	 * @param endDate filter by end date of audits
+	 */
+	private void bindSecurityEventFilters(Query<?> query, AuditSecurityEventType eventType, String username, Date startDate,
+	        Date endDate) {
+		if (eventType != null) {
+			query.setParameter("eventType", eventType);
+		}
+		if (username != null && !username.trim().isEmpty()) {
+			query.setParameter("username", "%" + username.trim().toLowerCase() + "%");
+		}
+		if (startDate != null) {
+			query.setParameter("startDate", startDate);
+		}
+		if (endDate != null) {
+			query.setParameter("endDate", endDate);
+		}
+	}
+	
+	/**
+	 * Retrieves a single security event by its primary key ID.
+	 *
+	 * @param eventId the primary key ID of the security event
+	 * @return the {@link AuditSecurityEvent}, or null if not found
+	 */
+	public AuditSecurityEvent getSecurityEventById(Integer eventId) {
+		Query<AuditSecurityEvent> query = sessionFactory.getCurrentSession()
+		        .createQuery("from AuditSecurityEvent e where e.id = :eventId", AuditSecurityEvent.class);
+		query.setParameter("eventId", eventId);
+		return query.uniqueResult();
+	}
+	
+	/**
+	 * Retrieves the most recent N security events from the same session (for related activity).
+	 *
+	 * @param sessionId the session ID to filter by
+	 * @param limit the maximum number of events to return
+	 * @return a list of {@link AuditSecurityEvent} ordered by eventTime descending
+	 */
+	public List<AuditSecurityEvent> getRelatedSecurityEvents(String sessionId, int limit) {
+		Query<AuditSecurityEvent> query = sessionFactory.getCurrentSession().createQuery(
+		    "from AuditSecurityEvent e where e.sessionId = :sessionId order by e.eventTime desc", AuditSecurityEvent.class);
+		query.setParameter("sessionId", sessionId);
+		query.setMaxResults(limit);
+		return query.getResultList();
 	}
 }

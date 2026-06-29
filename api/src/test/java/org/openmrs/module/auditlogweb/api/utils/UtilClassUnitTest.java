@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UtilClassUnitTest {
 	
@@ -62,6 +63,28 @@ public class UtilClassUnitTest {
 		LocalDate date=LocalDate.of(2025,Month.JULY,9);Date endDate=UtilClass.toEndDate(date);assertNotNull(endDate);
 		// Expecting 23:59:59.999 (999 milliseconds = 999_000_000 nanos)
 		assertEquals(date.atTime(23,59,59).plusNanos(999_000_000).atZone(java.time.ZoneId.systemDefault()).toInstant(),endDate.toInstant());assertNull(UtilClass.toEndDate(null));
+	}
+	
+	@Test
+	public void parseDate_shouldReturnCorrectDate() {
+		LocalDate date=LocalDate.of(2025,Month.JULY,9);Date startDate=UtilClass.parseDate("09/07/2025",false);assertNotNull(startDate);assertEquals(date.atStartOfDay().atZone(java.time.ZoneId.systemDefault()).toInstant(),startDate.toInstant());
+		
+		Date endDate=UtilClass.parseDate("09/07/2025",true);assertNotNull(endDate);assertEquals(date.atTime(23,59,59).plusNanos(999_000_000).atZone(java.time.ZoneId.systemDefault()).toInstant(),endDate.toInstant());
+	}
+	
+	@Test
+	public void parseDate_shouldReturnNullForNullOrEmpty() {
+		assertNull(UtilClass.parseDate(null, false));
+		assertNull(UtilClass.parseDate("", false));
+		assertNull(UtilClass.parseDate(" ", false));
+	}
+	
+	@Test
+	public void parseDate_shouldThrowIllegalArgumentExceptionForInvalidDate() {
+		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+			UtilClass.parseDate("2025/07/09", false);
+		});
+		assertTrue(exception.getMessage().contains("Invalid month date or date format"));
 	}
 	
 	@Test

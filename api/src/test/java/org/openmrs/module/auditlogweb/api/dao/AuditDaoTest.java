@@ -18,6 +18,7 @@ import org.hibernate.envers.RevisionType;
 import org.hibernate.envers.query.AuditQuery;
 import org.hibernate.envers.query.AuditQueryCreator;
 import org.hibernate.exception.SQLGrammarException;
+import org.hibernate.query.Query;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,8 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.AuditSecurityEvent;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
@@ -41,6 +44,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,6 +53,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+
+import static org.mockito.ArgumentMatchers.anyString;
 
 class AuditDaoTest {
 	
@@ -66,6 +74,12 @@ class AuditDaoTest {
 	
 	@Mock
 	private AuditQuery auditQuery;
+	
+	@Mock
+	private Query<AuditSecurityEvent> securityEventQuery;
+	
+	@Mock
+	private Query<Long> countQuery;
 	
 	@InjectMocks
 	private AuditDao auditDao;
@@ -435,4 +449,176 @@ class AuditDaoTest {
 		assertThat(exception.getMessage(), is("Audit history count could not be fetched, try again later"));
 	}
 	
+	@Test
+	void shouldSaveSecurityEvent_WhenValidEventIsProvided() {
+		AuditSecurityEvent event = buildSecurityEvent(AuditSecurityEventType.LOGIN_SUCCESS, "admin");
+		auditDao.saveSecurityEvent(event);
+		
+		verify(session, times(1)).save(event);
+	}
+	
+	@Test
+	void shouldReturnSecurityEvents_WhenNoFiltersProvided() {
+		List<AuditSecurityEvent> expected = Collections
+		        .singletonList(buildSecurityEvent(AuditSecurityEventType.LOGOUT, "nurse01"));
+		
+		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setFirstResult(0)).thenReturn(securityEventQuery);
+		when(securityEventQuery.setMaxResults(10)).thenReturn(securityEventQuery);
+		when(securityEventQuery.getResultList()).thenReturn(expected);
+		
+		List<AuditSecurityEvent> result = auditDao.getSecurityEvents(null, null, null, null, 0, 10);
+		
+		assertNotNull(result);
+		assertThat(result, hasSize(1));
+		assertThat(result.get(0).getEventType(), is(AuditSecurityEventType.LOGOUT));
+	}
+	
+	@Test
+	void shouldReturnFilteredSecurityEvents_WhenEventTypeAndUsernameProvided() {
+		AuditSecurityEvent event = buildSecurityEvent(AuditSecurityEventType.LOGIN_FAILURE, "admin");
+		
+		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setParameter(eq("eventType"), eq(AuditSecurityEventType.LOGIN_FAILURE)))
+		        .thenReturn(securityEventQuery);
+		when(securityEventQuery.setParameter(eq("username"), eq("admin"))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setFirstResult(0)).thenReturn(securityEventQuery);
+		when(securityEventQuery.setMaxResults(5)).thenReturn(securityEventQuery);
+		when(securityEventQuery.getResultList()).thenReturn(Collections.singletonList(event));
+		
+		List<AuditSecurityEvent> result = auditDao.getSecurityEvents("LOGIN_FAILURE", "admin", null, null, 0, 5);
+		
+		assertNotNull(result);
+		assertThat(result, hasSize(1));
+		assertThat(result.get(0).getUsername(), is("admin"));
+		
+		verify(securityEventQuery).setParameter(eq("eventType"), eq(AuditSecurityEventType.LOGIN_FAILURE));
+		verify(securityEventQuery).setParameter(eq("username"), eq("%admin%"));
+	}
+	
+	@Test
+	void shouldReturnSecurityEvents_WhenDateRangeProvided() {
+		Date start=new Date(System.currentTimeMillis()-86_400_000); // yesterday
+		Date end=new Date();
+		
+		when(session.createQuery(anyString(),eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);when(securityEventQuery.setParameter(eq("startDate"),eq(start))).thenReturn(securityEventQuery);when(securityEventQuery.setParameter(eq("endDate"),eq(end))).thenReturn(securityEventQuery);when(securityEventQuery.setFirstResult(0)).thenReturn(securityEventQuery);when(securityEventQuery.setMaxResults(10)).thenReturn(securityEventQuery);when(securityEventQuery.getResultList()).thenReturn(Collections.emptyList());
+		
+		List<AuditSecurityEvent>result=auditDao.getSecurityEvents(null,null,start,end,0,10);
+		
+		assertNotNull(result);assertThat(result,empty());verify(securityEventQuery).setParameter("startDate",start);verify(securityEventQuery).setParameter("endDate",end);
+	}
+	
+	@Test
+	void shouldReturnSecurityEventCount_WhenNoFiltersProvided() {
+		when(session.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
+		when(countQuery.getSingleResult()).thenReturn(42L);
+		
+		long count = auditDao.countSecurityEvents(null, null, null, null);
+		
+		assertThat(count, is(42L));
+	}
+	
+	@Test
+	void shouldReturnZeroCount_WhenCountSecurityEventsReturnsNull() {
+		when(session.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
+		when(countQuery.getSingleResult()).thenReturn(null);
+		
+		long count = auditDao.countSecurityEvents(null, null, null, null);
+		
+		assertThat(count, is(0L));
+	}
+	
+	@Test
+	void shouldReturnSecurityEventCount_WhenEventTypeFilterProvided() {
+		when(session.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
+		when(countQuery.setParameter(eq("eventType"), eq(AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS)))
+		        .thenReturn(countQuery);
+		when(countQuery.getSingleResult()).thenReturn(3L);
+		
+		long count = auditDao.countSecurityEvents("PASSWORD_CHANGED_SUCCESS", null, null, null);
+		
+		assertThat(count, is(3L));
+		verify(countQuery).setParameter("eventType", AuditSecurityEventType.PASSWORD_CHANGED_SUCCESS);
+	}
+	
+	@Test
+	void shouldReturnSecurityEvent_WhenFoundById() {
+		AuditSecurityEvent expected = AuditSecurityEvent.builder().eventType(AuditSecurityEventType.SESSION_TIMEOUT)
+		        .username("user1").eventTime(new Date()).ipAddress("127.0.0.1").sessionId("test-session-id").id(99).build();
+		
+		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setParameter("eventId", 99)).thenReturn(securityEventQuery);
+		when(securityEventQuery.uniqueResult()).thenReturn(expected);
+		
+		AuditSecurityEvent result = auditDao.getSecurityEventById(99);
+		
+		assertNotNull(result);
+		assertSame(expected, result);
+		assertThat(result.getId(), is(99));
+	}
+	
+	@Test
+	void shouldReturnNull_WhenSecurityEventNotFoundById() {
+		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setParameter("eventId", 404)).thenReturn(securityEventQuery);
+		when(securityEventQuery.uniqueResult()).thenReturn(null);
+		
+		AuditSecurityEvent result = auditDao.getSecurityEventById(404);
+		
+		assertNull(result);
+	}
+	
+	@Test
+	void shouldReturnRelatedSecurityEvents_WhenSessionIdProvided() {
+		String sessionId = "sess-abc-123";
+		AuditSecurityEvent e1 = buildSecurityEvent(AuditSecurityEventType.LOGIN_SUCCESS, "user1");
+		AuditSecurityEvent e2 = buildSecurityEvent(AuditSecurityEventType.LOGOUT, "user1");
+		
+		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setParameter("sessionId", sessionId)).thenReturn(securityEventQuery);
+		when(securityEventQuery.setMaxResults(5)).thenReturn(securityEventQuery);
+		when(securityEventQuery.getResultList()).thenReturn(Arrays.asList(e1, e2));
+		
+		List<AuditSecurityEvent> result = auditDao.getRelatedSecurityEvents(sessionId, 5);
+		
+		assertNotNull(result);
+		assertThat(result, hasSize(2));
+		verify(securityEventQuery).setParameter("sessionId", sessionId);
+		verify(securityEventQuery).setMaxResults(5);
+	}
+	
+	@Test
+	void shouldReturnEmptyList_WhenNoRelatedSecurityEventsFound() {
+		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setParameter(anyString(), anyString())).thenReturn(securityEventQuery);
+		when(securityEventQuery.setMaxResults(anyInt())).thenReturn(securityEventQuery);
+		when(securityEventQuery.getResultList()).thenReturn(Collections.emptyList());
+		
+		List<AuditSecurityEvent> result = auditDao.getRelatedSecurityEvents("sess-ghost", 10);
+		
+		assertNotNull(result);
+		assertThat(result, empty());
+	}
+	
+	@Test
+	void shouldBindUnknownEventType_WhenGivenSecurityEventIsInvalid() {
+		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
+		when(securityEventQuery.setParameter(eq("eventType"), eq(AuditSecurityEventType.UNKNOWN)))
+		        .thenReturn(securityEventQuery);
+		when(securityEventQuery.setFirstResult(anyInt())).thenReturn(securityEventQuery);
+		when(securityEventQuery.setMaxResults(anyInt())).thenReturn(securityEventQuery);
+		when(securityEventQuery.getResultList()).thenReturn(Collections.emptyList());
+		
+		List<AuditSecurityEvent> result = auditDao.getSecurityEvents("INVALID_EVENT", null, null, null, 0, 10);
+		
+		assertNotNull(result);
+		assertThat(result, empty());
+		verify(securityEventQuery).setParameter("eventType", AuditSecurityEventType.UNKNOWN);
+	}
+	
+	/** Helper function to build AuditSecurityEvent for use in tests. */
+	private AuditSecurityEvent buildSecurityEvent(AuditSecurityEventType type, String username) {
+		return AuditSecurityEvent.builder().eventType(type).username(username).eventTime(new Date()).ipAddress("127.0.0.1")
+		        .sessionId("test-session-id").build();
+	}
 }

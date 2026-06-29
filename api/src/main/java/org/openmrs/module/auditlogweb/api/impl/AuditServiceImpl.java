@@ -17,6 +17,8 @@ import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.auditlogweb.AuditEntity;
+import org.openmrs.module.auditlogweb.AuditSecurityEvent;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 import org.openmrs.module.auditlogweb.api.AuditService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
@@ -26,6 +28,8 @@ import org.openmrs.module.auditlogweb.api.dto.RelatedEntityDto;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Date;
@@ -322,6 +326,23 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 	/**
 	 * Counts audit logs across entities with filtering.
 	 */
+	/**
+	 * Builds an {@link AuditSecurityEvent}, stamps the current timestamp, and delegates persistence to
+	 * the DAO. Null-safe: all optional parameters are accepted without any non-null constraint here.
+	 */
+	@Override
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void logSecurityEvent(AuditSecurityEventType eventType, String username, String userUuid, String ipAddress,
+	        String userAgent, String sessionId, String detailsJson) {
+		
+		AuditSecurityEvent event = AuditSecurityEvent.builder().eventType(eventType)
+		        .username(StringUtils.substring(username, 0, 50)).userUuid(userUuid).eventTime(new Date())
+		        .ipAddress(StringUtils.substring(ipAddress, 0, 100)).userAgent(StringUtils.substring(userAgent, 0, 1000))
+		        .sessionId(StringUtils.substring(sessionId, 0, 256)).details(detailsJson).build();
+		auditDao.saveSecurityEvent(event);
+		auditDao.flush();
+	}
+	
 	@Override
 	public long countRevisionsAcrossEntitiesWithEntityType(Integer userId, Date startDate, Date endDate, String entityType) {
 		return auditDao.countRevisionsAcrossEntitiesWithEntityType(userId, startDate, endDate, entityType);
@@ -334,6 +355,27 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 		relevantClasses.remove(null);
 		
 		return auditDao.getEntitiesModifiedInRevision(revisionId, relevantClasses);
+	}
+	
+	@Override
+	public List<AuditSecurityEvent> getSecurityEvents(String eventType, String username, Date startDate, Date endDate,
+	        int page, int size) {
+		return auditDao.getSecurityEvents(eventType, username, startDate, endDate, page, size);
+	}
+	
+	@Override
+	public long countSecurityEvents(String eventType, String username, Date startDate, Date endDate) {
+		return auditDao.countSecurityEvents(eventType, username, startDate, endDate);
+	}
+	
+	@Override
+	public AuditSecurityEvent getSecurityEventById(Integer eventId) {
+		return auditDao.getSecurityEventById(eventId);
+	}
+	
+	@Override
+	public List<AuditSecurityEvent> getRelatedSecurityEvents(String sessionId, int limit) {
+		return auditDao.getRelatedSecurityEvents(sessionId, limit);
 	}
 	
 	private Object fetchPreviousRevision(AuditEntity<?> entity, Object currentEntity) {

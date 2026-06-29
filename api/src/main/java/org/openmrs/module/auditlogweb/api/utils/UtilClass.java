@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.MappedSuperclass;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -32,6 +31,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.time.temporal.Temporal;
 import java.util.Collection;
 import java.util.List;
@@ -155,13 +156,15 @@ public class UtilClass {
 	 */
 	public static List<AuditFieldDiff> computeFieldDiffs(Class<?> clazz, Object oldEntity, Object currentEntity) {
 		List<AuditFieldDiff> diffs = new ArrayList<>();
-		if (currentEntity == null)
+		if (currentEntity == null) {
 			return diffs;
+		}
 		
 		Field[] fields = getAllFields(clazz);
 		for (Field field : fields) {
-			if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic())
+			if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
 				continue;
+			}
 			
 			field.setAccessible(true);
 			
@@ -219,8 +222,9 @@ public class UtilClass {
 	 * @return the parsed {@link LocalDate}, or {@code null} if parsing fails
 	 */
 	public static LocalDate parse(String dateStr) {
-		if (dateStr == null || dateStr.trim().isEmpty())
+		if (dateStr == null || dateStr.trim().isEmpty()) {
 			return null;
+		}
 		
 		try {
 			return LocalDate.parse(dateStr.trim());
@@ -254,6 +258,29 @@ public class UtilClass {
 	 */
 	public static Date toEndDate(LocalDate date) {
 		return date == null ? null : Date.from(date.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+	}
+	
+	/**
+	 * Parses a date string in "dd/MM/yyyy" format strictly.
+	 *
+	 * @param dateStr the date string to parse
+	 * @param isEndDay if the date is end date
+	 * @return the parsed {@link Date} object, or null if the input is null or empty
+	 * @throws IllegalArgumentException if the date string cannot be parsed
+	 */
+	public static Date parseDate(String dateStr, boolean isEndDay) {
+		if (dateStr == null || dateStr.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT);
+			LocalDate parsedDate = LocalDate.parse(dateStr.trim(), formatter);
+			return isEndDay ? toEndDate(parsedDate) : toStartDate(parsedDate);
+		}
+		catch (DateTimeParseException e) {
+			throw new IllegalArgumentException(
+			        "Invalid month date or date format: '" + dateStr + "'. Expected format: DD/MM/YYYY", e);
+		}
 	}
 	
 	/**
