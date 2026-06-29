@@ -1,8 +1,9 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
@@ -22,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
 
 public class UtilClassUnitTest {
     @Test
@@ -107,7 +107,7 @@ public class UtilClassUnitTest {
 
         boolean foundParentField = false;
         boolean foundChildField = false;
-        
+
         for (AuditFieldDiff diff : diffs) {
             if ("parentField".equals(diff.getFieldName())) {
                 foundParentField = true;
@@ -116,7 +116,7 @@ public class UtilClassUnitTest {
                 foundChildField = true;
             }
         }
-        
+
         assertTrue(foundParentField);
         assertTrue(foundChildField);
     }
@@ -142,7 +142,7 @@ public class UtilClassUnitTest {
                 break;
             }
         }
-        
+
         assertNotNull(genderDiff);
         assertEquals("M", genderDiff.getOldValue());
         assertEquals("F", genderDiff.getCurrentValue());
@@ -155,7 +155,7 @@ public class UtilClassUnitTest {
         child.setChildField("value");
 
         List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(ChildClass.class, null, child);
-        
+
         boolean foundChildField = false;
         for (AuditFieldDiff diff : diffs) {
             if ("childField".equals(diff.getFieldName())) {

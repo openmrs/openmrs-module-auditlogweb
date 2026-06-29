@@ -11,19 +11,13 @@ package org.openmrs.module.auditlogweb.api.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.hibernate.envers.RevisionType;
+import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class RelatedEntityDto {
+@NoArgsConstructor
+public class AuditEntityTypesResponseDto {
 	
-	private String className;
-	
-	private String simpleName;
-	
-	private String entityIdValue;
-	
-	private int revisionId;
-	
-	private RevisionType revisionType;
+	private List<String> entityTypes;
 }

@@ -1,8 +1,9 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
@@ -40,122 +41,127 @@ import static org.openmrs.module.auditlogweb.AuditlogwebConstants.MODULE_PATH;
 @RequestMapping(value = MODULE_PATH + "/viewAudit.form")
 @RequiredArgsConstructor
 public class ViewAuditController {
-
-    private static final Logger logger = LoggerFactory.getLogger(ViewAuditController.class);
-
-    private final AuditService auditService;
-    private final EnversUiHelper enversUiHelper;
-
-    private static final String VIEW = MODULE_PATH + "/viewAudit";
-    private static final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
-
-    @RequestMapping(method = RequestMethod.GET)
-    public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
-        // Check if auditing is enabled
-        if (!EnversUtils.isEnversEnabled()) {
-            model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
-            return new ModelAndView(ENVERS_DISABLED_VIEW, model);
-        }
-
-        // Extract request parameters
-        String auditIdParam = request.getParameter("auditId");
-        String entityIdParam = request.getParameter("entityId");
-        String className = request.getParameter("class");
-
-        if (auditIdParam == null || entityIdParam == null || className == null ||
-                auditIdParam.isEmpty() || entityIdParam.isEmpty() || className.isEmpty()) {
-            model.addAttribute("errorMessage", "Please select an entity to view audit details.");
-            return new ModelAndView(VIEW, model);
-        }
-
-        try {
-            int auditId = Integer.parseInt(auditIdParam);
-            Class<?> clazz = Class.forName(className);
-
-            // Handle different ID types
-            Object entityId;
-            if (Role.class.isAssignableFrom(clazz) || GlobalProperty.class.isAssignableFrom(clazz)) {
-                entityId = entityIdParam;
-            } else {
-                entityId = Integer.parseInt(entityIdParam);
-            }
-
-            // Fetch current revision with full audit info
-            AuditEntity<?> auditEntity;
-            try {
-                auditEntity = auditService.getAuditEntityRevisionById(clazz, entityId, auditId);
-            } catch (ObjectNotFoundException ex) {
-                model.addAttribute("errorMessage", "Audit entity not found for this revision.");
-                return new ModelAndView(VIEW, model);
-            }
-
-            Object currentEntity = auditEntity.getEntity();
-
-            // Try to fetch the previous revision
-            Object oldEntity = null;
-            if (auditId - 1 > 0) {
-                try {
-                    oldEntity = auditService.getRevisionById(clazz, entityId, auditId - 1);
-                } catch (ObjectNotFoundException e) {
-                    logger.debug("Previous revision not found for entity {}: {}", entityId, e.getMessage());
-                }
-            }
-
-            // Compute field differences
-            List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
-
-            // Fetch related entities modified in the same revision and exclude current entity
-            List<RelatedEntityDto> relatedEntities = new ArrayList<>();
-            try {
-                List<AuditEntity<?>> allRelated = auditService.getRelatedEntitiesInRevision(clazz, entityId, auditId);
-                String currentId = UtilClass.getEntityIdAsString(currentEntity);
-                for (AuditEntity<?> related : allRelated) {
-                    if (related.getEntity() != null) {
-                        String relatedId = UtilClass.getEntityIdAsString(related.getEntity());
-                        if (!related.getEntity().getClass().equals(clazz) || !relatedId.equals(currentId)) {
-                            relatedEntities.add(new RelatedEntityDto(
-                                    related.getEntity().getClass().getName(),
-                                    related.getEntity().getClass().getSimpleName(),
-                                    relatedId,
-                                    related.getRevisionEntity().getId(),
-                                    related.getRevisionType()
-                            ));
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                logger.warn("Could not fetch related entities for revision {}: {}", auditId, e.getMessage());
-            }
-
-            // Determine edit or revision type
-            String auditType = AuditTypeMapper.toHumanReadable(auditEntity.getRevisionType());
-
-            // Add metadata and results to model
-            String username = auditService.resolveUsername(auditEntity.getChangedBy());
-
-            model.addAttribute("entityType", className.substring(className.lastIndexOf('.') + 1));
-            model.addAttribute("auditType", auditType);
-            model.addAttribute("changedBy", username);
-            model.addAttribute("changedOn", auditEntity.getRevisionEntity().getChangedOn());
-            model.addAttribute("diffs", diffs);
-            model.addAttribute("relatedEntities", relatedEntities);
-
-            return new ModelAndView(VIEW, model);
-
-        } catch (NumberFormatException e) {
-            model.addAttribute("errorMessage", "Invalid ID format for this entity type.");
-            return new ModelAndView(VIEW, model);
-        } catch (IllegalArgumentException e) {
-            if (e.getCause() instanceof QueryException) {
-                model.addAttribute("errorMessage", "Some referenced data could not be loaded. Please contact your administrator.");
-                return new ModelAndView(VIEW, model);
-            } else {
-                throw e;
-            }
-        } catch (Exception e) {
-            model.addAttribute("errorMessage", "Error loading audit data: " + e.getMessage());
-            logger.error("Error loading audit data: ", e);
-            return new ModelAndView(VIEW, model);
-        }
-    }
+	
+	private static final Logger logger = LoggerFactory.getLogger(ViewAuditController.class);
+	
+	private final AuditService auditService;
+	
+	private final EnversUiHelper enversUiHelper;
+	
+	private static final String VIEW = MODULE_PATH + "/viewAudit";
+	
+	private static final String ENVERS_DISABLED_VIEW = MODULE_PATH + "/enversDisabled";
+	
+	@RequestMapping(method = RequestMethod.GET)
+	public ModelAndView showForm(HttpServletRequest request, ModelMap model) {
+		// Check if auditing is enabled
+		if (!EnversUtils.isEnversEnabled()) {
+			model.addAttribute("errorMessage", enversUiHelper.getAdminHint());
+			return new ModelAndView(ENVERS_DISABLED_VIEW, model);
+		}
+		
+		// Extract request parameters
+		String auditIdParam = request.getParameter("auditId");
+		String entityIdParam = request.getParameter("entityId");
+		String className = request.getParameter("class");
+		
+		if (auditIdParam == null || entityIdParam == null || className == null || auditIdParam.isEmpty()
+		        || entityIdParam.isEmpty() || className.isEmpty()) {
+			model.addAttribute("errorMessage", "Please select an entity to view audit details.");
+			return new ModelAndView(VIEW, model);
+		}
+		
+		try {
+			int auditId = Integer.parseInt(auditIdParam);
+			Class<?> clazz = Class.forName(className);
+			
+			// Handle different ID types
+			Object entityId;
+			if (Role.class.isAssignableFrom(clazz) || GlobalProperty.class.isAssignableFrom(clazz)) {
+				entityId = entityIdParam;
+			} else {
+				entityId = Integer.parseInt(entityIdParam);
+			}
+			
+			// Fetch current revision with full audit info
+			AuditEntity<?> auditEntity;
+			try {
+				auditEntity = auditService.getAuditEntityRevisionById(clazz, entityId, auditId);
+			}
+			catch (ObjectNotFoundException ex) {
+				model.addAttribute("errorMessage", "Audit entity not found for this revision.");
+				return new ModelAndView(VIEW, model);
+			}
+			
+			Object currentEntity = auditEntity.getEntity();
+			
+			// Try to fetch the previous revision
+			Object oldEntity = null;
+			if (auditId - 1 > 0) {
+				try {
+					oldEntity = auditService.getRevisionById(clazz, entityId, auditId - 1);
+				}
+				catch (ObjectNotFoundException e) {
+					logger.debug("Previous revision not found for entity {}: {}", entityId, e.getMessage());
+				}
+			}
+			
+			// Compute field differences
+			List<AuditFieldDiff> diffs = UtilClass.computeFieldDiffs(clazz, oldEntity, currentEntity);
+			
+			// Fetch related entities modified in the same revision and exclude current entity
+			List<RelatedEntityDto> relatedEntities = new ArrayList<>();
+			try {
+				List<AuditEntity<?>> allRelated = auditService.getRelatedEntitiesInRevision(clazz, entityId, auditId);
+				String currentId = UtilClass.getEntityIdAsString(currentEntity);
+				for (AuditEntity<?> related : allRelated) {
+					if (related.getEntity() != null) {
+						String relatedId = UtilClass.getEntityIdAsString(related.getEntity());
+						if (!related.getEntity().getClass().equals(clazz) || !relatedId.equals(currentId)) {
+							relatedEntities.add(new RelatedEntityDto(related.getEntity().getClass().getName(),
+							        related.getEntity().getClass().getSimpleName(), relatedId,
+							        related.getRevisionEntity().getId(), related.getRevisionType()));
+						}
+					}
+				}
+			}
+			catch (Exception e) {
+				logger.warn("Could not fetch related entities for revision {}: {}", auditId, e.getMessage());
+			}
+			
+			// Determine edit or revision type
+			String auditType = AuditTypeMapper.toHumanReadable(auditEntity.getRevisionType());
+			
+			// Add metadata and results to model
+			String username = auditService.resolveUsername(auditEntity.getChangedBy());
+			
+			model.addAttribute("entityType", className.substring(className.lastIndexOf('.') + 1));
+			model.addAttribute("auditType", auditType);
+			model.addAttribute("changedBy", username);
+			model.addAttribute("changedOn", auditEntity.getRevisionEntity().getChangedOn());
+			model.addAttribute("diffs", diffs);
+			model.addAttribute("relatedEntities", relatedEntities);
+			
+			return new ModelAndView(VIEW, model);
+			
+		}
+		catch (NumberFormatException e) {
+			model.addAttribute("errorMessage", "Invalid ID format for this entity type.");
+			return new ModelAndView(VIEW, model);
+		}
+		catch (IllegalArgumentException e) {
+			if (e.getCause() instanceof QueryException) {
+				model.addAttribute("errorMessage",
+				    "Some referenced data could not be loaded. Please contact your administrator.");
+				return new ModelAndView(VIEW, model);
+			} else {
+				throw e;
+			}
+		}
+		catch (Exception e) {
+			model.addAttribute("errorMessage", "Error loading audit data: " + e.getMessage());
+			logger.error("Error loading audit data: ", e);
+			return new ModelAndView(VIEW, model);
+		}
+	}
 }

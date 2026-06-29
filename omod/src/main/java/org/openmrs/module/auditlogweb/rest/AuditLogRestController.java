@@ -1,11 +1,12 @@
-/**
-* This Source Code Form is subject to the terms of the Mozilla Public License,
-* v. 2.0. If a copy of the MPL was not distributed with this file, You can
-* obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
-* the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
-* Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
-* graphic logo is a trademark of OpenMRS Inc.
-*/
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0. If a copy of the MPL was not distributed with this file, You can
+ * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
+ * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
+ * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
+ * graphic logo is a trademark of OpenMRS Inc.
+ */
 package org.openmrs.module.auditlogweb.rest;
 
 import lombok.RequiredArgsConstructor;
@@ -37,11 +38,12 @@ import java.util.List;
 /**
  * REST controller for exposing audit log entries via the OpenMRS REST API.
  * <p>
- * Provides endpoints to fetch audit logs with optional filtering by user, date range,
- * and entity type. Supports pagination.
+ * Provides endpoints to fetch audit logs with optional filtering by user, date range, and entity
+ * type. Supports pagination.
  * </p>
  * <p>
- * Security: Access to the logs is controlled by the {@link AuditLogConstants#VIEW_AUDIT_LOGS} privilege.
+ * Security: Access to the logs is controlled by the {@link AuditLogConstants#VIEW_AUDIT_LOGS}
+ * privilege.
  * </p>
  *
  * <p>

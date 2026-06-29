@@ -1,8 +1,9 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
+ *
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
@@ -46,8 +47,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Utility class providing methods for working with Envers-audited classes,
- * computing field-level differences, and date parsing/formatting for audit filtering.
+ * Utility class providing methods for working with Envers-audited classes, computing field-level
+ * differences, and date parsing/formatting for audit filtering.
  */
 public class UtilClass {
 
@@ -138,7 +139,7 @@ public class UtilClass {
      */
     private static Field[] getAllFields(Class<?> clazz) {
         Map<String, Field> fieldMap = new LinkedHashMap<>();
-        
+
         Class<?> current = clazz;
         while (current != null && current != Object.class) {
             Field[] declaredFields = current.getDeclaredFields();
@@ -147,7 +148,7 @@ public class UtilClass {
             }
             current = current.getSuperclass();
         }
-        
+
         return fieldMap.values().toArray(new Field[0]);
     }
 
@@ -436,12 +437,12 @@ public class UtilClass {
     public static Map<String, Class<?>> getFieldTypes(Class<?> clazz) {
         Map<String, Class<?>> fieldTypes = new LinkedHashMap<>();
         Field[] fields = getAllFields(clazz);
-        
+
         for (Field field : fields) {
             if (Modifier.isStatic(field.getModifiers()) || field.isSynthetic()) {
                 continue;
             }
-            
+
             Class<?> fieldType = field.getType();
             if (Collection.class.isAssignableFrom(fieldType)) {
                 ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
@@ -455,7 +456,7 @@ public class UtilClass {
                 fieldTypes.put(field.getName(), fieldType);
             }
         }
-        
+
         return fieldTypes;
     }
 }
