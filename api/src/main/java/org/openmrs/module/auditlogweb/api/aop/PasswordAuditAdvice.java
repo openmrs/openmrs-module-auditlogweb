@@ -27,7 +27,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.stereotype.Component;
 
 /**
- * It listens for activity or specifically the password related functions like #isSecretAnswer &
+ * It listens for activity or specifically the password related functions like #isSecretAnswer and
  * #changePassword from the OpenMRS core, and stamps the event like : PASSWORD_CHANGED_SUCCESS,
  * PASSWORD_CHANGED_FAILURE, PASSWORD_RESET_REQUEST_SUCCESS, PASSWORD_RESET_REQUEST_FAILURE,
  * PASSWORD_RESET_SUCCESS, PASSWORD_RESET_FAILURE
