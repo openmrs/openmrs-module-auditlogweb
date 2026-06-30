@@ -51,7 +51,7 @@ public class ReadAuditEntityMetadata {
 			if (this.readAuditLog == readAuditLog) {
 				return;
 			}
-			throw new UnsupportedOperationException("readAuditLog cannot be mutated once set");
+			throw new UnsupportedOperationException("ReadAuditLog cannot be mutated once set");
 		}
 		this.readAuditLog = readAuditLog;
 	}

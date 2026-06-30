@@ -52,7 +52,7 @@ public class PatientDataReadAOP {
 		
 		if (AopUtils.isAopProxy(joinPoint.getTarget()))
 			return joinPoint.proceed();
-
+		
 		String returnDataType = null;
 		Method method = null;
 		String username = null;
@@ -111,8 +111,8 @@ public class PatientDataReadAOP {
 			if (!isReadSuccess || !newTargetEntities.isEmpty()) {
 				try {
 					ReadAuditLog readAuditLog = ReadAuditLog.builder().entityName(returnDataType).eventTime(new Date())
-							.username(username).userUUID(userUUID).userAgent(userAgent).sessionId(sessionId)
-							.ipAddress(ipAddress).isReadSuccess(isReadSuccess).build();
+					        .username(username).userUUID(userUUID).userAgent(userAgent).sessionId(sessionId)
+					        .ipAddress(ipAddress).isReadSuccess(isReadSuccess).build();
 					readAuditLog.setTargets(newTargetEntities);
 					readAuditWorker.submitTask(readAuditLog);
 					log.debug("Submitted the Read Audit log to worker");
