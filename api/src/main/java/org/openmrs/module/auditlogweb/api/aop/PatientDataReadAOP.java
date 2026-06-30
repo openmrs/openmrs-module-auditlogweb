@@ -52,9 +52,7 @@ public class PatientDataReadAOP {
 		
 		if (AopUtils.isAopProxy(joinPoint.getTarget()))
 			return joinPoint.proceed();
-		
-		ReadAuditLog auditData = new ReadAuditLog();
-		
+
 		String returnDataType = null;
 		Method method = null;
 		String username = null;
@@ -79,22 +77,13 @@ public class PatientDataReadAOP {
 		catch (Exception e) {
 			log.warn("Error while getting  data from audit context", e);
 		}
-		finally {
-			auditData.setEntityName(returnDataType);
-			auditData.setEventTime(new Date());
-			auditData.setUsername(username);
-			auditData.setUserUUID(userUUID);
-			auditData.setUserAgent(userAgent);
-			auditData.setSessionId(sessionId);
-			auditData.setIpAddress(ipAddress);
-		}
 		
 		Object result = null;
 		List<ReadAuditEntityMetadata> newTargetEntities = new ArrayList<>();
+		boolean isReadSuccess = true;
 		try {
 			result = joinPoint.proceed();
 			try {
-				auditData.setReadSuccess(true);
 				List<ReadAuditEntityMetadata> targetEntities = getEntityMetadata(result);
 				for (ReadAuditEntityMetadata targetEntity : targetEntities) {
 					if (targetEntity.getEntityUuid() != null) {
@@ -103,12 +92,10 @@ public class PatientDataReadAOP {
 						String key = userKey + ":" + safeIp + ":" + targetEntity.getEntityUuid();
 						if (appCacheManager.get(key) == null) {
 							appCacheManager.set(key, true);
-							targetEntity.setReadAuditLog(auditData);
 							newTargetEntities.add(targetEntity);
 						}
 					}
 				}
-				auditData.setTargets(newTargetEntities);
 			}
 			catch (Exception e) {
 				log.error("Error while getting read audit", e);
@@ -116,14 +103,18 @@ public class PatientDataReadAOP {
 			return result;
 		}
 		catch (Throwable e) {
-			auditData.setReadSuccess(false);
+			isReadSuccess = false;
 			throw e;
 		}
 		finally {
 			log.debug("Read patient AOP completed");
-			if (!auditData.isReadSuccess() || !newTargetEntities.isEmpty()) {
+			if (!isReadSuccess || !newTargetEntities.isEmpty()) {
 				try {
-					readAuditWorker.submitTask(auditData);
+					ReadAuditLog readAuditLog = ReadAuditLog.builder().entityName(returnDataType).eventTime(new Date())
+							.username(username).userUUID(userUUID).userAgent(userAgent).sessionId(sessionId)
+							.ipAddress(ipAddress).isReadSuccess(isReadSuccess).build();
+					readAuditLog.setTargets(newTargetEntities);
+					readAuditWorker.submitTask(readAuditLog);
 					log.debug("Submitted the Read Audit log to worker");
 				}
 				catch (Exception e) {
@@ -179,9 +170,7 @@ public class PatientDataReadAOP {
 	
 	private ReadAuditEntityMetadata createReadAuditLogEntity(OpenmrsObject openmrsObject) {
 		if (openmrsObject.getId() != null && openmrsObject.getUuid() != null) {
-			ReadAuditEntityMetadata entity = new ReadAuditEntityMetadata();
-			entity.setEntityUuid(openmrsObject.getUuid());
-			return entity;
+			return ReadAuditEntityMetadata.builder().entityUuid(openmrsObject.getUuid()).build();
 		}
 		return null;
 	}

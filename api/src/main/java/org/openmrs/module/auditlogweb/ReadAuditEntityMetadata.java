@@ -9,8 +9,12 @@
  */
 package org.openmrs.module.auditlogweb;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -25,7 +29,9 @@ import javax.persistence.JoinColumn;
 @Entity
 @Table(name = "read_audit_entity_metadata")
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ReadAuditEntityMetadata {
 	
 	@Id
@@ -39,5 +45,15 @@ public class ReadAuditEntityMetadata {
 	
 	@Column(name = "entity_uuid", nullable = false)
 	private String entityUuid;
+	
+	public void setReadAuditLog(ReadAuditLog readAuditLog) {
+		if (this.readAuditLog != null) {
+			if (this.readAuditLog == readAuditLog) {
+				return;
+			}
+			throw new UnsupportedOperationException("readAuditLog cannot be mutated once set");
+		}
+		this.readAuditLog = readAuditLog;
+	}
 	
 }
