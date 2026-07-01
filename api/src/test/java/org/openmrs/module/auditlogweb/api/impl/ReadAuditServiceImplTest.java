@@ -22,8 +22,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,6 +83,20 @@ class ReadAuditServiceImplTest {
 	}
 	
 	@Test
+	void shouldReturnEmptyListWhenLogNotFound() {
+		Date startDate = new Date();
+		Date endDate = new Date();
+		List<ReadAuditLog> list = Collections.emptyList();
+		
+		when(readAuditDAO.getReadAuditLogs("Patient", "admin", startDate, endDate, 0, 10)).thenReturn(list);
+		
+		List<ReadAuditLog> result = readAuditService.getReadAuditLogs("Patient", "admin", startDate, endDate, 0, 10);
+		
+		assertSame(list, result);
+		assertTrue(result.isEmpty());
+	}
+	
+	@Test
 	void shouldDelegateCountReadAuditLogs() {
 		Date startDate = new Date();
 		Date endDate = new Date();
@@ -92,4 +108,44 @@ class ReadAuditServiceImplTest {
 		assertEquals(15L, count);
 		verify(readAuditDAO).countReadAuditLogs("Patient", "admin", startDate, endDate);
 	}
+	
+	@Test
+	void shouldDelegateGetReadAuditLogById() {
+		ReadAuditLog mockLog = mock(ReadAuditLog.class);
+		when(readAuditDAO.getReadAuditLogById(1)).thenReturn(mockLog);
+		
+		ReadAuditLog result = readAuditService.getReadAuditLogById(1);
+		assertSame(mockLog, result);
+		verify(readAuditDAO).getReadAuditLogById(1);
+	}
+	
+	@Test
+	void shouldReturnNullWhenLogNotFound() {
+		when(readAuditDAO.getReadAuditLogById(1)).thenReturn(null);
+		ReadAuditLog result = readAuditService.getReadAuditLogById(1);
+		assertNull(result);
+	}
+	
+	@Test
+	void shouldDelegateGetRelatedReadAuditLogs() {
+		
+		List<ReadAuditLog> list = Collections.singletonList(mock(ReadAuditLog.class));
+		when(readAuditDAO.getRelatedReadLogs("session-123", 1)).thenReturn(list);
+		
+		List<ReadAuditLog> result = readAuditService.getRelatedReadLogs("session-123", 1);
+		assertSame(list, result);
+		verify(readAuditDAO).getRelatedReadLogs("session-123", 1);
+	}
+	
+	@Test
+	void shouldReturnEmptyListWhenRelatedReadAuditNotFound() {
+		List<ReadAuditLog> list = Collections.emptyList();
+		when(readAuditDAO.getRelatedReadLogs("session-123", 1)).thenReturn(list);
+		
+		List<ReadAuditLog> result = readAuditService.getRelatedReadLogs("session-123", 1);
+		
+		assertSame(list, result);
+		assertTrue(result.isEmpty());
+	}
+	
 }

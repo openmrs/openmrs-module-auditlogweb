@@ -133,20 +133,6 @@ public class ReadAuditDAOTest {
 	}
 	
 	@Test
-	void shouldGetReadAuditLogByUUID() {
-		ReadAuditLog expected = buildReadAuditLog("Patient", true, "admin");
-		when(session.createQuery(anyString(), eq(ReadAuditLog.class))).thenReturn(readAuditLogQuery);
-		when(readAuditLogQuery.setParameter(eq("uuid"), eq("some-uuid"))).thenReturn(readAuditLogQuery);
-		when(readAuditLogQuery.uniqueResult()).thenReturn(expected);
-		
-		ReadAuditLog result = readAuditDAO.getReadAuditLogByUUID("some-uuid");
-		
-		assertNotNull(result);
-		assertThat(result.getEntityName(), is("Patient"));
-		verify(readAuditLogQuery).setParameter("uuid", "some-uuid");
-	}
-	
-	@Test
 	void shouldGetRelatedReadLogs() {
 		List<ReadAuditLog> expected = Collections.singletonList(buildReadAuditLog("Patient", true, "admin"));
 		when(session.createQuery(anyString(), eq(ReadAuditLog.class))).thenReturn(readAuditLogQuery);

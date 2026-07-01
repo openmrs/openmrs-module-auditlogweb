@@ -60,11 +60,6 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 	}
 	
 	@Override
-	public ReadAuditLog getReadAuditLogByUUID(String UUID) {
-		return readAuditDAO.getReadAuditLogByUUID(UUID);
-	}
-	
-	@Override
 	public List<ReadAuditLog> getRelatedReadLogs(String sessionId, int limit) {
 		return readAuditDAO.getRelatedReadLogs(sessionId, limit);
 	}

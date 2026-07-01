@@ -32,8 +32,5 @@ public interface ReadAuditService {
 	ReadAuditLog getReadAuditLogById(Integer id);
 	
 	@Authorized(AuditLogConstants.VIEW_READ_AUDIT_LOGS)
-	ReadAuditLog getReadAuditLogByUUID(String UUID);
-	
-	@Authorized(AuditLogConstants.VIEW_READ_AUDIT_LOGS)
 	List<ReadAuditLog> getRelatedReadLogs(String sessionId, int limit);
 }

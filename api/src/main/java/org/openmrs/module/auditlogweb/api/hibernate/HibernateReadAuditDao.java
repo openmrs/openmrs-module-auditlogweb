@@ -69,14 +69,6 @@ public class HibernateReadAuditDao implements ReadAuditDAO {
 		return (ReadAuditLog) query.uniqueResult();
 	}
 	
-	@Override
-	public ReadAuditLog getReadAuditLogByUUID(String uuid) {
-		String hql = "from ReadAuditLog e left join fetch e.targets where e.uuid = :uuid";
-		Query query = sessionFactory.getCurrentSession().createQuery(hql, ReadAuditLog.class);
-		query.setParameter("uuid", uuid);
-		return (ReadAuditLog) query.uniqueResult();
-	}
-	
 	public List<ReadAuditLog> getRelatedReadLogs(String sessionId, int limit) {
 		Query<ReadAuditLog> query = sessionFactory.getCurrentSession().createQuery(
 		    "from ReadAuditLog e where e.sessionId = :sessionId order by e.eventTime desc", ReadAuditLog.class);
