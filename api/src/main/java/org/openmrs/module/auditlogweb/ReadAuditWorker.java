@@ -39,7 +39,7 @@ public class ReadAuditWorker {
 	
 	@PostConstruct
 	public void init() {
-		log.info("Starting ReadAuditWorker background thread...");
+		log.info("Starting ReadAuditWorker background thread");
 		workerThread = new Thread(() -> run(), "ReadAuditWorkerThread");
 		workerThread.setDaemon(true);
 		workerThread.start();
@@ -47,7 +47,7 @@ public class ReadAuditWorker {
 	
 	@PreDestroy
 	public void destroy() {
-		log.info("Stopping ReadAuditWorker background thread...");
+		log.info("Stopping ReadAuditWorker background thread");
 		running = false;
 		if (workerThread != null) {
 			workerThread.interrupt();
@@ -70,11 +70,10 @@ public class ReadAuditWorker {
 				
 				// It will drain any additional queued logs that can go up to 49 more, making it a max batch of 50
 				queue.drainTo(batch, 49);
-				
 				saveBatch(batch);
 			}
 			catch (InterruptedException e) {
-				log.info("ReadAuditWorker thread interrupted, shutting down");
+				log.debug("ReadAuditWorker thread interrupted, shutting down");
 				Thread.currentThread().interrupt();
 				break;
 			}
@@ -88,13 +87,12 @@ public class ReadAuditWorker {
 		if (batch.isEmpty()) {
 			return;
 		}
-		log.debug("ReadAuditWorker: Saving batch of {} logs", batch.size());
 		try {
 			Context.openSession();
 			readAuditService.logReadAudits(batch);
 		}
 		catch (Exception e) {
-			log.error("Failed to save read audit logs in batch, falling back to one-by-one save", e);
+			log.warn("Failed to save read audit logs in batch, falling back to one-by-one save", e);
 			for (ReadAuditLog logEntry : batch) {
 				try {
 					readAuditService.logReadAudit(logEntry);
