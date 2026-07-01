@@ -39,24 +39,24 @@ import java.util.List;
 
 @RequiredArgsConstructor
 public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAuditService {
-
+	
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
-
+	
 	private final ReadAuditDAO readAuditDAO;
-
+	
 	@Autowired
 	private AppCacheManager appCacheManager;
-
+	
 	@Autowired
 	@Lazy
 	private ReadAuditWorker readAuditWorker;
-
+	
 	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void logReadAudit(ReadAuditLog readAuditLog) {
 		readAuditDAO.saveReadAuditLog(readAuditLog);
 	}
-
+	
 	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void logReadAudits(List<ReadAuditLog> readAuditLogs) {
@@ -66,40 +66,40 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 			}
 		}
 	}
-
+	
 	@Override
 	@Transactional(readOnly = true)
 	public List<ReadAuditLog> getReadAuditLogs(String eventType, String username, Date startDate, Date endDate, int page,
 	        int size) {
 		return readAuditDAO.getReadAuditLogs(eventType, username, startDate, endDate, page, size);
 	}
-
+	
 	@Override
 	@Transactional(readOnly = true)
 	public long countReadAuditLogs(String eventType, String username, Date startDate, Date endDate) {
 		return readAuditDAO.countReadAuditLogs(eventType, username, startDate, endDate);
 	}
-
+	
 	@Override
 	public ReadAuditLog getReadAuditLogById(Integer id) {
 		return readAuditDAO.getReadAuditLogById(id);
 	}
-
+	
 	@Override
 	public List<ReadAuditLog> getRelatedReadLogs(String sessionId, int limit) {
 		return readAuditDAO.getRelatedReadLogs(sessionId, limit);
 	}
-
+	
 	@Override
 	public Object auditReadRequest(ProceedingJoinPoint joinPoint) throws Throwable {
 		if (AopUtils.isAopProxy(joinPoint.getTarget())) {
 			return joinPoint.proceed();
 		}
-
+		
 		String returnDataType = null;
 		Object result = null;
 		boolean isReadSuccess = true;
-
+		
 		try {
 			MethodSignature signature = (MethodSignature) joinPoint.getSignature();
 			Method method = signature.getMethod();
@@ -108,7 +108,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 		catch (Exception e) {
 			log.warn("Error while getting data from audit context", e);
 		}
-
+		
 		try {
 			result = joinPoint.proceed();
 			return result;
@@ -126,7 +126,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 			}
 		}
 	}
-
+	
 	@Override
 	public void saveReadAuditRequest(String entityType, boolean isReadSuccess, Object result) {
 		try {
@@ -135,7 +135,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 			String ipAddress = null;
 			String userAgent = null;
 			String sessionId = null;
-
+			
 			AuditLogContext ctx = AuditLogContext.get();
 			if (ctx != null) {
 				username = ctx.getLoggedInUsername();
@@ -144,7 +144,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 				userAgent = ctx.getUserAgent();
 				sessionId = ctx.getSessionId();
 			}
-
+			
 			List<ReadAuditEntityMetadata> newTargetEntities = new ArrayList<>();
 			List<ReadAuditEntityMetadata> targetEntities = getEntityMetadata(result);
 			for (ReadAuditEntityMetadata targetEntity : targetEntities) {
@@ -158,7 +158,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 					}
 				}
 			}
-
+			
 			if (!isReadSuccess || !newTargetEntities.isEmpty()) {
 				ReadAuditLog readAuditLog = ReadAuditLog.builder().entityName(entityType).eventTime(new Date())
 				        .username(username).userUUID(userUUID).userAgent(userAgent).sessionId(sessionId).ipAddress(ipAddress)
@@ -172,7 +172,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 			log.error("Error while saving read audit request", e);
 		}
 	}
-
+	
 	private String getMethodReturnDataType(Method method) {
 		Class<?> returnType = method.getReturnType();
 		if (Collection.class.isAssignableFrom(returnType)) {
@@ -190,7 +190,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 		}
 		return returnType.getSimpleName();
 	}
-
+	
 	public List<ReadAuditEntityMetadata> getEntityMetadata(Object result) {
 		List<ReadAuditEntityMetadata> auditLogEntities = new ArrayList<>();
 		if (result == null) {
@@ -213,7 +213,7 @@ public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAudi
 		}
 		return auditLogEntities;
 	}
-
+	
 	private ReadAuditEntityMetadata createReadAuditLogEntity(OpenmrsObject openmrsObject) {
 		if (openmrsObject.getId() != null && openmrsObject.getUuid() != null) {
 			return ReadAuditEntityMetadata.builder().entityUuid(openmrsObject.getUuid()).build();
