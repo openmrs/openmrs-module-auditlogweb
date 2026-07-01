@@ -25,18 +25,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 @Component
 public class ReadAuditWorker {
-
+	
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
-
+	
 	@Autowired
 	private ReadAuditService readAuditService;
-
+	
 	private final BlockingQueue<ReadAuditLog> queue = new LinkedBlockingQueue<>(10000);
-
+	
 	private Thread workerThread;
-
+	
 	private volatile boolean running = true;
-
+	
 	@PostConstruct
 	public void init() {
 		log.info("Starting ReadAuditWorker background thread");
@@ -44,7 +44,7 @@ public class ReadAuditWorker {
 		workerThread.setDaemon(true);
 		workerThread.start();
 	}
-
+	
 	@PreDestroy
 	public void destroy() {
 		log.info("Stopping ReadAuditWorker background thread");
@@ -53,21 +53,21 @@ public class ReadAuditWorker {
 			workerThread.interrupt();
 		}
 	}
-
+	
 	public void submitTask(ReadAuditLog readAuditLog) {
 		boolean isAdded = queue.offer(readAuditLog);
 		if (!isAdded) {
 			log.error("Queue is full!, can't submit new read audit task ");
 		}
 	}
-
+	
 	private void run() {
 		while (running) {
 			try {
 				ReadAuditLog item = queue.take();
 				List<ReadAuditLog> batch = new ArrayList<>();
 				batch.add(item);
-
+				
 				// It will drain any additional queued logs that can go up to 49 more, making it a max batch of 50
 				queue.drainTo(batch, 49);
 				saveBatch(batch);
@@ -82,12 +82,12 @@ public class ReadAuditWorker {
 			}
 		}
 	}
-
+	
 	private void saveBatch(List<ReadAuditLog> batch) {
 		if (batch.isEmpty()) {
 			return;
 		}
-
+		
 		boolean isBatchLogsSaved = false;
 		try {
 			Context.openSession();
@@ -100,7 +100,7 @@ public class ReadAuditWorker {
 		finally {
 			Context.closeSession();
 		}
-
+		
 		if (!isBatchLogsSaved) {
 			for (ReadAuditLog logEntry : batch) {
 				try {
