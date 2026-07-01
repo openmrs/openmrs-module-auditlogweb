@@ -36,6 +36,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class ReadAuditWorkerTest {
@@ -153,8 +154,8 @@ class ReadAuditWorkerTest {
 			verify(readAuditService).logReadAudit(logEntry1);
 			verify(readAuditService).logReadAudit(logEntry2);
 			
-			context.verify(Context::openSession);
-			context.verify(Context::closeSession);
+			context.verify(Context::openSession, times(3));
+			context.verify(Context::closeSession, times(3));
 		}
 	}
 	
@@ -175,8 +176,8 @@ class ReadAuditWorkerTest {
 			verify(readAuditService).logReadAudit(logEntry1);
 			verify(readAuditService).logReadAudit(logEntry2);
 			
-			context.verify(Context::openSession);
-			context.verify(Context::closeSession);
+			context.verify(Context::openSession, times(3));
+			context.verify(Context::closeSession, times(3));
 		}
 	}
 	
