@@ -56,11 +56,31 @@
         </property>
     </bean>
 
+    <bean id="auditlogweb.ReadAuditService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="target">
+            <bean class="org.openmrs.module.auditlogweb.api.impl.ReadAuditServiceImpl">
+                <constructor-arg ref="auditlogweb.ReadAuditDao"/>
+            </bean>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors"/>
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource"/>
+        </property>
+    </bean>
+
     <bean parent="serviceContext">
         <property name="moduleService">
             <list>
                 <value>org.openmrs.module.auditlogweb.api.AuditService</value>
                 <ref bean="auditlogweb.AuditService"/>
+                <value>org.openmrs.module.auditlogweb.api.ReadAuditService</value>
+                <ref bean="auditlogweb.ReadAuditService"/>
             </list>
         </property>
     </bean>

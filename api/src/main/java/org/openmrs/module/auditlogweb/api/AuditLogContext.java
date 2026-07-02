@@ -27,6 +27,8 @@ public class AuditLogContext {
 	
 	private String loggedInUsername;
 	
+	private String loggedInUserUUID;
+	
 	public static void set(AuditLogContext ctx) {
 		HOLDER.set(ctx);
 	}

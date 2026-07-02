@@ -60,7 +60,14 @@ public class AuditContextFilter extends OncePerRequestFilter {
 		ctx.setUserAgent(request.getHeader("User-Agent"));
 		if (session != null) {
 			ctx.setSessionId(session.getId());
-			ctx.setLoggedInUsername(resolveLoggedInUsername());
+			User user = resolveUser();
+			if (user != null) {
+				String username = user.getUsername();
+				if (StringUtils.isBlank(username))
+					username = user.getSystemId();
+				ctx.setLoggedInUsername(username);
+				ctx.setLoggedInUserUUID(user.getUuid());
+			}
 		}
 		return ctx;
 	}
@@ -73,15 +80,10 @@ public class AuditContextFilter extends OncePerRequestFilter {
 		return request.getRemoteAddr();
 	}
 	
-	private String resolveLoggedInUsername() {
+	private User resolveUser() {
 		
 		if (Context.isAuthenticated() && Context.getAuthenticatedUser() != null) {
-			User user = Context.getAuthenticatedUser();
-			if (StringUtils.isNotBlank(user.getUsername())) {
-				return user.getUsername();
-			} else {
-				return user.getSystemId();
-			}
+			return Context.getAuthenticatedUser();
 		}
 		return null;
 	}

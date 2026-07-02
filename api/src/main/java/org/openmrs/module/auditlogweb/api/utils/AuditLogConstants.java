@@ -15,4 +15,6 @@ public final class AuditLogConstants {
 	public static final String VIEW_AUDIT_LOGS = "View Audit Logs";
 	
 	public static final String VIEW_SECURITY_AUDIT_LOGS = "View Security Audit Logs";
+	
+	public static final String VIEW_READ_AUDIT_LOGS = "View Read Audit Logs";
 }
