@@ -48,6 +48,25 @@
 		</privilege>
 	</privileges>
 
+	<globalProperty>
+		<property>auditlogweb.backfillExistingData.enabled</property>
+		<defaultValue>true</defaultValue>
+		<description>
+			When set to true, the module performs a one-time backfill on startup: it snapshots the
+			current contents of every Envers-audited table into its corresponding audit table.
+			Requires hibernate.integration.envers.enabled=true.
+			Runs only once (see auditlogweb.backfillExistingData.completed).
+		</description>
+	</globalProperty>
+	<globalProperty>
+		<property>auditlogweb.backfillExistingData.completed</property>
+		<defaultValue>false</defaultValue>
+		<description>
+			Marker set automatically to true after the one-time existing-data backfill has run
+			successfully. Reset it to false to allow the backfill to run again on the next startup.
+		</description>
+	</globalProperty>
+
 	<messages>
 		<lang>en</lang>
 		<file>messages.properties</file>

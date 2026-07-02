@@ -117,7 +117,7 @@ public class AuditLogViewService {
 		AuditFilter filters = parseFilters(username, startDateStr, endDateStr);
 		
 		if (domainClassName != null && !domainClassName.isEmpty()) {
-			Class<?> clazz = Class.forName(domainClassName);
+			Class<?> clazz = UtilClass.loadClass(domainClassName);
 			List<AuditEntity<?>> audits = fetchAuditLogs(clazz, page, size, username, filters.getStartDate(),
 			    filters.getEndDate(), sortOrder);
 			long totalCount = countAuditLogs(clazz, username, filters.getStartDate(), filters.getEndDate());

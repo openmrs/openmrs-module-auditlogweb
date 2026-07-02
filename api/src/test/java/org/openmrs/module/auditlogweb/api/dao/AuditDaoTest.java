@@ -259,6 +259,8 @@ class AuditDaoTest {
 		try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
 			utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
 			        .thenReturn(Arrays.asList(TestAuditedEntity.class.getName()));
+			utilClassMockedStatic.when(() -> UtilClass.loadClass(TestAuditedEntity.class.getName()))
+			        .thenReturn(TestAuditedEntity.class);
 			when(auditQuery.getSingleResult()).thenReturn(5L);
 			enversUtilsMockedStatic
 			        .when(
@@ -326,6 +328,8 @@ class AuditDaoTest {
 		try (MockedStatic<UtilClass> utilClassMockedStatic = mockStatic(UtilClass.class)) {
 			utilClassMockedStatic.when(UtilClass::findClassesWithAnnotation)
 			        .thenReturn(Arrays.asList(TestAuditedEntity.class.getName()));
+			utilClassMockedStatic.when(() -> UtilClass.loadClass(TestAuditedEntity.class.getName()))
+			        .thenReturn(TestAuditedEntity.class);
 			
 			when(auditQuery.getSingleResult()).thenReturn(2L);
 			enversUtilsMockedStatic

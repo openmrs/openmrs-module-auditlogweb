@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.hibernate.proxy.HibernateProxy;
 import org.openmrs.BaseOpenmrsObject;
+import org.openmrs.util.OpenmrsClassLoader;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
@@ -77,6 +78,25 @@ public class UtilClass {
 	}
 	
 	/**
+	 * Loads a class by name using the {@link OpenmrsClassLoader}, which delegates to every loaded
+	 * module's classloader.
+	 *
+	 * @param className the fully qualified class name
+	 * @return the loaded {@link Class}
+	 * @throws ClassNotFoundException if the class cannot be resolved by any module classloader
+	 */
+	public static Class<?> loadClass(String className) throws ClassNotFoundException {
+		try {
+			return Class.forName(className, true, OpenmrsClassLoader.getInstance());
+		}
+		catch (ClassNotFoundException e) {
+			// Fallback for contexts where the OpenmrsClassLoader can't resolve the class (e.g. plain
+			// unit tests with test-only entities): use the caller's classloader.
+			return Class.forName(className);
+		}
+	}
+	
+	/**
 	 * It gets an audited entity class from either a fully qualified name or a simple class name.
 	 *
 	 * @param className the fully qualified class name or simple class name
@@ -88,7 +108,7 @@ public class UtilClass {
 		}
 		
 		try {
-			return Class.forName(className);
+			return loadClass(className);
 		}
 		catch (ClassNotFoundException ignored) {
 			// Fall through to simple-name lookup.
@@ -96,7 +116,7 @@ public class UtilClass {
 		
 		List<Class<?>> matches = findClassesWithAnnotation().stream().map(auditedClassName -> {
 			try {
-				return Class.forName(auditedClassName);
+				return loadClass(auditedClassName);
 			}
 			catch (ClassNotFoundException e) {
 				return null;

@@ -73,7 +73,7 @@ public class ViewAuditController {
 		
 		try {
 			int auditId = Integer.parseInt(auditIdParam);
-			Class<?> clazz = Class.forName(className);
+			Class<?> clazz = UtilClass.loadClass(className);
 			
 			// Handle different ID types
 			Object entityId;

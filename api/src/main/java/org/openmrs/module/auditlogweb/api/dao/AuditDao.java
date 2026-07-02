@@ -325,7 +325,7 @@ public class AuditDao {
 	private List<Class<?>> getNonAbstractAuditedClasses() {
 		return UtilClass.findClassesWithAnnotation().stream().map(className -> {
 			try {
-				return Class.forName(className);
+				return UtilClass.loadClass(className);
 			}
 			catch (ClassNotFoundException e) {
 				log.warn("Could not load class: {}", className, e);
