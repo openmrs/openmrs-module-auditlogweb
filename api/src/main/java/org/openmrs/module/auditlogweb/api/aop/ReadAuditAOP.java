@@ -37,4 +37,42 @@ public class ReadAuditAOP {
 		return readAuditService.auditReadRequest(joinPoint);
 	}
 	
+	@Around("(execution(* org.openmrs.api.ObsService.getObs*(..)) || "
+	        + "execution(* org.openmrs.api.ObsService.getRevisionObs(..)) || "
+	        + "execution(* org.openmrs.api.ObsService.getObservations*(..))) && "
+	        + "!execution(* org.openmrs.api.ObsService.getObservationCount(..))")
+	public Object auditObsDataRead(ProceedingJoinPoint joinPoint) throws Throwable {
+		return readAuditService.auditReadRequest(joinPoint);
+	}
+	
+	@Around("execution(* org.openmrs.api.CohortService.getCohort*(..)) || "
+	        + "execution(* org.openmrs.api.CohortService.getAllCohorts(..))")
+	public Object auditCohortDataRead(ProceedingJoinPoint joinPoint) throws Throwable {
+		return readAuditService.auditReadRequest(joinPoint);
+	}
+	
+	@Around("(execution(* org.openmrs.api.ConceptService.getConcept*(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getDrug*(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getAllConcept*(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getSetsContainingConcept(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getProposedConcepts(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getPrevConcept(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getNextConcept(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getTrueConcept(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getFalseConcept(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getUnknownConcept(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.findConceptAnswers(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getActiveConceptMapTypes(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getReferenceTermMappingsTo(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getDefaultConceptMapType(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getOrderableConcepts(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getAllConceptAttributeType*(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getConceptAttributeType*(..)) || "
+	        + "execution(* org.openmrs.api.ConceptService.getAllDrugs(..))) && "
+	        + "!execution(* org.openmrs.api.ConceptService.getConceptStopWords(..)) && "
+	        + "!execution(* org.openmrs.api.ConceptService.getConceptIdsByMapping(..))")
+	public Object auditConceptDataRead(ProceedingJoinPoint joinPoint) throws Throwable {
+		return readAuditService.auditReadRequest(joinPoint);
+	}
+	
 }
