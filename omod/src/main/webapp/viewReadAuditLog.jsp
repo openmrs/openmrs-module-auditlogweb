@@ -52,10 +52,10 @@
                     <td>
                         <c:choose>
                             <c:when test="${readAudit.readSuccess}">
-                                <span class="badge badge-success"><c:out value="${readAudit.entityName}"/></span>
+                                <span class="badge badge-success" style="text-transform: none;"><c:out value="${readAudit.entityName}"/></span>
                             </c:when>
                             <c:otherwise>
-                                <span class="badge badge-failure"><c:out value="${readAudit.entityName}"/></span>
+                                <span class="badge badge-failure" style="text-transform: none;"><c:out value="${readAudit.entityName}"/></span>
                             </c:otherwise>
                         </c:choose>
                     </td>
@@ -75,6 +75,19 @@
                         <c:choose>
                             <c:when test="${not empty readAudit.userUUID}"><c:out value="${readAudit.userUUID}"/></c:when>
                             <c:otherwise><span class="null-value">-</span></c:otherwise>
+                        </c:choose>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Read success</td>
+                    <td>
+                        <c:choose>
+                            <c:when test="${readAudit.readSuccess}">
+                                <span>Yes</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span>No</span>
+                            </c:otherwise>
                         </c:choose>
                     </td>
                 </tr>
@@ -153,10 +166,10 @@
                             <td>
                                 <c:choose>
                                     <c:when test="${relAudit.readSuccess}">
-                                        <span class="badge badge-success"><c:out value="${relAudit.entityName}"/></span>
+                                        <span class="badge badge-success" style="text-transform: none;"><c:out value="${relAudit.entityName}"/></span>
                                     </c:when>
                                     <c:otherwise>
-                                        <span class="badge badge-failure"><c:out value="${relAudit.entityName}"/></span>
+                                        <span class="badge badge-failure" style="text-transform: none;"><c:out value="${relAudit.entityName}"/></span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
