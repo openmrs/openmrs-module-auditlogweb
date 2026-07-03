@@ -50,7 +50,7 @@
 
 	<globalProperty>
 		<property>auditlogweb.backfillExistingData.enabled</property>
-		<defaultValue>true</defaultValue>
+		<defaultValue>false</defaultValue>
 		<description>
 			When set to true, the module performs a one-time backfill on startup: it snapshots the
 			current contents of every Envers-audited table into its corresponding audit table.

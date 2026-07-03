@@ -22,6 +22,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
 import org.openmrs.module.auditlogweb.AuditEntity;
 import org.openmrs.module.auditlogweb.AuditSecurityEvent;
+import org.openmrs.module.auditlogweb.api.AuditBackfillService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
@@ -38,8 +39,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doReturn;
@@ -48,6 +52,9 @@ class AuditServiceImplTest {
 	
 	@Mock
 	private AuditDao auditDao;
+	
+	@Mock
+	private AuditBackfillService auditBackfillService;
 	
 	@InjectMocks
 	private AuditServiceImpl auditService;
@@ -499,6 +506,29 @@ class AuditServiceImplTest {
 		
 		assertNotNull(result);
 		assertTrue(result.isEmpty());
+	}
+	
+	@Test
+	void shouldReturnEmptyRelatedEntitiesWhenRevisionIsBaseline() {
+		when(auditBackfillService.isBaselineRevision(42)).thenReturn(true);
+		
+		List<AuditEntity<?>> result = auditService.getRelatedEntitiesInRevision(TestEntity.class, 1, 42);
+		
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
+		verify(auditDao, never()).getEntitiesModifiedInRevision(anyInt(), any());
+	}
+	
+	@Test
+	void shouldDelegateToDaoWhenRevisionIsNotBaseline() {
+		when(auditBackfillService.isBaselineRevision(7)).thenReturn(false);
+		AuditEntity<?> related = mock(AuditEntity.class);
+		when(auditDao.getEntitiesModifiedInRevision(anyInt(), any())).thenReturn(Collections.singletonList(related));
+		
+		List<AuditEntity<?>> result = auditService.getRelatedEntitiesInRevision(TestEntity.class, 1, 7);
+		
+		assertEquals(1, result.size());
+		verify(auditDao).getEntitiesModifiedInRevision(anyInt(), any());
 	}
 	
 	@Test

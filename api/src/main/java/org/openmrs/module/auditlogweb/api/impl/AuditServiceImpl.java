@@ -55,6 +55,8 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 	
 	private final AuditDao auditDao;
 	
+	private final AuditBackfillService auditBackfillService;
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -355,9 +357,7 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 		// The one-time backfill assigns every pre-existing row to a single "baseline" revision.
 		// That revision is a bulk import, not a real transaction, so treating it as "these entities changed
 		// together" would list the entire audited dataset. Skip it for this feature.
-		AuditBackfillService backfillService = Context.getRegisteredComponent("auditlogweb.auditBackfillService",
-		    AuditBackfillService.class);
-		if (backfillService != null && backfillService.isBaselineRevision(revisionId)) {
+		if (auditBackfillService.isBaselineRevision(revisionId)) {
 			return Collections.emptyList();
 		}
 		

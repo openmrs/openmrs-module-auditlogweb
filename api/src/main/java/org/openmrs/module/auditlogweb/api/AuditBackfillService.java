@@ -33,14 +33,16 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -89,27 +91,46 @@ public class AuditBackfillService {
 		}
 		
 		log.warn("Starting one-time audit backfill of existing data into {} audited tables...", mappings.size());
-		Integer revId = reuseRevisionId();
 		
+		Integer revId = reuseRevisionId();
+		if (revId == null) {
+			revId = createBaselineRevision();
+			administrationService.setGlobalProperty(GP_BACKFILL_REVISION, String.valueOf(revId));
+		}
+		final int revision = revId;
+		
+		boolean allSucceeded = true;
 		try (Session session = sessionFactory.openSession()) {
-			Transaction tx = session.beginTransaction();
-			try {
-				if (revId == null) {
-					revId = createBaselineRevision(session);
+			// Insert parent audit tables before their children: joined-subclass inheritance gives child
+			// audit tables a (id, REV) foreign key to the parent audit table (e.g. patient_aud -> person_aud),
+			// so the parent's baseline rows must be committed first.
+			List<TableMapping> orderedMappings = session
+			        .doReturningWork(connection -> orderByAuditTableDependencies(mappings, connection));
+			for (TableMapping mapping : orderedMappings) {
+				Transaction tx = session.beginTransaction();
+				try {
+					long insertedRows = session.doReturningWork(connection -> backfillTable(connection, mapping, revision));
+					tx.commit();
+					if (insertedRows > 0) {
+						log.info("Audit backfill: {} -> {} ({} rows).", mapping.baseTable, mapping.auditTable, insertedRows);
+					}
 				}
-				final int revision = revId;
-				session.doWork(connection -> runBackfill(connection, mappings, revision));
-				tx.commit();
-			}
-			catch (RuntimeException e) {
-				tx.rollback();
-				throw e;
+				catch (Exception e) {
+					safeRollback(tx);
+					allSucceeded = false;
+					log.warn("Audit backfill skipped for {} -> {}: {}", mapping.baseTable, mapping.auditTable,
+					    describeRootCause(e));
+				}
 			}
 		}
 		
-		administrationService.setGlobalProperty(GP_BACKFILL_REVISION, String.valueOf(revId));
-		administrationService.setGlobalProperty(GP_BACKFILL_COMPLETED, "true");
-		log.warn("Audit backfill finished at revision {}.", revId);
+		if (allSucceeded) {
+			administrationService.setGlobalProperty(GP_BACKFILL_COMPLETED, "true");
+			log.warn("Audit backfill finished at revision {}.", revision);
+		} else {
+			log.warn("Audit backfill did not complete for all tables; {} stays false so it resumes on next startup.",
+			    GP_BACKFILL_COMPLETED);
+		}
 	}
 	
 	private List<TableMapping> resolveAuditedTableMappings() {
@@ -149,7 +170,63 @@ public class AuditBackfillService {
 		return result;
 	}
 	
-	private Integer reuseRevisionId() {
+	/**
+	 * Orders the mappings so that any audit table is preceded by the audit tables it references via
+	 * foreign keys (parents first). This matters for joined-subclass inheritance, where a child audit
+	 * table has a composite (id, REV) foreign key to its parent audit table.
+	 */
+	private List<TableMapping> orderByAuditTableDependencies(List<TableMapping> mappings, Connection connection)
+	        throws SQLException {
+		DatabaseMetaData md = connection.getMetaData();
+		String catalog = connection.getCatalog();
+		
+		Set<String> auditTableNames = new HashSet<>();
+		for (TableMapping mapping : mappings) {
+			auditTableNames.add(mapping.auditTable.toLowerCase(Locale.ROOT));
+		}
+		
+		Map<String, Set<String>> parentsByAuditTable = new HashMap<>();
+		for (TableMapping mapping : mappings) {
+			String child = mapping.auditTable.toLowerCase(Locale.ROOT);
+			Set<String> parents = new HashSet<>();
+			try (ResultSet rs = md.getImportedKeys(catalog, null, mapping.auditTable)) {
+				while (rs.next()) {
+					String referenced = rs.getString("PKTABLE_NAME");
+					if (referenced == null) {
+						continue;
+					}
+					String parent = referenced.toLowerCase(Locale.ROOT);
+					if (!parent.equals(child) && auditTableNames.contains(parent)) {
+						parents.add(parent);
+					}
+				}
+			}
+			parentsByAuditTable.put(child, parents);
+		}
+		
+		List<TableMapping> ordered = new ArrayList<>();
+		Set<String> emitted = new HashSet<>();
+		List<TableMapping> remaining = new ArrayList<>(mappings);
+		boolean progress = true;
+		while (!remaining.isEmpty() && progress) {
+			progress = false;
+			Iterator<TableMapping> it = remaining.iterator();
+			while (it.hasNext()) {
+				TableMapping mapping = it.next();
+				String name = mapping.auditTable.toLowerCase(Locale.ROOT);
+				if (emitted.containsAll(parentsByAuditTable.get(name))) {
+					ordered.add(mapping);
+					emitted.add(name);
+					it.remove();
+					progress = true;
+				}
+			}
+		}
+		ordered.addAll(remaining);
+		return ordered;
+	}
+	
+	Integer reuseRevisionId() {
 		String storedRevisionId = Context.getAdministrationService().getGlobalProperty(GP_BACKFILL_REVISION, "");
 		if (StringUtils.isBlank(storedRevisionId)) {
 			return null;
@@ -181,43 +258,42 @@ public class AuditBackfillService {
 		}
 	}
 	
-	private Integer createBaselineRevision(Session session) {
-		OpenmrsRevisionEntity revision = new OpenmrsRevisionEntity();
-		revision.setTimestamp(System.currentTimeMillis());
-		revision.setChangedOn(new Date());
-		session.save(revision);
-		session.flush();
-		return revision.getId();
+	private Integer createBaselineRevision() {
+		try (Session session = sessionFactory.openSession()) {
+			Transaction tx = session.beginTransaction();
+			try {
+				OpenmrsRevisionEntity revision = new OpenmrsRevisionEntity();
+				revision.setTimestamp(System.currentTimeMillis());
+				revision.setChangedOn(new Date());
+				session.save(revision);
+				tx.commit();
+				return revision.getId();
+			}
+			catch (RuntimeException e) {
+				safeRollback(tx);
+				throw e;
+			}
+		}
 	}
 	
-	private void runBackfill(Connection connection, List<TableMapping> mappings, int revId) throws SQLException {
-		try (Statement off = connection.createStatement()) {
-			off.execute("SET FOREIGN_KEY_CHECKS = 0");
-		}
+	private void safeRollback(Transaction tx) {
 		try {
-			for (TableMapping mapping : mappings) {
-				try {
-					long insertedRows = backfillTable(connection, mapping, revId);
-					if (insertedRows > 0) {
-						log.info("Audit backfill: {} -> {} ({} rows).", mapping.baseTable, mapping.auditTable, insertedRows);
-					}
-				}
-				catch (Exception e) {
-					log.warn("Audit backfill skipped for {} -> {}: {}", mapping.baseTable, mapping.auditTable,
-					    describeRootCause(e));
-				}
+			if (tx != null && tx.isActive()) {
+				tx.rollback();
 			}
 		}
-		finally {
-			try (Statement on = connection.createStatement()) {
-				on.execute("SET FOREIGN_KEY_CHECKS = 1");
-			}
+		catch (RuntimeException e) {
+			log.warn("Rollback failed during audit backfill: {}", describeRootCause(e));
 		}
 	}
 	
 	private long backfillTable(Connection connection, TableMapping mapping, int revId) throws SQLException {
 		DatabaseMetaData md = connection.getMetaData();
 		String catalog = connection.getCatalog();
+		String quote = md.getIdentifierQuoteString();
+		if (quote == null || " ".equals(quote)) {
+			quote = "";
+		}
 		
 		List<String> auditColumns = getColumnNames(md, catalog, mapping.auditTable);
 		if (auditColumns.isEmpty()) {
@@ -250,23 +326,24 @@ public class AuditBackfillService {
 			throw new IllegalStateException("no shared key columns between base and audit table");
 		}
 		
-		StringBuilder sql = new StringBuilder("INSERT INTO ").append(quoteIdentifier(mapping.auditTable)).append(" (");
+		StringBuilder sql = new StringBuilder("INSERT INTO ").append(quoteIdentifier(mapping.auditTable, quote))
+		        .append(" (");
 		for (String column : dataColumns) {
-			sql.append(quoteIdentifier(column)).append(", ");
+			sql.append(quoteIdentifier(column, quote)).append(", ");
 		}
 		sql.append("REV").append(hasRevType ? ", REVTYPE) SELECT " : ") SELECT ");
 		for (String column : dataColumns) {
-			sql.append("b.").append(quoteIdentifier(column)).append(", ");
+			sql.append("b.").append(quoteIdentifier(column, quote)).append(", ");
 		}
-		sql.append(revId).append(hasRevType ? ", 0" : "").append(" FROM ").append(quoteIdentifier(mapping.baseTable))
-		        .append(" b WHERE NOT EXISTS (SELECT 1 FROM ").append(quoteIdentifier(mapping.auditTable))
+		sql.append(revId).append(hasRevType ? ", 0" : "").append(" FROM ").append(quoteIdentifier(mapping.baseTable, quote))
+		        .append(" b WHERE NOT EXISTS (SELECT 1 FROM ").append(quoteIdentifier(mapping.auditTable, quote))
 		        .append(" a WHERE ");
 		for (int i = 0; i < joinColumns.size(); i++) {
 			if (i > 0) {
 				sql.append(" AND ");
 			}
-			sql.append("a.").append(quoteIdentifier(joinColumns.get(i))).append(" = b.")
-			        .append(quoteIdentifier(joinColumns.get(i)));
+			sql.append("a.").append(quoteIdentifier(joinColumns.get(i), quote)).append(" = b.")
+			        .append(quoteIdentifier(joinColumns.get(i), quote));
 		}
 		sql.append(")");
 		
@@ -309,8 +386,11 @@ public class AuditBackfillService {
 		return dot >= 0 ? name.substring(dot + 1) : name;
 	}
 	
-	private String quoteIdentifier(String identifier) {
-		return "`" + identifier.replace("`", "``") + "`";
+	private String quoteIdentifier(String identifier, String quote) {
+		if (quote.isEmpty()) {
+			return identifier;
+		}
+		return quote + identifier.replace(quote, quote + quote) + quote;
 	}
 	
 	private String describeRootCause(Throwable t) {

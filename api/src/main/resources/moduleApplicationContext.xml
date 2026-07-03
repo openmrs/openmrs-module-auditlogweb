@@ -43,6 +43,7 @@
         <property name="target">
             <bean class="org.openmrs.module.auditlogweb.api.impl.AuditServiceImpl">
                 <constructor-arg ref="auditlogweb.AuditlogwebDao"/>
+                <constructor-arg ref="auditlogweb.auditBackfillService"/>
             </bean>
         </property>
         <property name="transactionManager">
