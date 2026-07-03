@@ -9,31 +9,30 @@
  */
 package org.openmrs.module.auditlogweb.api;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.context.Context;
-import org.openmrs.api.db.hibernate.envers.OpenmrsRevisionEntity;
+import org.openmrs.module.auditlogweb.api.dao.AuditBackfillDao;
 import org.openmrs.module.auditlogweb.api.utils.EnversUtils;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class AuditBackfillServiceTest {
 	
-	private SessionFactory sessionFactory;
+	private AuditBackfillDao auditBackfillDao;
 	
 	private AdministrationService administrationService;
 	
@@ -41,9 +40,9 @@ class AuditBackfillServiceTest {
 	
 	@BeforeEach
 	void setUp() {
-		sessionFactory = mock(SessionFactory.class);
+		auditBackfillDao = mock(AuditBackfillDao.class);
 		administrationService = mock(AdministrationService.class);
-		service = new AuditBackfillService(sessionFactory);
+		service = new AuditBackfillService(auditBackfillDao);
 	}
 	
 	@Test
@@ -53,7 +52,7 @@ class AuditBackfillServiceTest {
 			
 			service.backfillExistingDataIfEnabled();
 			
-			verify(sessionFactory, never()).openSession();
+			verifyNoInteractions(auditBackfillDao);
 		}
 	}
 	
@@ -68,7 +67,7 @@ class AuditBackfillServiceTest {
 			
 			service.backfillExistingDataIfEnabled();
 			
-			verify(sessionFactory, never()).openSession();
+			verifyNoInteractions(auditBackfillDao);
 			verify(administrationService, never()).setGlobalProperty(eq(AuditBackfillService.GP_BACKFILL_COMPLETED),
 			    anyString());
 		}
@@ -87,7 +86,7 @@ class AuditBackfillServiceTest {
 			
 			service.backfillExistingDataIfEnabled();
 			
-			verify(sessionFactory, never()).openSession();
+			verifyNoInteractions(auditBackfillDao);
 			verify(administrationService, never()).setGlobalProperty(eq(AuditBackfillService.GP_BACKFILL_COMPLETED),
 			    anyString());
 		}
@@ -100,7 +99,7 @@ class AuditBackfillServiceTest {
 			when(administrationService.getGlobalProperty(AuditBackfillService.GP_BACKFILL_REVISION, "")).thenReturn("");
 			
 			assertNull(service.reuseRevisionId());
-			verify(sessionFactory, never()).openSession();
+			verify(auditBackfillDao, never()).revisionExists(anyInt());
 		}
 	}
 	
@@ -111,30 +110,27 @@ class AuditBackfillServiceTest {
 			when(administrationService.getGlobalProperty(AuditBackfillService.GP_BACKFILL_REVISION, "")).thenReturn("abc");
 			
 			assertNull(service.reuseRevisionId());
+			verify(auditBackfillDao, never()).revisionExists(anyInt());
 		}
 	}
 	
 	@Test
-	void shouldReturnIdFromReuseRevisionIdWhenRevisionRowExists() {
+	void shouldReturnIdFromReuseRevisionIdWhenRevisionExists() {
 		try (MockedStatic<Context> context = mockStatic(Context.class)) {
 			context.when(Context::getAdministrationService).thenReturn(administrationService);
 			when(administrationService.getGlobalProperty(AuditBackfillService.GP_BACKFILL_REVISION, "")).thenReturn("5");
-			Session session = mock(Session.class);
-			when(sessionFactory.openSession()).thenReturn(session);
-			when(session.get(OpenmrsRevisionEntity.class, 5)).thenReturn(mock(OpenmrsRevisionEntity.class));
+			when(auditBackfillDao.revisionExists(5)).thenReturn(true);
 			
-			assertEquals(Integer.valueOf(5), service.reuseRevisionId());
+			assertTrue(service.reuseRevisionId() == 5);
 		}
 	}
 	
 	@Test
-	void shouldReturnNullFromReuseRevisionIdWhenRevisionRowMissing() {
+	void shouldReturnNullFromReuseRevisionIdWhenRevisionMissing() {
 		try (MockedStatic<Context> context = mockStatic(Context.class)) {
 			context.when(Context::getAdministrationService).thenReturn(administrationService);
 			when(administrationService.getGlobalProperty(AuditBackfillService.GP_BACKFILL_REVISION, "")).thenReturn("5");
-			Session session = mock(Session.class);
-			when(sessionFactory.openSession()).thenReturn(session);
-			when(session.get(OpenmrsRevisionEntity.class, 5)).thenReturn(null);
+			when(auditBackfillDao.revisionExists(5)).thenReturn(false);
 			
 			assertNull(service.reuseRevisionId());
 		}

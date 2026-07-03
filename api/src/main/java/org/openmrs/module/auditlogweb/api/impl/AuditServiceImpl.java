@@ -402,7 +402,9 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 				//Here if this condition becomes true then most probably, this is id or uuid
 				entityId = Integer.parseInt(entityId.toString());
 			}
-			catch (NumberFormatException ignored) {}
+			catch (NumberFormatException e) {
+				log.debug("Entity id [{}] is not numeric; treating it as a non-integer identifier.", entityId);
+			}
 		}
 		
 		try {
