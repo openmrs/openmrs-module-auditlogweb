@@ -66,6 +66,15 @@
 			successfully. Reset it to false to allow the backfill to run again on the next startup.
 		</description>
 	</globalProperty>
+	<globalProperty>
+		<property>auditlogweb.backfillExistingData.revision</property>
+		<defaultValue></defaultValue>
+		<description>
+			Stores the id of the baseline revision created by the one-time existing-data backfill.
+			Managed automatically; used to reuse the same revision if the backfill resumes and to
+			identify (and skip) that baseline revision in the "related entities changed" view.
+		</description>
+	</globalProperty>
 
 	<messages>
 		<lang>en</lang>
