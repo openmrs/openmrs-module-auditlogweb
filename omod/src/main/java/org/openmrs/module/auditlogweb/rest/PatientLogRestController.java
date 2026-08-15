@@ -66,12 +66,11 @@ public class PatientLogRestController {
 		
 		Integer patientId = patient.getPatientId();
 		
-		List<AuditEntity<?>> revisions = auditService.getEntityAuditRevisionsById(patientId, patient.getClass(), page, size,
-		    "desc");
+		List<AuditEntity<?>> revisions = auditService.getPatientTimelineRevisions(patientId, page, size, "desc");
 		
 		List<AuditLogDetailDTO> logs = auditService.getEntityDetailedAudit(revisions, patient.getClass());
 		
-		long total = auditService.countEntityAuditRevisionsById(patientId, patient.getClass());
+		long total = auditService.countPatientTimelineRevisions(patientId);
 		int totalPages = (int) Math.ceil(total / (double) size);
 		
 		return new AuditLogResponseDto(Math.toIntExact(total), page, totalPages, logs);

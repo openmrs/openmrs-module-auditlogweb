@@ -36,6 +36,7 @@ import java.lang.reflect.Modifier;
 import java.sql.SQLSyntaxErrorException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Date;
 import java.util.stream.Collectors;
@@ -552,6 +553,53 @@ public class AuditDao {
 				throw new AuditLogUnavailableException("Audit history could not be fetched, try again later", ex);
 			}
 		}
+	}
+	
+	public List<AuditEntity<?>> getAllRevisionsForEntityById(Integer entityId, Class<?> entityClass) {
+		return getRevisionsForEntityById(entityId, entityClass, 0, Integer.MAX_VALUE, "desc");
+	}
+	
+	public List<AuditEntity<?>> getRevisionsForOwnedEntities(Integer ownerId, Map<Class<?>, String> ownerPropertyByClass) {
+		List<AuditEntity<?>> result = new ArrayList<>();
+		if (ownerId == null || ownerPropertyByClass == null || ownerPropertyByClass.isEmpty()) {
+			return result;
+		}
+		
+		AuditReader auditReader = AuditReaderFactory.get(sessionFactory.getCurrentSession());
+		
+		for (Map.Entry<Class<?>, String> entry : ownerPropertyByClass.entrySet()) {
+			Class<?> ownedClass = entry.getKey();
+			String ownerProperty = entry.getValue();
+			try {
+				AuditQuery query = auditReader.createQuery().forRevisionsOfEntity(ownedClass, false, true)
+				        .add(org.hibernate.envers.query.AuditEntity.relatedId(ownerProperty).eq(ownerId));
+				
+				for (Object row : query.getResultList()) {
+					if (!(row instanceof Object[])) {
+						continue;
+					}
+					Object[] array = (Object[]) row;
+					Object entity = array[0];
+					OpenmrsRevisionEntity revisionEntity = (OpenmrsRevisionEntity) array[1];
+					RevisionType revisionType = (RevisionType) array[2];
+					if (entity != null) {
+						Integer userId = revisionEntity != null ? revisionEntity.getChangedBy() : null;
+						result.add(new AuditEntity<>(entity, revisionEntity, revisionType, userId));
+					}
+				}
+			}
+			catch (Exception ex) {
+				if (isMissingAuditTableException(ex)) {
+					log.warn("Skipping owned type {} in the timeline for owner {}: audit table missing ({})",
+					    ownedClass.getSimpleName(), ownerId, ex.getMessage());
+				} else {
+					log.error("Unexpected error fetching {} revisions for owner {}", ownedClass.getSimpleName(), ownerId,
+					    ex);
+				}
+			}
+		}
+		
+		return result;
 	}
 	
 	/**

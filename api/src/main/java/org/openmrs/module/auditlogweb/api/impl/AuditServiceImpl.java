@@ -12,6 +12,7 @@ package org.openmrs.module.auditlogweb.api.impl;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.GlobalProperty;
+import org.openmrs.Patient;
 import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
@@ -26,6 +27,7 @@ import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditFieldDiff;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
 import org.openmrs.module.auditlogweb.api.dto.RelatedEntityDto;
+import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Date;
@@ -169,11 +172,15 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 			return "Unknown";
 		}
 		
-		String username = user.getDisplayString();
-		if (StringUtils.isBlank(username)) {
-			return StringUtils.defaultIfBlank(user.getSystemId(), "Unknown");
+		if (StringUtils.isNotBlank(user.getUsername())) {
+			return user.getUsername();
 		}
-		return username;
+		if (StringUtils.isNotBlank(user.getSystemId())) {
+			return user.getSystemId();
+		}
+		
+		String personName = user.getPersonName() != null ? user.getPersonName().getFullName() : null;
+		return StringUtils.defaultIfBlank(personName, "Unknown");
 	}
 	
 	/**
@@ -473,6 +480,27 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 		return auditDao.getRevisionsForEntityById(patientId, entityClass, page, size, sortOrder);
 	}
 	
+	@Override
+	public List<AuditEntity<?>> getPatientTimelineRevisions(Integer patientId, int page, int size, String sortOrder) {
+		return UtilClass.paginate(collectPatientTimeline(patientId, sortOrder), page, size);
+	}
+	
+	@Override
+	public long countPatientTimelineRevisions(Integer patientId) {
+		return collectPatientTimeline(patientId, "desc").size();
+	}
+	
+	private List<AuditEntity<?>> collectPatientTimeline(Integer patientId, String sortOrder) {
+		List<AuditEntity<?>> merged = new ArrayList<>(auditDao.getAllRevisionsForEntityById(patientId, Patient.class));
+		merged.addAll(auditDao.getRevisionsForOwnedEntities(patientId, AuditLogConstants.PATIENT_OWNED_AUDITED_TYPES));
+		
+		Comparator<AuditEntity<?>> byChangedOn = Comparator.comparing(entity -> entity.getRevisionEntity().getChangedOn(),
+		    Comparator.nullsLast(Comparator.naturalOrder()));
+		merged.sort("asc".equalsIgnoreCase(sortOrder) ? byChangedOn : byChangedOn.reversed());
+		
+		return merged;
+	}
+	
 	public List<AuditLogDetailDTO> getEntityDetailedAudit(List<AuditEntity<?>> auditEntities, Class<?> entityClass) {
 		List<AuditLogDetailDTO> entityAudList = new ArrayList<>();
 		Map<String, String> displayCache = new HashMap<>();
@@ -485,14 +513,16 @@ public class AuditServiceImpl extends BaseOpenmrsService implements AuditService
 			
 			String entityId = UtilClass.getEntityIdAsString(currentEntity);
 			
-			List<AuditEntity<?>> allRelated = getRelatedEntitiesInRevision(entityClass, entityId,
+			Class<?> revisionClass = currentEntity.getClass();
+			
+			List<AuditEntity<?>> allRelated = getRelatedEntitiesInRevision(revisionClass, entityId,
 			    entity.getRevisionEntity().getId());
 			List<RelatedEntityDto> relatedEntities = new ArrayList<>();
 			
 			for (AuditEntity<?> related : allRelated) {
 				if (related.getEntity() != null) {
 					String relatedId = UtilClass.getEntityIdAsString(related.getEntity());
-					if (!related.getEntity().getClass().equals(entityClass) || !relatedId.equals(entityId)) {
+					if (!related.getEntity().getClass().equals(revisionClass) || !relatedId.equals(entityId)) {
 						relatedEntities.add(new RelatedEntityDto(related.getEntity().getClass().getName(),
 						        related.getEntity().getClass().getSimpleName(), relatedId,
 						        related.getRevisionEntity().getId(), related.getRevisionType()));

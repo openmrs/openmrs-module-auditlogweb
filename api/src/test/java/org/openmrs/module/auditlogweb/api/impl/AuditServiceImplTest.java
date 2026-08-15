@@ -16,6 +16,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import org.openmrs.Patient;
+import org.openmrs.PersonName;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
@@ -26,6 +28,7 @@ import org.openmrs.module.auditlogweb.api.AuditBackfillService;
 import org.openmrs.module.auditlogweb.api.dao.AuditDao;
 import org.openmrs.module.auditlogweb.api.dto.AuditEntityTypesResponseDto;
 import org.openmrs.module.auditlogweb.api.dto.AuditLogDetailDTO;
+import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
@@ -42,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -126,12 +130,12 @@ class AuditServiceImplTest {
 			UserService userService = mock(UserService.class);
 			User user = mock(User.class);
 			
-			when(user.getDisplayString()).thenReturn("Supper User (testuser)");
+			when(user.getUsername()).thenReturn("testuser");
 			context.when(Context::getUserService).thenReturn(userService);
 			when(userService.getUser(10)).thenReturn(user);
 			
 			String result = auditService.resolveUsername(10);
-			assertEquals("Supper User (testuser)", result);
+			assertEquals("testuser", result);
 		}
 	}
 	
@@ -479,7 +483,7 @@ class AuditServiceImplTest {
 			when(mockEntity.getChangedBy()).thenReturn(5);
 			doReturn(new TestEntity()).when(mockEntity).getEntity();
 			
-			when(user.getDisplayString()).thenReturn("Test User");
+			when(user.getUsername()).thenReturn("testuser");
 			context.when(Context::getUserService).thenReturn(userService);
 			when(userService.getUser(5)).thenReturn(user);
 			
@@ -492,7 +496,7 @@ class AuditServiceImplTest {
 			assertEquals(1, result.size());
 			
 			AuditLogDetailDTO dto = result.get(0);
-			assertEquals("Test User", dto.getChangedBy());
+			assertEquals("testuser", dto.getChangedBy());
 			
 			verify(userService).getUser(5);
 			
@@ -506,6 +510,94 @@ class AuditServiceImplTest {
 		
 		assertNotNull(result);
 		assertTrue(result.isEmpty());
+	}
+	
+	@Test
+	void shouldNotReturnDisplayStringWithNullUsername_GivenUserWithoutUsername() {
+		try (MockedStatic<Context> context = mockStatic(Context.class)) {
+			UserService userService = mock(UserService.class);
+			User user = mock(User.class);
+			
+			when(user.getUsername()).thenReturn(null);
+			when(user.getSystemId()).thenReturn("admin");
+			lenient().when(user.getDisplayString()).thenReturn("Super User (null)");
+			context.when(Context::getUserService).thenReturn(userService);
+			when(userService.getUser(11)).thenReturn(user);
+			
+			assertEquals("admin", auditService.resolveUsername(11));
+		}
+	}
+	
+	@Test
+	void shouldFallBackToPersonName_GivenNoUsernameOrSystemId() {
+		try (MockedStatic<Context> context = mockStatic(Context.class)) {
+			UserService userService = mock(UserService.class);
+			User user = mock(User.class);
+			PersonName personName = mock(PersonName.class);
+			
+			when(personName.getFullName()).thenReturn("Jane Doe");
+			when(user.getUsername()).thenReturn(null);
+			when(user.getSystemId()).thenReturn(null);
+			when(user.getPersonName()).thenReturn(personName);
+			context.when(Context::getUserService).thenReturn(userService);
+			when(userService.getUser(12)).thenReturn(user);
+			
+			assertEquals("Jane Doe", auditService.resolveUsername(12));
+		}
+	}
+	
+	private AuditEntity<?> revisionChangedOn(long epochMillis) {
+		AuditEntity<?> entity = mock(AuditEntity.class);
+		OpenmrsRevisionEntity revisionEntity = mock(OpenmrsRevisionEntity.class);
+		when(revisionEntity.getChangedOn()).thenReturn(new Date(epochMillis));
+		doReturn(revisionEntity).when(entity).getRevisionEntity();
+		return entity;
+	}
+	
+	@Test
+	void shouldMergePatientAndOwnedEntityRevisions_NewestFirst() {
+		AuditEntity<?> patientRevision = revisionChangedOn(2000);
+		AuditEntity<?> nameRevision = revisionChangedOn(3000);
+		AuditEntity<?> addressRevision = revisionChangedOn(1000);
+		
+		when(auditDao.getAllRevisionsForEntityById(7, Patient.class)).thenReturn(Collections.singletonList(patientRevision));
+		when(auditDao.getRevisionsForOwnedEntities(7, AuditLogConstants.PATIENT_OWNED_AUDITED_TYPES))
+		        .thenReturn(Arrays.asList(nameRevision, addressRevision));
+		
+		List<AuditEntity<?>> result = auditService.getPatientTimelineRevisions(7, 0, 10, "desc");
+		
+		assertEquals(3, result.size());
+		assertSame(nameRevision, result.get(0));
+		assertSame(patientRevision, result.get(1));
+		assertSame(addressRevision, result.get(2));
+	}
+	
+	@Test
+	void shouldSurfaceOwnedEntityRevisions_WhenPatientRowItselfNeverChanged() {
+		AuditEntity<?> nameRevision = revisionChangedOn(5000);
+		
+		when(auditDao.getAllRevisionsForEntityById(9, Patient.class)).thenReturn(Collections.emptyList());
+		when(auditDao.getRevisionsForOwnedEntities(9, AuditLogConstants.PATIENT_OWNED_AUDITED_TYPES))
+		        .thenReturn(Collections.singletonList(nameRevision));
+		
+		assertEquals(1, auditService.getPatientTimelineRevisions(9, 0, 10, "desc").size());
+		assertEquals(1, auditService.countPatientTimelineRevisions(9));
+	}
+	
+	@Test
+	void shouldPaginateTheMergedTimeline() {
+		List<AuditEntity<?>> patientRevisions = Arrays.asList(revisionChangedOn(4000), revisionChangedOn(3000));
+		List<AuditEntity<?>> ownedRevisions = Arrays.asList(revisionChangedOn(2000), revisionChangedOn(1000));
+		
+		when(auditDao.getAllRevisionsForEntityById(3, Patient.class)).thenReturn(patientRevisions);
+		when(auditDao.getRevisionsForOwnedEntities(3, AuditLogConstants.PATIENT_OWNED_AUDITED_TYPES))
+		        .thenReturn(ownedRevisions);
+		
+		assertEquals(4, auditService.countPatientTimelineRevisions(3));
+		assertEquals(2, auditService.getPatientTimelineRevisions(3, 0, 2, "desc").size());
+		List<AuditEntity<?>> secondPage = auditService.getPatientTimelineRevisions(3, 1, 2, "desc");
+		assertEquals(2, secondPage.size());
+		assertEquals(new Date(2000), secondPage.get(0).getRevisionEntity().getChangedOn());
 	}
 	
 	@Test

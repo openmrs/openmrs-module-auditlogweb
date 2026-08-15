@@ -77,15 +77,15 @@ public class PatientLogRestControllerTest {
 		when(mockPatient.getPatientId()).thenReturn(1);
 		when(patientService.getPatientByUuid("uuid-123")).thenReturn(mockPatient);
 		
-		when(auditService.getEntityAuditRevisionsById(1, Patient.class, 0, 20, "desc")).thenReturn(Collections.emptyList());
+		when(auditService.getPatientTimelineRevisions(1, 0, 20, "desc")).thenReturn(Collections.emptyList());
 		
 		when(auditService.getEntityDetailedAudit(any(), eq(Patient.class))).thenReturn(Collections.emptyList());
 		
-		when(auditService.countEntityAuditRevisionsById(1, Patient.class)).thenReturn(0L);
+		when(auditService.countPatientTimelineRevisions(1)).thenReturn(0L);
 		
 		mockMvc.perform(get("/rest/v1/auditlogs/patients").param("uuid", "uuid-123")).andExpect(status().isOk());
 		
-		verify(auditService).getEntityAuditRevisionsById(1, Patient.class, 0, 20, "desc");
+		verify(auditService).getPatientTimelineRevisions(1, 0, 20, "desc");
 	}
 	
 	@Test
@@ -94,13 +94,13 @@ public class PatientLogRestControllerTest {
 		when(mockPatient.getPatientId()).thenReturn(3);
 		when(patientService.getPatient(3)).thenReturn(mockPatient);
 		
-		when(auditService.getEntityAuditRevisionsById(3, Patient.class, 0, 20, "desc")).thenReturn(Collections.emptyList());
+		when(auditService.getPatientTimelineRevisions(3, 0, 20, "desc")).thenReturn(Collections.emptyList());
 		when(auditService.getEntityDetailedAudit(any(), eq(Patient.class))).thenReturn(Collections.emptyList());
-		when(auditService.countEntityAuditRevisionsById(3, Patient.class)).thenReturn(0L);
+		when(auditService.countPatientTimelineRevisions(3)).thenReturn(0L);
 		
 		mockMvc.perform(get("/rest/v1/auditlogs/patients").param("id", "3")).andExpect(status().isOk());
 		
-		verify(auditService).getEntityAuditRevisionsById(3, Patient.class, 0, 20, "desc");
+		verify(auditService).getPatientTimelineRevisions(3, 0, 20, "desc");
 	}
 	
 	@Test
@@ -109,14 +109,14 @@ public class PatientLogRestControllerTest {
 		when(mockPatient.getPatientId()).thenReturn(2);
 		when(patientService.getPatientByUuid("uuid-2")).thenReturn(mockPatient);
 		
-		when(auditService.getEntityAuditRevisionsById(2, Patient.class, 0, 20, "desc")).thenReturn(Collections.emptyList());
+		when(auditService.getPatientTimelineRevisions(2, 0, 20, "desc")).thenReturn(Collections.emptyList());
 		when(auditService.getEntityDetailedAudit(any(), eq(Patient.class))).thenReturn(Collections.emptyList());
-		when(auditService.countEntityAuditRevisionsById(2, Patient.class)).thenReturn(0L);
+		when(auditService.countPatientTimelineRevisions(2)).thenReturn(0L);
 		
 		mockMvc.perform(get("/rest/v1/auditlogs/patients").param("uuid", "uuid-2").param("page", "-3").param("size", "0"))
 		        .andExpect(status().isOk());
 		
-		verify(auditService).getEntityAuditRevisionsById(2, Patient.class, 0, 20, "desc");
+		verify(auditService).getPatientTimelineRevisions(2, 0, 20, "desc");
 	}
 	
 	@Test
@@ -125,13 +125,13 @@ public class PatientLogRestControllerTest {
 		when(mockPatient.getPatientId()).thenReturn(42);
 		when(patientService.getPatientByUuid("uuid-42")).thenReturn(mockPatient);
 		
-		when(auditService.getEntityAuditRevisionsById(42, Patient.class, 0, 20, "desc")).thenThrow(
+		when(auditService.getPatientTimelineRevisions(42, 0, 20, "desc")).thenThrow(
 		    new AuditLogUnavailableException("Audit history could not be fetched, try again later", new RuntimeException()));
 		
 		mockMvc.perform(get("/rest/v1/auditlogs/patients").param("uuid", "uuid-42"))
 		        .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.error", is("Audit Log Unavailable")))
 		        .andExpect(jsonPath("$.message", is("Audit history could not be fetched, try again later")));
 		
-		verify(auditService, never()).countEntityAuditRevisionsById(anyInt(), any());
+		verify(auditService, never()).countPatientTimelineRevisions(anyInt());
 	}
 }
