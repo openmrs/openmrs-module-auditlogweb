@@ -20,4 +20,7 @@
         <a href="${pageContext.request.contextPath}/module/auditlogweb/readauditlogs.form">Read Audit Logs</a>
     </li>
     <!-- Add more tabs as needed -->
+    <li <c:if test='${page eq "moduleEvents"}'>class="active"</c:if>>
+        <a href="${pageContext.request.contextPath}/module/auditlogweb/moduleEvents.form">Module Event Audit Logs</a>
+    </li>
 </ul>

@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.auditlogweb;
 
+import lombok.Getter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.context.Context;
@@ -22,6 +23,16 @@ public class AuditlogwebActivator extends BaseModuleActivator {
 	
 	private Log log = LogFactory.getLog(this.getClass());
 	
+	@Getter
+	private static volatile boolean appShuttingDown = false;
+	
+	/**
+	 * It's a JVM shutdown hook that fires when the server process exits. Registered on module start so
+	 * that {@code appShuttingDown} returns {@code true} so that we can know when the server is getting
+	 * shutdown.
+	 */
+	private Thread shutdownHook;
+	
 	@Override
 	public void started() {
 		log.info("Started Auditlogweb");
@@ -33,6 +44,7 @@ public class AuditlogwebActivator extends BaseModuleActivator {
 			log.error("Could not resolve the audit backfill service; Envers schema setup skipped", e);
 			return;
 		}
+		
 		try {
 			backfillService.createMissingAuditTablesIfEnabled();
 		}
@@ -51,10 +63,31 @@ public class AuditlogwebActivator extends BaseModuleActivator {
 		catch (Exception e) {
 			log.error("One-time audit backfill of existing data failed", e);
 		}
+		
+		try {
+			// Register a JVM shutdown hook so we know when the whole server is stopping.
+			shutdownHook = new Thread(() -> {
+				appShuttingDown = true;
+			}, "auditlogweb-shutdown-hook");
+			Runtime.getRuntime().addShutdownHook(shutdownHook);
+		}
+		catch (Exception e) {
+			log.error("Failed to start register the shutdownHook", e);
+		}
 	}
 	
 	@Override
 	public void stopped() {
 		log.info("Stopped Auditlogweb");
+		// Remove the shutdown hook when the module is stopped manually (not due to JVM exit).
+		if (shutdownHook != null) {
+			try {
+				Runtime.getRuntime().removeShutdownHook(shutdownHook);
+			}
+			catch (IllegalStateException ignored) {
+				// Cause because JVM is already shutting down, ignore because hook either fired or is in flight
+			}
+			shutdownHook = null;
+		}
 	}
 }

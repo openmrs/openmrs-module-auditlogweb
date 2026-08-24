@@ -75,6 +75,24 @@
         </property>
     </bean>
 
+    <bean id="auditlogweb.ModuleEventService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="target">
+            <bean class="org.openmrs.module.auditlogweb.api.impl.ModuleEventServiceImpl">
+                <constructor-arg ref="auditlogweb.ModuleActionEventDao"/>
+            </bean>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors"/>
+        </property>
+        <property name="transactionAttributeSource">
+            <ref bean="transactionAttributeSource"/>
+        </property>
+    </bean>
+
     <bean parent="serviceContext">
         <property name="moduleService">
             <list>
@@ -82,6 +100,8 @@
                 <ref bean="auditlogweb.AuditService"/>
                 <value>org.openmrs.module.auditlogweb.api.ReadAuditService</value>
                 <ref bean="auditlogweb.ReadAuditService"/>
+                <value>org.openmrs.module.auditlogweb.api.ModuleEventService</value>
+                <ref bean="auditlogweb.ModuleEventService"/>
             </list>
         </property>
     </bean>

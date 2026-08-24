@@ -37,6 +37,7 @@ public class AdminList extends AdministrationSectionExt {
 		map.put("module/auditlogweb/auditlogs.form", "View Audit Trails");
 		map.put("module/auditlogweb/securityauditlogs.form", "View Security Trails");
 		map.put("module/auditlogweb/readauditlogs.form", "View Read Audit Trails");
+		map.put("module/auditlogweb/moduleEvents.form", "View Module Event Trails");
 		return map;
 	}
 	

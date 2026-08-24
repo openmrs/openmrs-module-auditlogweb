@@ -144,4 +144,36 @@
             <column name="entity_name"/>
         </createIndex>
     </changeSet>
+    <changeSet id="auditlogweb-20260722-create-module_event_audit-table" author="sudhanshu-raj">
+        <preConditions>
+            <not>
+                <tableExists tableName="module_event_audit"/>
+            </not>
+        </preConditions>
+        <comment>Create module_event_audit  table for auditing the module event actions</comment>
+        <createTable tableName="module_event_audit">
+            <column name="id" type="INT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="event_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="module_id" type="VARCHAR(50)" />
+            <column name="module_name" type="VARCHAR(50)" />
+            <column name="module_version" type="VARCHAR(50)" />
+            <column name="event_success" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name = "failure_reason" type="VARCHAR(500)" />
+            <column name="username" type="VARCHAR(50)" />
+            <column name="user_uuid" type="VARCHAR(38)" />
+            <column name="event_time" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ip_address" type="VARCHAR(100)"/>
+            <column name="user_agent" type="VARCHAR(500)"/>
+            <column name="session_id" type="VARCHAR(256)"/>
+        </createTable>
+    </changeSet>
+
 </databaseChangeLog>

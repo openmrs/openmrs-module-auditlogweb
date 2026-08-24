@@ -28,8 +28,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReadAuditServiceImpl extends BaseOpenmrsService implements ReadAuditService {
 	
-	private final Logger log = LoggerFactory.getLogger(this.getClass());
-	
 	private final ReadAuditDAO readAuditDAO;
 	
 	@Override

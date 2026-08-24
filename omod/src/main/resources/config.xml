@@ -51,6 +51,10 @@
 			<name>View Read Audit Logs</name>
 			<description>Allows viewing read audit logs in the system</description>
 		</privilege>
+		<privilege>
+			<name>View Admin Audit Logs</name>
+			<description>Allows viewing admin audit logs in the system</description>
+		</privilege>
 	</privileges>
 
 	<globalProperty>
