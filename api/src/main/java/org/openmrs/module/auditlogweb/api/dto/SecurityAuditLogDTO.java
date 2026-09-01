@@ -12,21 +12,17 @@ package org.openmrs.module.auditlogweb.api.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Data;
+import org.openmrs.module.auditlogweb.api.utils.AuditSecurityEventType;
 
 import java.util.Date;
-import java.util.List;
 
 @Data
 @Builder
-public class ReadAuditLogDTO {
+public class SecurityAuditLogDTO {
 	
 	private Integer id;
 	
-	private String entityName;
-	
-	private List<ReadAuditEntityMetadataDTO> entityMetadata;
-	
-	private boolean isReadSuccess;
+	private AuditSecurityEventType eventType;
 	
 	private String username;
 	
@@ -40,5 +36,7 @@ public class ReadAuditLogDTO {
 	private String userAgent;
 	
 	private String sessionId;
+	
+	private String details;
 	
 }

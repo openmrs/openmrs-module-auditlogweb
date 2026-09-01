@@ -245,6 +245,50 @@ public class UtilClassUnitTest {
 		}
 	}
 	
+	@Test
+	void testSanitizePageSize_Normal() {
+		assertEquals(50, UtilClass.sanitizePageSizeValue(50));
+	}
+	
+	@Test
+	void testSanitizePageSize_ZeroOrNegative() {
+		assertEquals(15, UtilClass.sanitizePageSizeValue(0));
+		assertEquals(15, UtilClass.sanitizePageSizeValue(-5));
+	}
+	
+	@Test
+	void testSanitizePageSize_ExceedsMax() {
+		int expectedMax = AuditLogConstants.MAX_PAGE_SIZE;
+		assertEquals(expectedMax, UtilClass.sanitizePageSizeValue(9999));
+	}
+	
+	@Test
+	void testSanitizePage_Normal() {
+		assertEquals(2, UtilClass.sanitizePageValue(2, 20));
+	}
+	
+	@Test
+	void testSanitizePage_Negative() {
+		assertEquals(0, UtilClass.sanitizePageValue(-1, 20));
+	}
+	
+	@Test
+	void testSanitizePage_OverflowPrevention() {
+		int size = 100;
+		int maxSafePage = Integer.MAX_VALUE / size;
+		
+		int sanitizedPage = UtilClass.sanitizePageValue(Integer.MAX_VALUE, size);
+		
+		assertEquals(maxSafePage, sanitizedPage);
+	}
+	
+	@Test
+	void testSanitizePage_WithInvalidSize() {
+		int sanitizedPage = UtilClass.sanitizePageValue(5, 0);
+		
+		assertEquals(5, sanitizedPage);
+	}
+	
 	// Dummy Audited class for testing only
 	@Audited
 	public static class TestAuditedClass {}

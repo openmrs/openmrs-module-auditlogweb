@@ -103,7 +103,7 @@ class SecurityAuditDetailControllerTest {
 		
 		when(mockEvent.getSessionId()).thenReturn("session-test");
 		when(auditService.getSecurityEventById(2)).thenReturn(mockEvent);
-		when(auditService.getRelatedSecurityEvents("session-test", 10)).thenReturn(relatedList);
+		when(auditService.getRelatedSecurityEvents("session-test", 0, 10)).thenReturn(relatedList);
 		
 		mockMvc.perform(get("/module/auditlogweb/viewSecurityAudit.form").param("eventId", "2")).andExpect(status().isOk())
 		        .andExpect(view().name("/module/auditlogweb/viewSecurityAudit"))
@@ -111,7 +111,7 @@ class SecurityAuditDetailControllerTest {
 		        .andExpect(model().attribute("page", "securityauditlogs"));
 		
 		verify(auditService).getSecurityEventById(2);
-		verify(auditService).getRelatedSecurityEvents("session-test", 10);
+		verify(auditService).getRelatedSecurityEvents("session-test", 0, 10);
 	}
 	
 	@Test

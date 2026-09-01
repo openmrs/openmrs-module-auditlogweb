@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.openmrs.module.auditlogweb.ReadAuditLog;
 import org.openmrs.module.auditlogweb.api.ReadAuditService;
 import org.openmrs.module.auditlogweb.api.dto.ReadAuditLogResponseDTO;
+import org.openmrs.module.auditlogweb.api.utils.AuditLogConstants;
 import org.openmrs.module.auditlogweb.api.utils.UtilClass;
 import org.openmrs.module.auditlogweb.api.dto.ReadAuditLogDTO;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -51,20 +52,16 @@ public class ReadAuditRestController {
 		if (logId != null) {
 			ReadAuditLog readAuditLog = readAuditService.getReadAuditLogById(logId);
 			if (readAuditLog == null) {
-				return ReadAuditLogResponseDTO.builder().totalLogs(0).currentLogs(0).readAuditLogs(Collections.emptyList())
-				        .build();
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No log found for this logId");
 			}
 			List<ReadAuditLogDTO> readAuditLogsDTO = readAuditService
 			        .mapToReadAuditLogDTO(Collections.singletonList(readAuditLog));
-			return ReadAuditLogResponseDTO.builder().totalLogs(1).currentLogs(1).readAuditLogs(readAuditLogsDTO).build();
+			return ReadAuditLogResponseDTO.builder().totalLogs(1).currentLogs(1).readAuditLogs(readAuditLogsDTO)
+			        .totalPages(1).build();
 		}
 		
-		if (page < 0) {
-			page = 0;
-		}
-		if (size <= 0) {
-			size = 15;
-		}
+		size = UtilClass.sanitizePageSizeValue(size);
+		page = UtilClass.sanitizePageValue(page, size);
 		
 		Date start = UtilClass.parseDate(startDate, false);
 		Date end = UtilClass.parseDate(endDate, true);
@@ -81,23 +78,19 @@ public class ReadAuditRestController {
 		
 	}
 	
-	@GetMapping("/releatedAudits")
+	@GetMapping("/relatedAudits")
 	public ReadAuditLogResponseDTO fetchRelatedAudits(@RequestParam(value = "sessionId") String sessionId,
 	        @RequestParam(value = "page", defaultValue = "0") int page,
 	        @RequestParam(value = "size", defaultValue = "15") int size) {
 		
-		if (sessionId == null || sessionId.isEmpty()) {
+		if (sessionId.trim().isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid session id");
 		}
 		
-		if (page < 0) {
-			page = 0;
-		}
-		if (size <= 0) {
-			size = 15;
-		}
+		size = UtilClass.sanitizePageSizeValue(size);
+		page = UtilClass.sanitizePageValue(page, size);
 		
-		List<ReadAuditLog> relatedAudits = readAuditService.getRelatedReadLogs(sessionId, page, size);
+		List<ReadAuditLog> relatedAudits = readAuditService.getRelatedReadLogs(sessionId.trim(), page, size);
 		long totalCount = readAuditService.countRelatedReadLogs(sessionId);
 		int totalPages = UtilClass.computeTotalPages(totalCount, size);
 		
@@ -105,7 +98,7 @@ public class ReadAuditRestController {
 		
 		return ReadAuditLogResponseDTO.builder().totalLogs(totalCount)
 		        .currentLogs(readAuditLogsDTO != null ? readAuditLogsDTO.size() : 0).totalPages(totalPages).currentPage(page)
-		        .currentPage(page).readAuditLogs(readAuditLogsDTO).build();
+		        .readAuditLogs(readAuditLogsDTO).build();
 		
 	}
 }

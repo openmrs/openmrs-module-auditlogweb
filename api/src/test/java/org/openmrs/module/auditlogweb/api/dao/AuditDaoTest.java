@@ -580,28 +580,43 @@ class AuditDaoTest {
 		
 		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
 		when(securityEventQuery.setParameter("sessionId", sessionId)).thenReturn(securityEventQuery);
-		when(securityEventQuery.setMaxResults(5)).thenReturn(securityEventQuery);
+		when(securityEventQuery.setFirstResult(30)).thenReturn(securityEventQuery);
+		when(securityEventQuery.setMaxResults(2)).thenReturn(securityEventQuery);
 		when(securityEventQuery.getResultList()).thenReturn(Arrays.asList(e1, e2));
 		
-		List<AuditSecurityEvent> result = auditDao.getRelatedSecurityEvents(sessionId, 5);
+		List<AuditSecurityEvent> result = auditDao.getRelatedSecurityEvents(sessionId, 15, 2);
 		
 		assertNotNull(result);
 		assertThat(result, hasSize(2));
 		verify(securityEventQuery).setParameter("sessionId", sessionId);
-		verify(securityEventQuery).setMaxResults(5);
+		verify(securityEventQuery).setFirstResult(30);
+		verify(securityEventQuery).setMaxResults(2);
 	}
 	
 	@Test
 	void shouldReturnEmptyList_WhenNoRelatedSecurityEventsFound() {
 		when(session.createQuery(anyString(), eq(AuditSecurityEvent.class))).thenReturn(securityEventQuery);
 		when(securityEventQuery.setParameter(anyString(), anyString())).thenReturn(securityEventQuery);
+		when(securityEventQuery.setFirstResult(0)).thenReturn(securityEventQuery);
 		when(securityEventQuery.setMaxResults(anyInt())).thenReturn(securityEventQuery);
 		when(securityEventQuery.getResultList()).thenReturn(Collections.emptyList());
 		
-		List<AuditSecurityEvent> result = auditDao.getRelatedSecurityEvents("sess-ghost", 10);
+		List<AuditSecurityEvent> result = auditDao.getRelatedSecurityEvents("sess-ghost", 0, 10);
 		
 		assertNotNull(result);
 		assertThat(result, empty());
+	}
+	
+	@Test
+	void shouldReturnRelatedSecurityEventsCount() {
+		when(session.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
+		when(countQuery.setParameter(eq("sessionId"), eq("session-123"))).thenReturn(countQuery);
+		when(countQuery.uniqueResult()).thenReturn(10L);
+		
+		long count = auditDao.countRelatedSecurityEvents("session-123");
+		
+		assertThat(count, is(10L));
+		verify(countQuery).setParameter("sessionId", "session-123");
 	}
 	
 	@Test

@@ -9,36 +9,23 @@
  */
 package org.openmrs.module.auditlogweb.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.Date;
 import java.util.List;
 
 @Data
 @Builder
-public class ReadAuditLogDTO {
+public class SecurityLogResponseDTO {
 	
-	private Integer id;
+	private long totalLogs;
 	
-	private String entityName;
+	private int currentLogs;
 	
-	private List<ReadAuditEntityMetadataDTO> entityMetadata;
+	private int totalPages;
 	
-	private boolean isReadSuccess;
+	private int currentPage;
 	
-	private String username;
-	
-	private String userUUID;
-	
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm:ss", timezone = "GMT")
-	private Date eventTime;
-	
-	private String ipAddress;
-	
-	private String userAgent;
-	
-	private String sessionId;
+	private List<SecurityAuditLogDTO> securityAuditLogs;
 	
 }

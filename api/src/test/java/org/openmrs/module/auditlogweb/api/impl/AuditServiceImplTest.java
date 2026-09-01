@@ -397,15 +397,23 @@ class AuditServiceImplTest {
 		AuditSecurityEvent relatedSecurityEvent2 = AuditSecurityEvent.builder()
 		        .eventType(AuditSecurityEventType.LOGIN_SUCCESS).eventTime(new Date()).sessionId("session-123").build();
 		
-		when(auditDao.getRelatedSecurityEvents("session-123", 2))
+		when(auditDao.getRelatedSecurityEvents("session-123", 0, 2))
 		        .thenReturn(Arrays.asList(relatedSecurityEvent1, relatedSecurityEvent2));
 		
-		List<AuditSecurityEvent> result = auditService.getRelatedSecurityEvents("session-123", 2);
+		List<AuditSecurityEvent> result = auditService.getRelatedSecurityEvents("session-123", 0, 2);
 		
 		assertNotNull(result);
 		assertEquals(2, result.size());
 		assertEquals(relatedSecurityEvent1, result.get(0));
 		assertEquals(relatedSecurityEvent2, result.get(1));
+	}
+	
+	@Test
+	void shouldCountRelatedSecurityEvents() {
+		when(auditDao.countRelatedSecurityEvents("session-123")).thenReturn(10L);
+		
+		long count = auditService.countRelatedSecurityEvents("session-123");
+		assertEquals(10L, count);
 	}
 	
 	public static class TestEntity {

@@ -14,9 +14,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,12 +27,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.mockito.MockitoAnnotations;
 import org.openmrs.module.auditlogweb.ReadAuditLog;
 import org.openmrs.module.auditlogweb.api.ReadAuditService;
+import org.openmrs.module.auditlogweb.api.dto.ReadAuditLogDTO;
 import org.openmrs.module.auditlogweb.rest.exceptions.RestExceptionHandler;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import static org.hamcrest.Matchers.is;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 public class ReadAuditRestControllerTest {
@@ -69,9 +76,14 @@ public class ReadAuditRestControllerTest {
 		ReadAuditLog mockReadAuditLog = mock(ReadAuditLog.class);
 		List<ReadAuditLog> logList = Collections.singletonList(mockReadAuditLog);
 		when(readAuditService.getReadAuditLogById(1)).thenReturn(mockReadAuditLog);
-		when(readAuditService.mapToReadAuditLogDTO(logList)).thenReturn(Collections.emptyList());
+		Date fixedDate = Date.from(LocalDateTime.of(2026, 12, 25, 14, 30, 0).atZone(ZoneId.of("GMT")).toInstant());
+		when(readAuditService.mapToReadAuditLogDTO(logList))
+		        .thenReturn(Collections.singletonList(ReadAuditLogDTO.builder().id(1).eventTime(fixedDate).build()));
 		
-		mockMvc.perform(get("/rest/v1/readauditlogs").param("logId", "1")).andExpect(status().isOk());
+		mockMvc.perform(get("/rest/v1/readauditlogs").param("logId", "1")).andExpect(status().isOk())
+		        .andExpect(jsonPath("$.readAuditLogs[0].eventTime", is("25/12/2026 14:30:00")))
+		        .andExpect(jsonPath("$.totalLogs", is(1))).andExpect(jsonPath("$.currentLogs", is(1)))
+		        .andExpect(jsonPath("$.totalPages", is(1))).andExpect(jsonPath("$.currentPage", is(0)));
 		
 		verify(readAuditService).getReadAuditLogById(1);
 		verify(readAuditService).mapToReadAuditLogDTO(logList);
@@ -83,6 +95,26 @@ public class ReadAuditRestControllerTest {
 		mockMvc.perform(get("/rest/v1/readauditlogs").param("logId", "-1")).andExpect(status().isBadRequest())
 		        .andExpect(jsonPath("$.error", is("Bad Request")))
 		        .andExpect(jsonPath("$.message", is("Please provide a valid log ID")));
+	}
+	
+	@Test
+	public void shouldThrowNotFoundErrorIfLogNotFoundForId() throws Exception {
+		when(readAuditService.getReadAuditLogById(anyInt())).thenReturn(null);
+		mockMvc.perform(get("/rest/v1/readauditlogs").param("logId", "999")).andExpect(status().isNotFound())
+		        .andExpect(jsonPath("$.error", is("Not Found")))
+		        .andExpect(jsonPath("$.message", is("No log found for this logId")));
+	}
+	
+	@Test
+	public void pageSizeShouldNotGoAboveTheCapForFetchReadAuditLogs() throws Exception {
+		when(readAuditService.getReadAuditLogs(any(), any(), any(), any(), anyInt(), eq(200)))
+		        .thenReturn(Collections.emptyList());
+		when(readAuditService.countReadAuditLogs(any(), any(), any(), any())).thenReturn(200L);
+		
+		mockMvc.perform(get("/rest/v1/readauditlogs").param("size", "10000")).andExpect(status().isOk())
+		        .andExpect(jsonPath("$.totalLogs", is(200)));
+		
+		verify(readAuditService).getReadAuditLogs(any(), any(), any(), any(), eq(0), eq(200));
 	}
 	
 	@Test
@@ -134,12 +166,23 @@ public class ReadAuditRestControllerTest {
 		when(readAuditService.countRelatedReadLogs("session-123")).thenReturn(1L);
 		when(readAuditService.mapToReadAuditLogDTO(relatedList)).thenReturn(Collections.emptyList());
 		
-		mockMvc.perform(get("/rest/v1/readauditlogs/releatedAudits").param("sessionId", "session-123").param("page", "0")
+		mockMvc.perform(get("/rest/v1/readauditlogs/relatedAudits").param("sessionId", "session-123").param("page", "0")
 		        .param("size", "10")).andExpect(status().isOk());
 		
 		verify(readAuditService).getRelatedReadLogs("session-123", 0, 10);
 		verify(readAuditService).countRelatedReadLogs("session-123");
 		verify(readAuditService).mapToReadAuditLogDTO(relatedList);
+	}
+	
+	@Test
+	public void pageSizeShouldNotGoAboveTheCapForFetchRelatedReadAuditLogs() throws Exception {
+		when(readAuditService.getRelatedReadLogs(any(), anyInt(), eq(200))).thenReturn(Collections.emptyList());
+		when(readAuditService.countRelatedReadLogs(any())).thenReturn(200L);
+		
+		mockMvc.perform(get("/rest/v1/readauditlogs/relatedAudits").param("sessionId", "session-123").param("size", "10000"))
+		        .andExpect(status().isOk()).andExpect(jsonPath("$.totalLogs", is(200)));
+		
+		verify(readAuditService).getRelatedReadLogs(any(), eq(0), eq(200));
 	}
 	
 }

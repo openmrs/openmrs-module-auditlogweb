@@ -10,7 +10,11 @@
 package org.openmrs.module.auditlogweb.rest.exceptions;
 
 import org.hibernate.ObjectNotFoundException;
+import org.openmrs.api.APIAuthenticationException;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.auditlogweb.api.exception.AuditLogUnavailableException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -42,8 +46,10 @@ import java.util.Map;
  * message</li>
  * </ul>
  */
-@ControllerAdvice
+@ControllerAdvice(basePackages = "org.openmrs.module.auditlogweb.rest")
 public class RestExceptionHandler {
+	
+	private final Logger log = LoggerFactory.getLogger(RestExceptionHandler.class);
 	
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
@@ -84,8 +90,20 @@ public class RestExceptionHandler {
 		return buildResponseEntity("Audit Log Unavailable", ex.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
 	}
 	
+	@ExceptionHandler(APIAuthenticationException.class)
+	public ResponseEntity<Map<String, String>> handleAPIAuthException(APIAuthenticationException ex) {
+		if (Context.isAuthenticated()) {
+			log.warn("Request denied, the user does not have the required privileges: {}", ex.getMessage());
+			return buildResponseEntity("Forbidden", ex.getMessage(), HttpStatus.FORBIDDEN);
+		}
+		
+		log.warn("Request denied, the caller is not authenticated: {}", ex.getMessage());
+		return buildResponseEntity("Unauthorized", "Authentication required", HttpStatus.UNAUTHORIZED);
+	}
+	
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<Map<String, String>> handleGeneralError(Exception ex) {
+		log.error("Unexpected error occurred, ", ex);
 		return buildResponseEntity("Internal Server Error", "An unexpected error occurred",
 		    HttpStatus.INTERNAL_SERVER_ERROR);
 	}

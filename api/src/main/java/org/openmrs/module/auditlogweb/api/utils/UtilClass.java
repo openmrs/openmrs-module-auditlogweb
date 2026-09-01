@@ -566,4 +566,34 @@ public class UtilClass {
 		
 		return fieldTypes;
 	}
+	
+	/**
+	 * Used to sanitize the page size value, in case if it's negative or out of max limit
+	 * 
+	 * @param size the page size of how much rows it will take
+	 * @return the sanitized value for size
+	 */
+	public static int sanitizePageSizeValue(int size) {
+		if (size <= 0) {
+			size = 15;
+		}
+		size = Math.min(size, AuditLogConstants.MAX_PAGE_SIZE);
+		return size;
+	}
+	
+	/**
+	 * Used to sanitize the page value, in case if it's negative or out of max limit
+	 * 
+	 * @param page the page value in the paginated view
+	 * @param size the sanitized size value
+	 * @return the sanitized the page value
+	 */
+	public static int sanitizePageValue(int page, int size) {
+		if (page < 0) {
+			page = 0;
+		}
+		size = sanitizePageSizeValue(size);
+		page = Math.min(page, Integer.MAX_VALUE / size);
+		return page;
+	}
 }
