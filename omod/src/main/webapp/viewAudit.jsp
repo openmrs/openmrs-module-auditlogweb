@@ -25,7 +25,7 @@
 
     <c:if test="${not empty errorMessage}">
         <div class="audit-error">
-                ${errorMessage}
+                <c:out value="${errorMessage}"/>
         </div>
     </c:if>
 
