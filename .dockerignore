@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.claude
+**/target
+node_modules
+*.md
+.env
+.env.*
+docker-compose*.yml
+pom.xml.versionsBackup

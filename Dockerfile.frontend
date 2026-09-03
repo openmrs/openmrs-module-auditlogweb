@@ -1,0 +1,65 @@
+# O3 frontend with @openmrs/esm-audit-log-app added to the standard RefApp SPA.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build-spa
+
+RUN npm install --legacy-peer-deps --global openmrs@next
+
+# Placed after the CLI install on purpose: CACHE_BUST re-runs only the layers
+# below, re-resolving the distro config and the "next" module versions while
+# keeping the openmrs CLI layer cached.
+ARG CACHE_BUST
+
+# Derive the module list from the distro at build time instead of vendoring a
+# copy that would drift silently as the distro adds or removes apps.
+ADD https://raw.githubusercontent.com/openmrs/openmrs-distro-referenceapplication/main/frontend/spa-assemble-config.json /app/distro-config.json
+WORKDIR /app
+RUN node -e "const c=require('./distro-config.json'); c.frontendModules['@openmrs/esm-audit-log-app']='next'; require('fs').writeFileSync('spa-assemble-config.json', JSON.stringify(c,null,2))"
+
+RUN openmrs assemble --mode config --config spa-assemble-config.json --target dist
+
+# Write the .gz/.br siblings the base image's nginx expects (its config serves
+# <file>.br or <file>.gz over the plain file when one exists, trying .br
+# first). `openmrs assemble` emits none, so without these the base's stale
+# siblings — deleted below, and importmap.json's above all — would answer for
+# the replaced files. Runs in this $BUILDPLATFORM stage on purpose: the final
+# stage builds once per target platform, so compressing there would repeat the
+# whole pass under QEMU for linux/arm64. Script and treatment from
+# openmrs-module-chartsearchai, which shipped exactly this defect first.
+COPY precompress-spa.mjs /app/precompress-spa.mjs
+RUN node /app/precompress-spa.mjs /app/dist
+
+# Use the official O3 frontend image as the base — it has the correct
+# index.html (with SPA bootstrap), nginx config, and env var substitution.
+# Note the app shell comes from the base image while modules resolve at build
+# time, so the two can drift between base-image and module releases.
+FROM openmrs/openmrs-reference-application-3-frontend:nightly
+# Before the copy: drop the base image's app bundles (the shell, fonts, and
+# config files live at the html root and survive; stale copies of
+# distro-removed apps would otherwise linger on disk), then drop the
+# precompressed siblings of just the files the copy replaces. nginx prefers
+# <file>.br / <file>.gz over the plain file, so a stale sibling beside a
+# replaced importmap.json or routes.registry.json would hand every browser the
+# base's module list, which never names the audit-log app, while a plain curl
+# (no Accept-Encoding) still reads the fresh file and looks healthy.
+# Driving that off the assembly's own file list, rather than deleting every
+# sibling in the tree, keeps the base-only files compressed: nothing here
+# rebuilds them and this stage has no brotli compressor.
+RUN rm -rf /usr/share/nginx/html/openmrs-esm-*
+RUN --mount=type=bind,from=build-spa,source=/app/dist,target=/dist \
+    cd /dist && find . -type f ! -name '*.gz' ! -name '*.br' \
+      -exec rm -f "/usr/share/nginx/html/{}.gz" "/usr/share/nginx/html/{}.br" \;
+COPY --from=build-spa /app/dist /usr/share/nginx/html
+
+# Fail the build unless the two files that decide whether the ESM loads name
+# it in the variants a browser receives. The .gz halves are checked by
+# content; the .br halves by mtime against their source — this stage has no
+# brotli decompressor, and precompress-spa.mjs stamps each sibling with its
+# source's mtime, so a leftover base-image sibling carries the base's
+# timestamp and fails while one from the assembly matches.
+RUN set -eux; \
+    cd /usr/share/nginx/html; \
+    gzip -cd importmap.json.gz | grep -q '@openmrs/esm-audit-log-app'; \
+    gzip -cd routes.registry.json.gz | grep -q '@openmrs/esm-audit-log-app'; \
+    for f in importmap.json routes.registry.json; do \
+      test -f "$f.br"; \
+      test "$(stat -c %Y "$f.br")" = "$(stat -c %Y "$f")"; \
+    done

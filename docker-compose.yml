@@ -1,0 +1,101 @@
+# O3 Reference Application with audit logging (images built from this repo by
+# .github/workflows/build-docker.yml).
+# Usage: cp .env.example .env (set passwords), then: docker compose up -d
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  gateway:
+    # nightly to match the nightly bases of the frontend/backend images below.
+    image: openmrs/openmrs-reference-application-3-gateway:${GATEWAY_TAG:-nightly}
+    restart: "unless-stopped"
+    # backend is service_started (not healthy) on purpose: first boot takes
+    # long and the gateway serving 502s beats it not starting at all.
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    ports:
+      - "${GATEWAY_PORT:-80}:80"
+    logging: *logging
+
+  frontend:
+    # Built by .github/workflows/build-docker.yml from Dockerfile.frontend
+    # (RefApp SPA + @openmrs/esm-audit-log-app).
+    image: openmrs/openmrs-reference-application-3-frontend:${FRONTEND_TAG:-nightly-auditlog}
+    restart: "unless-stopped"
+    environment:
+      SPA_PATH: /openmrs/spa
+      API_URL: /openmrs
+      SPA_CONFIG_URLS: /openmrs/spa/config-core_demo.json
+      SPA_DEFAULT_LOCALE: ${SPA_DEFAULT_LOCALE:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - backend
+    logging: *logging
+
+  backend:
+    # Built by .github/workflows/build-docker.yml from Dockerfile.backend
+    # (RefApp backend + auditlogweb module + Envers enabled).
+    image: openmrs/openmrs-reference-application-3-backend:${BACKEND_TAG:-nightly-auditlog}
+    restart: "unless-stopped"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      OMRS_CONFIG_MODULE_WEB_ADMIN: ${OMRS_MODULE_WEB_ADMIN:-false}
+      OMRS_CONFIG_AUTO_UPDATE_DATABASE: "true"
+      OMRS_CONFIG_CREATE_TABLES: "true"
+      OMRS_CONFIG_CONNECTION_SERVER: db
+      OMRS_CONFIG_CONNECTION_DATABASE: openmrs
+      OMRS_CONFIG_CONNECTION_USERNAME: ${OMRS_DB_USER:-openmrs}
+      OMRS_CONFIG_CONNECTION_PASSWORD: ${OMRS_DB_PASSWORD:?set OMRS_DB_PASSWORD in .env}
+    healthcheck:
+      # /health/started answers 200 only after full startup — the plain
+      # /openmrs path reads "healthy" during the startup page / setup wizard.
+      # A success during start_period marks healthy immediately, so the long
+      # window doesn't slow fast boots; it only covers the slow first boot
+      # (liquibase install + demo data can exceed 30 min).
+      test: ["CMD", "curl", "-f", "http://localhost:8080/openmrs/health/started"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 1h
+    volumes:
+      - openmrs-data:/openmrs/data
+    logging: *logging
+
+  db:
+    image: mariadb:10.11.7
+    restart: "unless-stopped"
+    command: "mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci"
+    healthcheck:
+      # $$ defers expansion to the container so the password never appears in
+      # the parsed compose config; the quotes keep the container shell from
+      # word-splitting passwords with spaces or globs.
+      test: 'mysql --user="$$MYSQL_USER" --password="$$MYSQL_PASSWORD" --execute "SHOW DATABASES;"'
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
+    environment:
+      MYSQL_DATABASE: openmrs
+      MYSQL_USER: ${OMRS_DB_USER:-openmrs}
+      MYSQL_PASSWORD: ${OMRS_DB_PASSWORD:?set OMRS_DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/mysql
+    logging: *logging
+
+volumes:
+  openmrs-data: ~
+  db-data: ~

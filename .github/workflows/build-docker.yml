@@ -1,0 +1,136 @@
+name: Build Docker Images
+
+# Publishes nightly-auditlog on pushes to main, on the nightly schedule, and
+# on workflow_dispatch; <version>-auditlog on the release tags created by
+# release.yml (the parent pom tags releases as the plain version, e.g. 1.1.0 —
+# release.yml pushes them with a PAT because GITHUB_TOKEN-pushed tags don't
+# trigger workflows). Pull requests build both images (single platform, no
+# push) so Dockerfile breakage is caught in review instead of on the published
+# tag. The build jobs push candidate tags; the promote job retags the pair
+# together, so the published tags never hold a mismatched frontend/backend
+# pair even if one build fails after the other pushed.
+on:
+  push:
+    branches: [main]
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+  pull_request:
+    branches: [main]
+  schedule:
+    # Nightly, so the "next" ESMs and nightly base images don't go stale.
+    - cron: '45 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: openmrs/openmrs-reference-application-3
+  DOCKER_IMAGE_TAG: ${{ github.ref_type == 'tag' && format('{0}-auditlog', github.ref_name) || 'nightly-auditlog' }}
+  CANDIDATE_TAG: ${{ format('{0}-candidate', github.ref_type == 'tag' && format('{0}-auditlog', github.ref_name) || 'nightly-auditlog') }}
+  DOCKER_IMAGE_PLATFORMS: linux/amd64,linux/arm64
+
+# Queue rather than cancel: a push landing mid-nightly (or vice versa) must
+# not cancel a run between the two candidate pushes and the promote step.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Run Tests
+    if: github.repository_owner == 'openmrs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up JDK
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: maven
+
+      # package, not test: the omod's unpack-dependencies step needs the api
+      # artifact packaged (MDEP-98), which the test phase never does.
+      - name: Build and run tests
+        run: mvn clean package -B
+
+  build-frontend:
+    name: Build the Frontend Image
+    if: github.repository_owner == 'openmrs'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Build and push candidate image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || env.DOCKER_IMAGE_PLATFORMS }}
+          build-args: |
+            CACHE_BUST=${{ github.run_id }}
+          tags: |
+            ${{ env.IMAGE }}-frontend:${{ env.CANDIDATE_TAG }}
+
+  build-backend:
+    name: Build the Backend Image
+    if: github.repository_owner == 'openmrs'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Build and push candidate image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          file: Dockerfile.backend
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || env.DOCKER_IMAGE_PLATFORMS }}
+          tags: |
+            ${{ env.IMAGE }}-backend:${{ env.CANDIDATE_TAG }}
+
+  promote:
+    name: Promote the Image Pair
+    # Retags both candidates in one job, so the published tags only ever move
+    # together. Runs only when both builds pushed (skipped needs skip this).
+    if: github.repository_owner == 'openmrs' && github.event_name != 'pull_request'
+    needs: [build-frontend, build-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Retag candidates as the published pair
+        run: |
+          docker buildx imagetools create -t "$IMAGE-frontend:$DOCKER_IMAGE_TAG" "$IMAGE-frontend:$CANDIDATE_TAG"
+          docker buildx imagetools create -t "$IMAGE-backend:$DOCKER_IMAGE_TAG" "$IMAGE-backend:$CANDIDATE_TAG"

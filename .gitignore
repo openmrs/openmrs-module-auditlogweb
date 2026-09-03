@@ -68,6 +68,9 @@ nb-configuration.xml
 !.gitattributes
 !.tx
 !.github/
+!.dockerignore
+!.env.example
+!.env.dev
 *~
 #############
 
